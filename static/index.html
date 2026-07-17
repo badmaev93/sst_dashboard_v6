@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>GFS Прогноз — Северная Пацифика</title>
+
+  <link rel="stylesheet" href="/static/vendor/ol.css"/>
+  <script src="/static/vendor/ol.js"></script>
+  <script src="/static/vendor/chart.js"></script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/static/style.css"/>
+  <link rel="stylesheet" href="/static/monitoring.css"/>
+</head>
+<body>
+
+<!-- ══ OL MAP (always in DOM) ══ -->
+<div id="map"></div>
+
+<!-- ══ DETAIL-MODE TAB CONTENT PANELS ══ -->
+<div id="detail-panel-monitoring" class="detail-panel"></div>
+
+<!-- Containers required by overlay JS modules (hidden by default) -->
+<div id="forecast-view" style="display:none"></div>
+
+<!-- ══ COMPARE VIEW (default) ══ -->
+<div id="compare-view">
+
+  <!-- Header -->
+  <div id="cmp-header">
+    <div class="cmp-hdr-top">
+      <span class="cmp-hdr-dataset">GFS — Северная Пацифика</span>
+      <span class="cmp-hdr-dot">·</span>
+      <span id="cmp-run-label" class="cmp-hdr-run">—</span>
+    </div>
+    <div class="cmp-hdr-controls">
+      <label class="cmp-hdr-lbl">Параметр:</label>
+      <select id="cmp-param-select" class="cmp-param-select" onchange="setParam(this.value)">
+        <option value="gfs_t">Темп. поверхности (°C)</option>
+        <option value="gfs_2t">Темп. воздуха 2м (°C)</option>
+        <option value="gfs_prmsl">Давление на ур. моря (гПа)</option>
+        <option value="gfs_wind">Скорость ветра 10м (м/с)</option>
+        <option value="gfs_tcc">Облачность (%)</option>
+        <option value="gfs_pwat">Запас воды (кг/м²)</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Grid of small maps (6 forecast hours) -->
+  <div id="compare-grid"></div>
+
+  <!-- Horizontal legend -->
+  <div id="cmp-legend-h" class="hidden"></div>
+
+</div>
+
+<!-- ══ DETAIL-MODE TOP NAV ══ -->
+<div id="detail-nav" style="display:none">
+  <button class="detail-nav-back" onclick="goCompare()">
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+      <path d="M9 2L4 7L9 12"/>
+    </svg>
+    Обзор
+  </button>
+  <div class="detail-nav-tabs">
+    <button class="detail-tab active" data-tab="map"        onclick="showDetailTab('map')">Карта и станции</button>
+    <button class="detail-tab"        data-tab="forecast"   onclick="showDetailTab('forecast')">ИИ Прогноз</button>
+    <button class="detail-tab"        data-tab="agents"     onclick="showDetailTab('agents')">ИИ Мониторинг</button>
+    <button class="detail-tab"        data-tab="monitoring" onclick="showDetailTab('monitoring')">Мониторинг</button>
+    <button class="detail-tab"        data-tab="calendar"   onclick="showDetailTab('calendar')">Календарь</button>
+    <button class="detail-tab"        data-tab="requests"   onclick="showDetailTab('requests')">Заявки</button>
+  </div>
+  <div class="detail-nav-period" id="detail-period-label">—</div>
+</div>
+
+<!-- ══ HAMBURGER TOGGLE (map mode only) ══ -->
+<button id="panel-toggle" onclick="togglePanel()">
+  <svg width="18" height="14" viewBox="0 0 18 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+    <line x1="0" y1="1"  x2="18" y2="1"/>
+    <line x1="0" y1="7"  x2="18" y2="7"/>
+    <line x1="0" y1="13" x2="18" y2="13"/>
+  </svg>
+</button>
+
+<!-- ══ LEFT PANEL ══ -->
+<div id="left-panel">
+
+  <!-- Run info -->
+  <div class="lp-group">
+    <div class="lp-lbl">GFS запуск</div>
+    <div id="run-info" style="font-size:11px;color:var(--accent);padding:4px 0">—</div>
+  </div>
+
+  <!-- GFS Parameter selector -->
+  <div class="lp-group">
+    <div class="lp-lbl">Параметр</div>
+    <select class="lp-select" onchange="setParam(this.value)" id="lp-param-select">
+      <option value="gfs_t">Темп. поверхности</option>
+      <option value="gfs_2t">Темп. воздуха 2м</option>
+      <option value="gfs_prmsl">Давление (уровень моря)</option>
+      <option value="gfs_wind">Скорость ветра 10м</option>
+      <option value="gfs_tcc">Облачность</option>
+      <option value="gfs_pwat">Запас воды (PWAT)</option>
+    </select>
+  </div>
+
+  <!-- Forecast hour buttons -->
+  <div id="period-box">
+    <div class="period-label">Горизонт прогноза</div>
+    <div id="period-btns"></div>
+  </div>
+
+  <!-- Stations toggle -->
+  <div class="lp-group">
+    <div class="lp-lbl">Станции</div>
+    <div class="lp-btns">
+      <button class="lp-btn station-toggle-btn active" onclick="toggleStations(true)">Вкл</button>
+      <button class="lp-btn station-toggle-btn"        onclick="toggleStations(false)">Выкл</button>
+    </div>
+  </div>
+
+  <!-- Wind animation toggle -->
+  <div class="lp-group">
+    <div class="lp-lbl">Анимация ветра</div>
+    <div class="lp-btns">
+      <button class="lp-btn wind-anim-btn" onclick="toggleWindAnim(true)">Вкл</button>
+      <button class="lp-btn wind-anim-btn active" onclick="toggleWindAnim(false)">Выкл</button>
+    </div>
+  </div>
+
+  <!-- Settings (collapsible) -->
+  <div class="lp-section" id="lp-settings">
+    <button class="lp-section-hdr" onclick="toggleLpSection('lp-settings')">
+      <span>Настройки</span>
+      <svg class="lp-chevron" width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.8">
+        <path d="M2 3.5 L5 7 L8 3.5"/>
+      </svg>
+    </button>
+    <div class="lp-section-body">
+      <div class="lp-row">
+        <span class="lp-lbl">Береговая линия</span>
+        <div class="lp-btns">
+          <button class="lp-btn coast-btn active" data-coast="1" onclick="setCoastline(true)">Вкл</button>
+          <button class="lp-btn coast-btn"        data-coast="0" onclick="setCoastline(false)">Выкл</button>
+        </div>
+      </div>
+      <div class="lp-row">
+        <span class="lp-lbl">Размытие</span>
+        <div class="lp-btns">
+          <button class="lp-btn blur-btn active" data-blur="1" onclick="setBlur(true)">Вкл</button>
+          <button class="lp-btn blur-btn"        data-blur="0" onclick="setBlur(false)">Выкл</button>
+        </div>
+      </div>
+      <div class="lp-row">
+        <span class="lp-lbl">Перцентиль</span>
+        <div class="lp-btns">
+          <button class="lp-btn pct-btn active" data-pct="99"   onclick="setPct('99')">99</button>
+          <button class="lp-btn pct-btn"        data-pct="99.9" onclick="setPct('99.9')">99.9</button>
+          <button class="lp-btn pct-btn"        data-pct="100"  onclick="setPct('100')">100</button>
+        </div>
+      </div>
+      <div class="lp-row">
+        <span class="lp-lbl">Разрешение PNG</span>
+        <div class="lp-btns">
+          <button class="lp-btn scale-btn"        data-scale="1" onclick="setScale(1)">1×</button>
+          <button class="lp-btn scale-btn active" data-scale="2" onclick="setScale(2)">2×</button>
+        </div>
+      </div>
+      <div class="lp-row">
+        <span class="lp-lbl">Изолинии</span>
+        <div class="lp-btns">
+          <button class="lp-btn contour-btn active" data-contour="1" onclick="setContours(true)">Вкл</button>
+          <button class="lp-btn contour-btn"        data-contour="0" onclick="setContours(false)">Выкл</button>
+        </div>
+      </div>
+      <div class="lp-row">
+        <span class="lp-lbl">Подписи изолиний</span>
+        <div class="lp-btns">
+          <button class="lp-btn contlbl-btn active" data-contlbl="1" onclick="setContourLabels(true)">Вкл</button>
+          <button class="lp-btn contlbl-btn"        data-contlbl="0" onclick="setContourLabels(false)">Выкл</button>
+        </div>
+      </div>
+      <div class="lp-row">
+        <span class="lp-lbl">Интерполяция</span>
+        <div class="lp-btns">
+          <button class="lp-btn smooth-btn active" data-smooth="1" onclick="setSmooth(true)">Вкл</button>
+          <button class="lp-btn smooth-btn"        data-smooth="0" onclick="setSmooth(false)">Выкл</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══ RIGHT LEGEND (map mode) ══ -->
+<div id="legend">
+  <div id="legend-unit"></div>
+  <div id="legend-body">
+    <canvas id="legend-canvas" width="64" height="320"></canvas>
+    <div id="legend-ticks-wrap"><div id="legend-ticks"></div></div>
+  </div>
+</div>
+
+<!-- Hover tooltip -->
+<div id="hover-tooltip" class="hidden"></div>
+
+<!-- Map popup -->
+<div id="map-popup" class="ol-popup" style="display:none">
+  <div id="map-popup-content"></div>
+</div>
+
+<!-- Loading overlay -->
+<div id="loading-overlay" class="hidden">
+  <div class="spinner"></div>
+  <div id="loading-text">Загрузка…</div>
+</div>
+
+<script src="/static/app.js"></script>
+<script src="/static/stations.js"></script>
+<script src="/static/monitoring.js"></script>
+<script src="/static/forecast.js"></script>
+<script src="/static/requests_ui.js"></script>
+<script src="/static/calendar.js"></script>
+</body>
+</html>
