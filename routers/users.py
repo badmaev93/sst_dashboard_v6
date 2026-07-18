@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends
 import db
-from auth import require_role, get_current_user
+from auth import require_role
 
 users_router = APIRouter(prefix="/api/monitoring/users", tags=["users"])
 
@@ -10,7 +10,7 @@ async def list_users(user=Depends(require_role("supervisor"))):
     return [dict(r) for r in rows]
 
 @users_router.get("/personnel")
-async def list_personnel():
+async def list_personnel(user=Depends(require_role("supervisor"))):
     rows = await db.pool.fetch("""
         SELECT p.*, u.full_name, u.role as user_role, s.name as station_name, s.code as station_code
         FROM personnel p

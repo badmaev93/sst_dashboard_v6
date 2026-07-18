@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends, Query
+from fastapi import APIRouter, Depends
 import db
 from auth import get_current_user, require_role
 from models import EquipmentCheckCreate
@@ -6,7 +6,7 @@ from models import EquipmentCheckCreate
 equipment_router = APIRouter(prefix="/api/monitoring/equipment", tags=["equipment"])
 
 @equipment_router.get("/checks")
-async def list_checks(station_id: int = None):
+async def list_checks(station_id: int = None, user=Depends(get_current_user)):
     if station_id:
         rows = await db.pool.fetch("""
             SELECT ec.*, u.full_name as engineer_name, s.name as station_name

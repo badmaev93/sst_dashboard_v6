@@ -6,7 +6,8 @@ from models import RequestCreate
 requests_router = APIRouter(prefix="/api/monitoring/requests", tags=["requests"])
 
 @requests_router.get("/")
-async def list_requests(status: str = None, req_type: str = None, station_id: int = None):
+async def list_requests(status: str = None, req_type: str = None, station_id: int = None,
+                        user=Depends(get_current_user)):
     conditions, params = [], []
     idx = 1
     if status:
