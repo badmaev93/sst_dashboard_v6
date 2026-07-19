@@ -1,0 +1,4 @@
+## 2025-02-15 - Request Authorization Bypass and Missing Input Validation
+**Vulnerability:** In `PUT /api/monitoring/requests/{req_id}`, any authenticated user could modify any request (regardless of who created it) and directly transition its status to "signed" or "rejected", bypassing supervisor approval. In addition, input fields like `status` and `priority` lacked validation.
+**Learning:** Missing permission checks on request ownership and role validation allowed a low-privileged user to perform unauthorized privilege escalation and bypass the intended `/sign` signature workflow.
+**Prevention:** Always restrict request updates to either the request's creator or a supervisor, block unauthorized status transitions (e.g. setting status to approved/signed or rejected directly via a PUT update), and rigorously validate inputs such as status and priority against strict lists of allowed values.

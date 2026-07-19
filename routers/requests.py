@@ -42,10 +42,29 @@ async def update_request(req_id: int, data: dict, user=Depends(get_current_user)
     existing = await db.pool.fetchrow("SELECT * FROM requests WHERE id = $1", req_id)
     if not existing:
         raise HTTPException(404, "Request not found")
+
+    # Authorization Check: only supervisors or the original request creator can update
+    if user["role"] != "supervisor" and existing["created_by"] != user["id"]:
+        raise HTTPException(403, "Not authorized to update this request")
+
+    # Input Validation: validate priority if provided
+    priority = data.get("priority")
+    if priority is not None and priority not in ("low", "normal", "medium", "high", "urgent"):
+        raise HTTPException(400, "Invalid priority value")
+
+    # Input Validation & Guard Rails: validate status if provided
+    status = data.get("status")
+    if status is not None:
+        if status not in ("draft", "pending", "signed", "rejected", "in_progress", "completed"):
+            raise HTTPException(400, "Invalid status value")
+        # Non-supervisors are forbidden from approving/signing or rejecting requests directly
+        if status in ("signed", "rejected") and user["role"] != "supervisor":
+            raise HTTPException(403, "Not authorized to approve or reject requests")
+
     await db.pool.execute("""
         UPDATE requests SET title=COALESCE($1,title), description=COALESCE($2,description),
             status=COALESCE($3,status), priority=COALESCE($4,priority) WHERE id=$5
-    """, data.get("title"), data.get("description"), data.get("status"), data.get("priority"), req_id)
+    """, data.get("title"), data.get("description"), status, priority, req_id)
     return {"ok": True}
 
 @requests_router.post("/{req_id}/sign")
