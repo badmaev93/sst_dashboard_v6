@@ -36,7 +36,7 @@
       <span id="cmp-run-label" class="cmp-hdr-run">—</span>
     </div>
     <div class="cmp-hdr-controls">
-      <label class="cmp-hdr-lbl">Параметр:</label>
+      <label class="cmp-hdr-lbl" for="cmp-param-select">Параметр:</label>
       <select id="cmp-param-select" class="cmp-param-select" onchange="setParam(this.value)">
         <option value="gfs_t">Темп. поверхности (°C)</option>
         <option value="gfs_2t">Темп. воздуха 2м (°C)</option>
@@ -76,7 +76,7 @@
 </div>
 
 <!-- ══ HAMBURGER TOGGLE (map mode only) ══ -->
-<button id="panel-toggle" onclick="togglePanel()">
+<button id="panel-toggle" onclick="togglePanel()" aria-expanded="false" aria-controls="left-panel" aria-label="Открыть панель управления">
   <svg width="18" height="14" viewBox="0 0 18 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
     <line x1="0" y1="1"  x2="18" y2="1"/>
     <line x1="0" y1="7"  x2="18" y2="7"/>
@@ -95,7 +95,7 @@
 
   <!-- GFS Parameter selector -->
   <div class="lp-group">
-    <div class="lp-lbl">Параметр</div>
+    <label class="lp-lbl" for="lp-param-select">Параметр</label>
     <select class="lp-select" onchange="setParam(this.value)" id="lp-param-select">
       <option value="gfs_t">Темп. поверхности</option>
       <option value="gfs_2t">Темп. воздуха 2м</option>

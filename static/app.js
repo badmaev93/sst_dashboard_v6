@@ -1068,8 +1068,24 @@ function _applySmoothing() {
 // ──────────────────────────────────────────────
 // Panel
 // ──────────────────────────────────────────────
-function togglePanel() { document.getElementById("left-panel").classList.toggle("panel-open"); }
-function closePanel()  { document.getElementById("left-panel").classList.remove("panel-open"); }
+function togglePanel() {
+  const panel = document.getElementById("left-panel");
+  const toggle = document.getElementById("panel-toggle");
+  const isOpen = panel.classList.toggle("panel-open");
+  if (toggle) {
+    toggle.setAttribute("aria-expanded", isOpen ? "true" : "false");
+    toggle.setAttribute("aria-label", isOpen ? "Закрыть панель управления" : "Открыть панель управления");
+  }
+}
+function closePanel()  {
+  const panel = document.getElementById("left-panel");
+  const toggle = document.getElementById("panel-toggle");
+  panel.classList.remove("panel-open");
+  if (toggle) {
+    toggle.setAttribute("aria-expanded", "false");
+    toggle.setAttribute("aria-label", "Открыть панель управления");
+  }
+}
 function toggleLpSection(id) { document.getElementById(id).classList.toggle("open"); }
 
 function _onDocClick(e) {
