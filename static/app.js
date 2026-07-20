@@ -669,7 +669,7 @@ async function _applyViewMode() {
     document.querySelectorAll(".detail-panel").forEach(p => p.classList.remove("active"));
     const _fvEl = document.getElementById("forecast-view");
     if (_fvEl) _fvEl.style.display = "none";
-    document.getElementById("left-panel").classList.remove("panel-open");
+    closePanel();
     await _buildCompareGrid();
     await _refreshLegend();
   } else {
@@ -961,7 +961,7 @@ function showDetailTab(tab) {
     if (mapEl)       mapEl.style.display       = "";
     if (legend)      legend.classList.add("hidden");
     if (panelToggle) panelToggle.style.display  = "none";
-    if (leftPanel)   leftPanel.classList.remove("panel-open");
+    closePanel();
     if (tab === "forecast" && fvEl) fvEl.style.display = "flex";
     _loadDetailPanel(tab, fvEl || document.createElement("div"));
   } else {
@@ -969,7 +969,7 @@ function showDetailTab(tab) {
     if (mapEl)       mapEl.style.display       = "none";
     if (legend)      legend.classList.add("hidden");
     if (panelToggle) panelToggle.style.display  = "none";
-    if (leftPanel)   leftPanel.classList.remove("panel-open");
+    closePanel();
 
     const panelId = `detail-panel-${tab}`;
     const panel   = document.getElementById(panelId);
@@ -1068,8 +1068,20 @@ function _applySmoothing() {
 // ──────────────────────────────────────────────
 // Panel
 // ──────────────────────────────────────────────
-function togglePanel() { document.getElementById("left-panel").classList.toggle("panel-open"); }
-function closePanel()  { document.getElementById("left-panel").classList.remove("panel-open"); }
+function togglePanel() {
+  const panel = document.getElementById("left-panel");
+  const toggle = document.getElementById("panel-toggle");
+  if (panel) {
+    const isOpen = panel.classList.toggle("panel-open");
+    if (toggle) toggle.setAttribute("aria-expanded", isOpen ? "true" : "false");
+  }
+}
+function closePanel() {
+  const panel = document.getElementById("left-panel");
+  const toggle = document.getElementById("panel-toggle");
+  if (panel) panel.classList.remove("panel-open");
+  if (toggle) toggle.setAttribute("aria-expanded", "false");
+}
 function toggleLpSection(id) { document.getElementById(id).classList.toggle("open"); }
 
 function _onDocClick(e) {

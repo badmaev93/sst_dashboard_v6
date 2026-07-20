@@ -1,0 +1,90 @@
+2026-07-18 23:05:57,944 WARNING app — Router auth_router not loaded: No module named 'jose'
+2026-07-18 23:05:57,945 WARNING app — Router stations_router not loaded: No module named 'asyncpg'
+2026-07-18 23:05:57,946 WARNING app — Router forecast_router not loaded: No module named 'asyncpg'
+2026-07-18 23:05:57,947 WARNING app — Router monitoring_router not loaded: No module named 'asyncpg'
+2026-07-18 23:05:57,947 WARNING app — Router requests_router not loaded: No module named 'asyncpg'
+2026-07-18 23:05:57,948 WARNING app — Router calendar_router not loaded: No module named 'asyncpg'
+2026-07-18 23:05:57,948 WARNING app — Router equipment_router not loaded: No module named 'asyncpg'
+2026-07-18 23:05:57,949 WARNING app — Router users_router not loaded: No module named 'asyncpg'
+2026-07-18 23:05:57,949 WARNING app — Router regions_router not loaded: No module named 'asyncpg'
+2026-07-18 23:05:57,950 WARNING app — Router schedule_router not loaded: No module named 'asyncpg'
+2026-07-18 23:05:57,951 WARNING app — Router webhooks_router not loaded: No module named 'asyncpg'
+INFO:     Started server process [65814]
+INFO:     Waiting for application startup.
+2026-07-18 23:05:58,149 WARNING app — DB not available: No module named 'asyncpg'
+2026-07-18 23:05:58,155 INFO services.scheduler — Scheduler started: hourly readings + requests + agent events + daily monitoring
+2026-07-18 23:05:58,155 INFO app — Scheduler started
+2026-07-18 23:05:58,155 ERROR services.scheduler — Hourly generation failed: No module named 'asyncpg'
+2026-07-18 23:05:58,155 INFO services.scheduler — Daily monitoring: first run in 32042 seconds (at 08:00 UTC)
+2026-07-18 23:05:58,156 ERROR asyncio — Task exception was never retrieved
+future: <Task finished name='Task-7' coro=<start_scheduler.<locals>._telegram_polling() done, defined at /app/services/scheduler.py:88> exception=ModuleNotFoundError("No module named 'httpx'")>
+Traceback (most recent call last):
+  File "/app/services/scheduler.py", line 90, in _telegram_polling
+    import httpx
+ModuleNotFoundError: No module named 'httpx'
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8080 (Press CTRL+C to quit)
+INFO:     127.0.0.1:53824 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53824 - "GET /static/vendor/ol.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53832 - "GET /static/style.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53846 - "GET /static/monitoring.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53852 - "GET /static/vendor/ol.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53856 - "GET /static/vendor/chart.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53866 - "GET /static/app.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53824 - "GET /static/stations.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53832 - "GET /static/monitoring.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53846 - "GET /static/forecast.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53824 - "GET /static/requests_ui.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53866 - "GET /static/calendar.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53852 - "GET /api/gfs/meta HTTP/1.1" 200 OK
+2026-07-18 23:06:47,695 INFO app — GFS map gfs_t +72h scale=2 blur=True
+2026-07-18 23:06:47,695 INFO app — GFS map gfs_t +48h scale=2 blur=True
+2026-07-18 23:06:47,695 INFO app — GFS map gfs_t +24h scale=2 blur=True
+2026-07-18 23:06:47,695 INFO app — GFS map gfs_t +0h scale=2 blur=True
+INFO:     127.0.0.1:53832 - "GET /api/map/gfs_t/forecast/3.png?percentile=99&scale=2&contour_labels=1&_v=1784416007616_1 HTTP/1.1" 503 Service Unavailable
+INFO:     127.0.0.1:53856 - "GET /api/map/gfs_t/forecast/2.png?percentile=99&scale=2&contour_labels=1&_v=1784416007616_1 HTTP/1.1" 503 Service Unavailable
+INFO:     127.0.0.1:53846 - "GET /api/map/gfs_t/forecast/1.png?percentile=99&scale=2&contour_labels=1&_v=1784416007616_1 HTTP/1.1" 503 Service Unavailable
+INFO:     127.0.0.1:53866 - "GET /api/map/gfs_t/forecast/0.png?percentile=99&scale=2&contour_labels=1&_v=1784416007616_1 HTTP/1.1" 503 Service Unavailable
+INFO:     127.0.0.1:53832 - "GET /api/colorscale/gfs_t?season_type=forecast&season_idx=0&percentile=99&scale=2&contour_labels=1 HTTP/1.1" 503 Service Unavailable
+2026-07-18 23:06:50,834 INFO app — GFS map gfs_t +120h scale=2 blur=True
+2026-07-18 23:06:50,834 INFO app — GFS map gfs_t +96h scale=2 blur=True
+INFO:     127.0.0.1:53846 - "GET /api/map/gfs_t/forecast/5.png?percentile=99&scale=2&contour_labels=1&_v=1784416007616_1 HTTP/1.1" 503 Service Unavailable
+INFO:     127.0.0.1:53866 - "GET /api/map/gfs_t/forecast/4.png?percentile=99&scale=2&contour_labels=1&_v=1784416007616_1 HTTP/1.1" 503 Service Unavailable
+INFO:     127.0.0.1:53824 - "GET /api/coastline.svg HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53852 - "GET /api/coastline.geojson HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45370 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45370 - "GET /static/vendor/ol.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45390 - "GET /static/monitoring.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45374 - "GET /static/style.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45392 - "GET /static/vendor/ol.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45404 - "GET /static/vendor/chart.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45370 - "GET /static/stations.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45414 - "GET /static/app.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45390 - "GET /static/monitoring.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45370 - "GET /static/forecast.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45414 - "GET /static/requests_ui.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45374 - "GET /static/calendar.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45392 - "GET /api/gfs/meta HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45392 - "GET /api/coastline.geojson HTTP/1.1" 200 OK
+2026-07-18 23:07:16,756 INFO app — GFS map gfs_t +0h scale=2 blur=True
+INFO:     127.0.0.1:45414 - "GET /api/map/gfs_t/forecast/0.png?percentile=99&scale=2&contour_labels=1&_v=1784416036732_1 HTTP/1.1" 503 Service Unavailable
+INFO:     127.0.0.1:45392 - "GET /api/coastline.svg HTTP/1.1" 200 OK
+2026-07-18 23:07:16,763 INFO app — GFS map gfs_t +24h scale=2 blur=True
+INFO:     127.0.0.1:45374 - "GET /api/map/gfs_t/forecast/1.png?percentile=99&scale=2&contour_labels=1&_v=1784416036732_1 HTTP/1.1" 503 Service Unavailable
+2026-07-18 23:07:16,769 INFO app — GFS map gfs_t +48h scale=2 blur=True
+2026-07-18 23:07:16,769 INFO app — GFS map gfs_t +72h scale=2 blur=True
+INFO:     127.0.0.1:45370 - "GET /api/map/gfs_t/forecast/2.png?percentile=99&scale=2&contour_labels=1&_v=1784416036732_1 HTTP/1.1" 503 Service Unavailable
+2026-07-18 23:07:16,770 INFO app — GFS map gfs_t +96h scale=2 blur=True
+2026-07-18 23:07:16,770 INFO app — GFS map gfs_t +120h scale=2 blur=True
+INFO:     127.0.0.1:45404 - "GET /api/map/gfs_t/forecast/3.png?percentile=99&scale=2&contour_labels=1&_v=1784416036732_1 HTTP/1.1" 503 Service Unavailable
+INFO:     127.0.0.1:45374 - "GET /api/colorscale/gfs_t?season_type=forecast&season_idx=0&percentile=99&scale=2&contour_labels=1 HTTP/1.1" 503 Service Unavailable
+INFO:     127.0.0.1:45390 - "GET /api/map/gfs_t/forecast/4.png?percentile=99&scale=2&contour_labels=1&_v=1784416036732_1 HTTP/1.1" 503 Service Unavailable
+INFO:     127.0.0.1:45414 - "GET /api/map/gfs_t/forecast/5.png?percentile=99&scale=2&contour_labels=1&_v=1784416036732_1 HTTP/1.1" 503 Service Unavailable
+INFO:     127.0.0.1:45390 - "GET /api/colorscale/gfs_t?season_type=forecast&season_idx=0&percentile=99&scale=2&contour_labels=1 HTTP/1.1" 503 Service Unavailable
+2026-07-18 23:07:17,241 INFO app — GFS map gfs_t +0h scale=2 blur=True
+INFO:     127.0.0.1:45390 - "GET /api/map/gfs_t/forecast/0.png?percentile=99&scale=2&contour_labels=1 HTTP/1.1" 503 Service Unavailable
+INFO:     127.0.0.1:45390 - "GET /api/monitoring/stations HTTP/1.1" 404 Not Found
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [65814]
