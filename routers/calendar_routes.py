@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends, Query
+from fastapi import APIRouter, HTTPException, Depends
 from datetime import date as _date, datetime as _dt
 import db
 from auth import get_current_user, require_role
@@ -15,7 +15,8 @@ def _parse_date(s):
 calendar_router = APIRouter(prefix="/api/monitoring/calendar", tags=["calendar"])
 
 @calendar_router.get("/events")
-async def list_events(start: str = None, end: str = None, station_id: int = None):
+async def list_events(start: str = None, end: str = None, station_id: int = None,
+                       user=Depends(get_current_user)):
     conditions, params = [], []
     idx = 1
     if start:
@@ -58,7 +59,8 @@ async def delete_event(event_id: int, user=Depends(require_role("supervisor"))):
 # ── Tasks ──────────────────────────────────────────
 
 @calendar_router.get("/tasks")
-async def list_tasks(date: str = None, user_id: int = None):
+async def list_tasks(date: str = None, user_id: int = None,
+                      user=Depends(get_current_user)):
     conditions, params = [], []
     idx = 1
     if date:
@@ -117,7 +119,8 @@ async def update_task(task_id: int, data: dict, user=Depends(get_current_user)):
 # ── Focus Blocks ───────────────────────────────────
 
 @calendar_router.get("/focus-blocks")
-async def list_focus_blocks(user_id: int = None):
+async def list_focus_blocks(user_id: int = None,
+                             user=Depends(get_current_user)):
     if user_id:
         rows = await db.pool.fetch(
             "SELECT * FROM focus_blocks WHERE user_id = $1 ORDER BY start_time", user_id

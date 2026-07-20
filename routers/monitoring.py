@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, Depends
 from datetime import datetime, timezone
 import db
 import logging
+from auth import get_current_user
 
 logger = logging.getLogger(__name__)
 
@@ -9,7 +10,8 @@ monitoring_router = APIRouter(prefix="/api/monitoring", tags=["monitoring"])
 
 @monitoring_router.get("/feed")
 async def activity_feed(limit: int = Query(50, le=200), offset: int = 0,
-                        severity: str = None, agent_name: str = None):
+                        severity: str = None, agent_name: str = None,
+                        user=Depends(get_current_user)):
     conditions = []
     params = []
     idx = 1
@@ -33,7 +35,7 @@ async def activity_feed(limit: int = Query(50, le=200), offset: int = 0,
     return result
 
 @monitoring_router.get("/dashboard/summary")
-async def dashboard_summary():
+async def dashboard_summary(user=Depends(get_current_user)):
     counts = await db.pool.fetchrow("""
         SELECT
             COUNT(*) FILTER (WHERE status = 'normal') as normal,
@@ -124,7 +126,7 @@ async def dashboard_summary():
 
 
 @monitoring_router.post("/actions/{action}")
-async def run_action(action: str):
+async def run_action(action: str, user=Depends(get_current_user)):
     now = datetime.now(timezone.utc)
     if action == "digest":
         stations = await db.pool.fetch("""
