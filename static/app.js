@@ -1020,9 +1020,10 @@ function _renderMonitoringInPanel(container) {
 
 async function _fetchMonitoringSummary(container) {
   try {
+    const authFetchFn = window.authFetch || fetch;
     const [sumRes, feedRes] = await Promise.all([
-      fetch("/api/monitoring/dashboard/summary").then(r => r.ok ? r.json() : null),
-      fetch("/api/monitoring/feed?limit=20").then(r => r.ok ? r.json() : []),
+      authFetchFn("/api/monitoring/dashboard/summary").then(r => r.ok ? r.json() : null),
+      authFetchFn("/api/monitoring/feed?limit=20").then(r => r.ok ? r.json() : []),
     ]);
     const sum  = document.getElementById("mon-inline-summary");
     const feed = document.getElementById("mon-inline-feed");
