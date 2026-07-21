@@ -1082,7 +1082,14 @@ function closePanel() {
   if (panel) panel.classList.remove("panel-open");
   if (toggle) toggle.setAttribute("aria-expanded", "false");
 }
-function toggleLpSection(id) { document.getElementById(id).classList.toggle("open"); }
+function toggleLpSection(id) {
+  const el = document.getElementById(id);
+  if (el) {
+    const isOpen = el.classList.toggle("open");
+    const btn = el.querySelector(".lp-section-hdr");
+    if (btn) btn.setAttribute("aria-expanded", isOpen ? "true" : "false");
+  }
+}
 
 function _onDocClick(e) {
   const panel  = document.getElementById("left-panel");

@@ -132,13 +132,13 @@
 
   <!-- Settings (collapsible) -->
   <div class="lp-section" id="lp-settings">
-    <button class="lp-section-hdr" onclick="toggleLpSection('lp-settings')">
+    <button class="lp-section-hdr" onclick="toggleLpSection('lp-settings')" aria-expanded="false" aria-controls="settings-body">
       <span>Настройки</span>
       <svg class="lp-chevron" width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.8">
         <path d="M2 3.5 L5 7 L8 3.5"/>
       </svg>
     </button>
-    <div class="lp-section-body">
+    <div class="lp-section-body" id="settings-body">
       <div class="lp-row">
         <span class="lp-lbl">Береговая линия</span>
         <div class="lp-btns">
