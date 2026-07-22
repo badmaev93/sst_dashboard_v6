@@ -156,6 +156,12 @@ async function init() {
   }
   hideLoading();
   document.addEventListener("click", _onDocClick);
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      _hidePopup();
+      closePanel();
+    }
+  });
 }
 
 // ──────────────────────────────────────────────
@@ -934,9 +940,11 @@ function _updateDetailPeriodLabel() {
 
 function showDetailTab(tab) {
   S._detailTab = tab;
-  // Update active tab button
+  // Update active tab button and aria-selected state
   document.querySelectorAll(".detail-tab").forEach(b => {
-    b.classList.toggle("active", b.dataset.tab === tab);
+    const isActive = b.dataset.tab === tab;
+    b.classList.toggle("active", isActive);
+    b.setAttribute("aria-selected", isActive ? "true" : "false");
   });
 
   const mapEl     = document.getElementById("map");

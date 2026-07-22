@@ -637,7 +637,7 @@
     const hdr = el('div');
     hdr.style.cssText = `display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid ${CLR.border};flex-shrink:0`;
     hdr.innerHTML = `<span style="font-size:15px;font-weight:700;color:${CLR.text}">${TITLE_MAP[filter] || filter}</span>
-      <button onclick="document.getElementById('mon-status-modal').remove()" style="background:${CLR.surface};border:1px solid ${CLR.border};color:${CLR.text};width:28px;height:28px;border-radius:6px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;font-family:inherit">&times;</button>`;
+      <button aria-label="Закрыть" onclick="document.getElementById('mon-status-modal').remove()" style="background:${CLR.surface};border:1px solid ${CLR.border};color:${CLR.text};width:28px;height:28px;border-radius:6px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;font-family:inherit">&times;</button>`;
     box.appendChild(hdr);
 
     const list = el('div');
@@ -706,7 +706,7 @@
           <div style="font-size:15px;font-weight:700;color:${CLR.text}">${escHtml(station.name)}</div>
           <div style="font-size:11px;color:${CLR.textDim}">${stData ? escHtml(stData.code || '') + ' · ' + escHtml(stData.region || '') : ''}</div>
         </div>
-        <button onclick="document.getElementById('mon-station-alert-modal').remove()" style="background:${CLR.surface};border:1px solid ${CLR.border};color:${CLR.text};width:28px;height:28px;border-radius:6px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center">&times;</button>
+        <button aria-label="Закрыть" onclick="document.getElementById('mon-station-alert-modal').remove()" style="background:${CLR.surface};border:1px solid ${CLR.border};color:${CLR.text};width:28px;height:28px;border-radius:6px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center">&times;</button>
       </div>
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:12px 16px;border-bottom:1px solid ${CLR.border}">
         <div style="text-align:center"><div style="font-size:10px;color:${CLR.textDim}">ТПО</div><div style="font-size:16px;font-weight:700;color:${CLR.info}">${sst}</div></div>
@@ -1171,6 +1171,16 @@
   function stopAutoRefresh() {
     if (_refreshTimer) { clearInterval(_refreshTimer); _refreshTimer = null; }
   }
+
+  // ── Keyboard accessibility listener ────────────────────────
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" || e.keyCode === 27) {
+      const m1 = document.getElementById("mon-status-modal");
+      if (m1) m1.remove();
+      const m2 = document.getElementById("mon-station-alert-modal");
+      if (m2) m2.remove();
+    }
+  });
 
   // ── Public API ─────────────────────────────────────────────
 
