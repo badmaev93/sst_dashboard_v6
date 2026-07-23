@@ -64,13 +64,13 @@
     </svg>
     Обзор
   </button>
-  <div class="detail-nav-tabs">
-    <button class="detail-tab active" data-tab="map"        onclick="showDetailTab('map')">Карта и станции</button>
-    <button class="detail-tab"        data-tab="forecast"   onclick="showDetailTab('forecast')">ИИ Прогноз</button>
-    <button class="detail-tab"        data-tab="agents"     onclick="showDetailTab('agents')">ИИ Мониторинг</button>
-    <button class="detail-tab"        data-tab="monitoring" onclick="showDetailTab('monitoring')">Мониторинг</button>
-    <button class="detail-tab"        data-tab="calendar"   onclick="showDetailTab('calendar')">Календарь</button>
-    <button class="detail-tab"        data-tab="requests"   onclick="showDetailTab('requests')">Заявки</button>
+  <div class="detail-nav-tabs" role="tablist" aria-label="Разделы мониторинга">
+    <button class="detail-tab active" role="tab" aria-selected="true" data-tab="map"        onclick="showDetailTab('map')">Карта и станции</button>
+    <button class="detail-tab"        role="tab" aria-selected="false" data-tab="forecast"   onclick="showDetailTab('forecast')">ИИ Прогноз</button>
+    <button class="detail-tab"        role="tab" aria-selected="false" data-tab="agents"     onclick="showDetailTab('agents')">ИИ Мониторинг</button>
+    <button class="detail-tab"        role="tab" aria-selected="false" data-tab="monitoring" onclick="showDetailTab('monitoring')">Мониторинг</button>
+    <button class="detail-tab"        role="tab" aria-selected="false" data-tab="calendar"   onclick="showDetailTab('calendar')">Календарь</button>
+    <button class="detail-tab"        role="tab" aria-selected="false" data-tab="requests"   onclick="showDetailTab('requests')">Заявки</button>
   </div>
   <div class="detail-nav-period" id="detail-period-label">—</div>
 </div>
