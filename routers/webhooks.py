@@ -8,12 +8,12 @@ logger = logging.getLogger(__name__)
 webhooks_router = APIRouter(prefix="/api/webhooks", tags=["webhooks"])
 
 def _check_key(key: str = Header(None, alias="X-Agent-Key")):
-    if key != AGENT_API_KEY:
+    if not AGENT_API_KEY or key != AGENT_API_KEY:
         raise HTTPException(403, "Invalid agent key")
 
 @webhooks_router.post("/agent/insight")
 async def agent_insight(data: AgentInsight, key: str = Header(None, alias="X-Agent-Key")):
-    if key != AGENT_API_KEY:
+    if not AGENT_API_KEY or key != AGENT_API_KEY:
         raise HTTPException(403, "Invalid agent key")
     row = await db.pool.fetchrow("""
         INSERT INTO agent_activity (agent_name, event_type, severity, title, body, metadata)
@@ -24,7 +24,7 @@ async def agent_insight(data: AgentInsight, key: str = Header(None, alias="X-Age
 
 @webhooks_router.post("/agent/status")
 async def agent_status(data: AgentInsight, key: str = Header(None, alias="X-Agent-Key")):
-    if key != AGENT_API_KEY:
+    if not AGENT_API_KEY or key != AGENT_API_KEY:
         raise HTTPException(403, "Invalid agent key")
     row = await db.pool.fetchrow("""
         INSERT INTO agent_activity (agent_name, event_type, severity, title, body, metadata)
@@ -35,7 +35,7 @@ async def agent_status(data: AgentInsight, key: str = Header(None, alias="X-Agen
 
 @webhooks_router.post("/agent/anomaly")
 async def agent_anomaly(data: AgentInsight, key: str = Header(None, alias="X-Agent-Key")):
-    if key != AGENT_API_KEY:
+    if not AGENT_API_KEY or key != AGENT_API_KEY:
         raise HTTPException(403, "Invalid agent key")
     row = await db.pool.fetchrow("""
         INSERT INTO agent_activity (agent_name, event_type, severity, title, body, metadata)
