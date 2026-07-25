@@ -642,6 +642,16 @@ function syncUI() {
   document.querySelectorAll(".period-btn").forEach((btn, i) => {
     btn.classList.toggle("active", S._periodSelected && i === periodIdx);
   });
+
+  // Sync station and wind anim toggle buttons aria-pressed
+  document.querySelectorAll(".station-toggle-btn").forEach(b => {
+    const active = b.textContent.includes("Вкл") === S.showStations;
+    b.setAttribute("aria-pressed", active ? "true" : "false");
+  });
+  document.querySelectorAll(".wind-anim-btn").forEach(b => {
+    const active = (b.textContent.includes("Вкл") && S.showWindAnim) || (b.textContent.includes("Выкл") && !S.showWindAnim);
+    b.setAttribute("aria-pressed", active ? "true" : "false");
+  });
 }
 
 // ──────────────────────────────────────────────
@@ -757,7 +767,9 @@ function _gfs_png_cache_bust() {
 function toggleStations(on) {
   S.showStations = on;
   document.querySelectorAll(".station-toggle-btn").forEach(b => {
-    b.classList.toggle("active", b.textContent.includes("Вкл") === on);
+    const active = b.textContent.includes("Вкл") === on;
+    b.classList.toggle("active", active);
+    b.setAttribute("aria-pressed", active ? "true" : "false");
   });
   if (typeof updateStationsVisibility === "function") updateStationsVisibility(on);
 }
@@ -765,8 +777,9 @@ function toggleStations(on) {
 function toggleWindAnim(on) {
   S.showWindAnim = on;
   document.querySelectorAll(".wind-anim-btn").forEach(b => {
-    b.classList.toggle("active",
-      (b.textContent.includes("Вкл") && on) || (b.textContent.includes("Выкл") && !on));
+    const active = (b.textContent.includes("Вкл") && on) || (b.textContent.includes("Выкл") && !on);
+    b.classList.toggle("active", active);
+    b.setAttribute("aria-pressed", active ? "true" : "false");
   });
   if (on) {
     _startWindAnimation();
@@ -1090,7 +1103,14 @@ function closePanel() {
   if (panel) panel.classList.remove("panel-open");
   if (toggle) toggle.setAttribute("aria-expanded", "false");
 }
-function toggleLpSection(id) { document.getElementById(id).classList.toggle("open"); }
+function toggleLpSection(id) {
+  const section = document.getElementById(id);
+  const isOpen = section.classList.toggle("open");
+  const hdrBtn = section.querySelector(".lp-section-hdr");
+  if (hdrBtn) {
+    hdrBtn.setAttribute("aria-expanded", isOpen ? "true" : "false");
+  }
+}
 
 function _onDocClick(e) {
   const panel  = document.getElementById("left-panel");
