@@ -1,0 +1,31 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Read|Grep|Glob",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/graphify_context.py\" 2>/dev/null || true",
+            "timeout": 10,
+            "statusMessage": "Consulting graph"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/graphify_update.py\" 2>/dev/null || true",
+            "timeout": 120,
+            "async": true,
+            "statusMessage": "Refreshing graph"
+          }
+        ]
+      }
+    ]
+  }
+}

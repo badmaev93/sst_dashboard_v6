@@ -1,268 +1,321 @@
-# SST Dashboard v5
+# SST Dashboard v6
 
-Интерактивный дашборд анализа температуры поверхности океана (ТПО) — Северная Пацифика, ERA5 1979–2026.
+Платформа мониторинга гидрометеостанций Дальнего Востока и Арктики: живые показания станций, ИИ-прогноз (Prophet + GFS + опциональный TimeGPT), календарь/график дежурств, заявки на обслуживание, Telegram-бот — поверх PostgreSQL. Внутри того же FastAPI-приложения по-прежнему живёт исходный проект: рендер климатических карт ТПО (ERA5, precompute → PNG) и GFS-оверлей поверх карты.
+
+> Это НЕ простой netCDF-дашборд, как было написано в старом README. Это гибрид: станционный мониторинг на Postgres + унаследованный слой климатических карт.
 
 ---
 
-## Технологический стек
+## Что внутри
 
-### Backend
-| Компонент | Версия | Роль |
-|---|---|---|
-| **Python** | 3.10+ | основной язык |
-| **FastAPI** | ≥0.110 | REST API + раздача статики |
-| **Uvicorn** | ≥0.27 | ASGI-сервер |
-| **NumPy** | ≥1.24 | все численные вычисления |
-| **SciPy** | ≥1.10 | OLS-регрессия, интерполяция, Гауссово размытие |
-| **Pillow** | ≥10.0 | рендер карт в PNG, насыщение цвета |
-| **netCDF4** | ≥1.6 | чтение исходных данных ERA5 |
-| **pyproj** | — | проекция Меркатора (EPSG:3857) |
-
-### Frontend
-| Компонент | Роль |
-|---|---|
-| **OpenLayers 10.2** | интерактивная карта (EPSG:3857, ImageStatic слой) |
-| **Chart.js** | временны́е ряды и графики по точкам |
-| **CartoDB Dark** | базовая тёмная карта (тайлы без подписей) |
-| **Vanilla JS** | всё взаимодействие без фреймворков |
-
-### Данные
-- **ERA5 Monthly Averaged SST** (MODA, `sst`), переменная в Кельвинах
-- Файл: `.nc` (NetCDF4), форма `(565, 157, 441)` = (время × широта × долгота)
-- Регион: **26–72°N, 117–246°E** (Северная Пацифика + переход через антимеридиан)
-- Период: **январь 1979 — январь 2026** (~47 лет, 565 месяцев)
+- **Станции** — карта, живые показания (SST, ветер, волна, давление), история за 24 ч
+- **ИИ-прогноз** («Serendipity») — Prophet-модель по станции + коррекция по GFS-узлу, с опциональным оверрайдом от Nixtla TimeGPT (квота 50 вызовов/мес, кэш 7 дней)
+- **Мониторинг агентов** — лента событий, дашборд сводки, синтетические digest/anomaly-действия
+- **Заявки** — создание, назначение, согласование (sign-off) с ролями
+- **Календарь** — события, задачи, личные focus-blocks
+- **График дежурств** — назначения персонала по станциям, "сегодня"/"ближайшие"
+- **Проверки оборудования** — журнал по станциям
+- **Telegram-бот** — `/status`, `/station`, `/forecast`, `/pending`, `/summary`, `/events`, свободный текст через GigaChat/Gemini
+- **Вебхуки** — приём insight/status/anomaly от внешних агентов (`X-Agent-Key`)
+- **Карты ТПО (наследие)** — климатология, OLS-тренд, R², дисперсия, тренд дисперсии, градиент фронтов, аномалии по годам — рендерятся на лету из `.npz`, спроецированы в Меркатор
+- **GFS-оверлей** — ветровые поля поверх карты из локальных GRIB-файлов (`cfgrib`)
 
 ---
 
 ## Архитектура
 
 ```
-NetCDF файл
-    │
-    ▼
-precompute.py           ← запускается один раз (~3–5 мин)
-    │  OLS, R², дисперсия, аномалии, тренд дисперсии
-    ▼
-data/*.npz              ← кэш предвычисленных данных
-    │  meta, sst_raw, s1..s7
-    ▼
-app.py (FastAPI)        ← REST API, рендер PNG на лету
-    │  Mercator projection, Gaussian AA, PIL saturation
-    ▼
-static/app.js           ← OpenLayers, Chart.js, UI
-    │  ImageStatic слой, легенда, графики, всплывающие панели
-    ▼
-браузер
+                         ┌─────────────────────────┐
+                         │   PostgreSQL (docker)   │
+                         │ users/stations/readings │
+                         │ requests/calendar/...   │
+                         └───────────┬─────────────┘
+                                     │ asyncpg
+┌───────────────┐   npz-кэш   ┌──────▼──────────────────────┐
+│ precompute.py │ ───────────▶│         app.py (FastAPI)     │
+│ (запуск вручную,           │  • lifespan: init_db,         │
+│  строит data/*.npz)        │    start_scheduler            │
+└───────────────┘             │  • роуты карт ТПО/GFS —      │
+                               │    прямо в app.py            │
+                               │  • include_router(...) —     │
+                               │    11 роутеров из routers/   │
+                               └──────────┬────────────────────┘
+                                          │
+                    ┌─────────────────────┼─────────────────────┐
+                    │                     │                     │
+             services/scheduler   services/prophet_forecast  services/telegram_bot
+             (почасовой опрос      (SST-прогноз по станции)   (long polling +
+              Open-Meteo)                                       webhook)
+                    │
+             services/gigachat (Gemini → GigaChat fallback, брендируется как «GigaChat»)
+                                          │
+                                   static/ (SPA, vanilla JS)
+                                   OpenLayers + Chart.js
 ```
 
-**Режим работы:** данные предвычисляются раз (`precompute.py`), затем сервер читает `.npz` файлы по запросу и рендерит PNG в нужной проекции. PNG кэшируются в памяти на время жизни процесса.
+**Запуск**: сервер поднимается без БД и без Prophet/GEE (роутеры и планировщик просто не грузятся, в логах — warning). Карты ТПО работают независимо от Postgres, читая `data/*.npz`.
 
 ---
 
-## Порядок вычислений
+## Технологический стек
 
-### 1. `precompute.py` — предвычисление (запуск один раз)
+### Backend
+| Компонент | Роль |
+|---|---|
+| **FastAPI** | REST API, статика, 11 роутеров + inline SST/GFS-эндпоинты |
+| **asyncpg** | пул соединений к PostgreSQL (Neon в проде / локальный docker в деве) |
+| **python-jose + passlib[bcrypt]** | JWT-аутентификация (access/refresh), хеши паролей |
+| **APScheduler-подобный фон** (`services/scheduler.py`, чистый `asyncio`) | почасовой сбор данных, поллинг Telegram, синтетическая активность |
+| **Prophet** | базовый прогноз ТПО по станции |
+| **Nixtla TimeGPT** (`services/serendipity.py`) | опциональный оверрайд прогноза + коррекция смещения GFS |
+| **Google Earth Engine** (`ee`, `services/gee_gfs.py`) | извлечение GFS-узла по координатам станции |
+| **cfgrib** | чтение локальных GRIB2-файлов GFS для карт ветра |
+| **NumPy / SciPy / Pillow / netCDF4 / pyproj** | вычисления и рендер PNG-карт ТПО (Меркатор, LUT, Гауссово размытие) |
+| **httpx** | запросы к Open-Meteo, Telegram Bot API, GigaChat/Gemini |
 
-| Шаг | Секция | Что считается |
+### Frontend
+| Компонент | Роль |
+|---|---|
+| **OpenLayers** | карта станций, карты ТПО/GFS (ImageStatic слой) |
+| **Chart.js** | графики прогнозов, аналитика, мониторинг |
+| **Vanilla JS** (11 модулей в `static/`) | вся логика без сборщика/фреймворка |
+
+### Данные
+- **ERA5 Monthly Averaged SST** — исходный `.nc`, регион 26–72°N 117–246°E, 1979–2026
+- **PostgreSQL** — 13 таблиц (см. ниже), заполняются `migrate.py` + `seed.py`
+- **GFS GRIB2** — локальные файлы, читаются `cfgrib`
+
+---
+
+## Схема БД (`migrate.py`)
+
+| Таблица | Назначение |
+|---|---|
+| `users` | учётки, роли (`supervisor`/`data_analyst`/`observer`/`engineer`), пароль-хеш |
+| `stations` | справочник станций (код, координаты, регион, статус) |
+| `readings` | почасовые показания (SST, ветер, волна, давление, видимость...) |
+| `gfs_forecasts` | прогнозы GFS по станции/часу + скорректированные значения |
+| `personnel` | привязка персонала к станциям |
+| `assignments` | график дежурств |
+| `requests` | заявки на обслуживание + согласование |
+| `equipment_checks` | журнал проверок оборудования |
+| `calendar_events` | события календаря |
+| `agent_activity` | лента событий/действий агентов |
+| `notifications` | лог отправленных уведомлений (Telegram и др.) |
+| `tasks` | задачи в календаре |
+| `focus_blocks` | личные блоки фокус-времени |
+
+Заполнение демо-данными (`seed.py`): 20 станций ДВ/Арктики, 15 пользователей, 30 дней почасовых показаний, прогнозы, события, заявки, назначения.
+
+---
+
+## API
+
+### Аутентификация (`auth.py`, без префикса)
+| Метод | Путь | Описание |
 |---|---|---|
-| **S1** | Клим. среднее | `nanmean(SST)` по каждому месяцу/сезону за выбранный период. 3 периода: 1981–2010, 1991–2020, 1980–2026 |
-| **S2** | OLS тренд | `scipy.stats.linregress` по каждому пикселю; результат в °C/десятилетие; маскируется при `p ≥ 0.05` |
-| **S3** | R² | коэффициент детерминации OLS тренда; диапазон 0–1 |
-| **S4** | Дисперсия | `nanvar(SST)` по каждому месяцу/сезону за каждый период |
-| **S5** | Тренд дисперсии | для каждого месяца: `anom = SST − clim_m`, OLS тренд к `anom²`; единицы °C²/десятилетие; `p < 0.05` |
-| **S6** | Градиент / фронты | пространственный градиент `‖∇SST‖` в °C/100 км |
-| **S7** | Аномалии | клим. среднее по 3 периодам хранится для вычитания на лету |
-| **Ticks** | Легенда | процентильные позиции (p5…p100) по пулу всех пикселей |
+| POST | `/api/auth/login` | логин, выдаёт access + refresh JWT |
+| POST | `/api/auth/refresh` | обновление access-токена |
+| GET | `/api/auth/me` | текущий пользователь |
 
-Результаты: `data/{s1..s7, meta, sst_raw}.npz`
-
-### 2. `app.py` — вычисления на лету (по каждому запросу)
-
-**`/api/map/{section}/{season_type}/{season_idx}.png`**
-
-1. Загрузить `.npz` (из кэша в памяти)
-2. Выбрать нужный слой (месяц/сезон/период климата)
-3. Для S7: вычесть климатологию → поле аномалий
-4. Для S5: если период не предвычислен → скользящая 10-летняя дисперсия + OLS
-5. Вычислить `vmin`/`vmax` по заданному перцентилю (99 / 99.9 / 100)
-6. Проецировать на сетку Меркатора 1200×550 (`RegularGridInterpolator`)
-7. Взвешенное Гауссово размытие для сглаживания береговой линии (σ=1.0)
-8. Применить LUT (look-up table) → RGBA
-9. Усилить насыщение (×2.0), яркость (×1.1), контраст (×1.1) через PIL
-10. Вернуть PNG (кэш в памяти)
-
-**`/api/colorscale/{section}`** — вычислить тики легенды с умным округлением
-
-**`/api/point_stats`**, **`/api/point_series`**, **`/api/point_annual`** — временны́е ряды и статистика по клику на карту
-
----
-
-## Параметры карты
-
-| Параметр | Значения | Описание |
+### Станции — `/api/monitoring` (`routers/stations.py`)
+| Метод | Путь | Описание |
 |---|---|---|
-| `season_type` | `monthly` / `ess` | помесячно или по сезонам (ДЯФ/МАМ/ИИА/СОЯ) |
-| `season_idx` | 0–11 / 0–3 | номер месяца или сезона |
-| `clim_period` | `1981_2010`, `1991_2020`, `1980_2026` | базовый климатический период |
-| `percentile` | `99` / `99.9` / `100` | насыщение цветовой шкалы |
-| `year` | 1979–2026 | только для S7 (аномалии) |
+| GET | `/stations` | список станций + последнее показание |
+| GET | `/stations/{id}` | детали станции + показания за 24 ч |
+| GET | `/stations/{id}/readings` | показания за N часов |
+| GET | `/readings/latest` | последнее показание по каждой станции |
+| POST | `/readings` | добавить показание (роль observer/supervisor) |
+
+### Прогноз — `/api/monitoring/forecast` (`routers/forecast.py`)
+| Метод | Путь | Описание |
+|---|---|---|
+| GET | `/stations/{id}/forecast` | Prophet + GFS-узел + опциональный TimeGPT |
+| GET | `/stations/{id}/forecast/history` | прогнозы прошлых периодов против факта |
+
+### Мониторинг — `/api/monitoring` (`routers/monitoring.py`)
+| Метод | Путь | Описание |
+|---|---|---|
+| GET | `/feed` | лента активности (пагинация) |
+| GET | `/dashboard/summary` | сводка: статусы станций, заявки, аномалии, графики |
+| POST | `/actions/{action}` | запустить digest/anomaly-check (роль supervisor) |
+
+### Заявки — `/api/monitoring/requests` (`routers/requests.py`)
+| Метод | Путь | Описание |
+|---|---|---|
+| GET / POST | `/` | список / создание заявки |
+| PUT | `/{id}` | обновление |
+| POST | `/{id}/sign` | согласование (роль supervisor) |
+
+### Календарь — `/api/monitoring/calendar` (`routers/calendar_routes.py`)
+| Метод | Путь | Описание |
+|---|---|---|
+| GET / POST | `/events` | события |
+| PUT / DELETE | `/events/{id}` | обновление / удаление (роль supervisor) |
+| GET / POST | `/tasks` | задачи |
+| PUT | `/tasks/{id}` | обновление задачи |
+| GET / POST | `/focus-blocks` | личные focus-blocks |
+
+### Оборудование — `/api/monitoring/equipment` (`routers/equipment.py`)
+| Метод | Путь | Описание |
+|---|---|---|
+| GET / POST | `/checks` | список / добавление проверки (роль engineer/supervisor) |
+
+### Пользователи — `/api/monitoring/users` (`routers/users.py`)
+| Метод | Путь | Описание |
+|---|---|---|
+| GET | `/` | список пользователей (роль supervisor) |
+| GET | `/personnel` | персонал + станции |
+| POST | `/assignments` | назначение (роль supervisor) |
+
+### Регионы — `/api/regions` (`routers/regions.py`)
+| Метод | Путь | Описание |
+|---|---|---|
+| GET | `/` | регионы + агрегаты статусов станций |
+| GET | `/geojson` | сырой GeoJSON |
+| GET | `/{code}` | детали региона |
+
+### График дежурств — `/api/monitoring/schedule` (`routers/schedule.py`)
+| Метод | Путь | Описание |
+|---|---|---|
+| GET | `/`, `/stations`, `/personnel` | списки для UI |
+| POST / PUT / DELETE | `/`, `/{id}` | CRUD назначений (роль supervisor) |
+| GET | `/today`, `/upcoming` | текущие / ближайшие дежурства |
+
+### Вебхуки — `/api/webhooks` (`routers/webhooks.py`)
+| Метод | Путь | Описание |
+|---|---|---|
+| POST | `/agent/insight`, `/agent/status`, `/agent/anomaly` | приём от внешних агентов (`X-Agent-Key`) |
+| POST | `/telegram` | вебхук Telegram-бота |
+
+### Карты ТПО / GFS — inline в `app.py` (без префикса)
+| Метод | Путь | Описание |
+|---|---|---|
+| GET | `/api/meta` | метаданные сетки, секции, даты |
+| GET | `/api/map/{section}/{season_type}/{season_idx}.png` | PNG-карта (Меркатор) |
+| GET | `/api/coastline.svg`, `/api/coastline.geojson` | береговая линия |
+| GET | `/api/colorscale/{section}` | тики цветовой шкалы |
+| GET | `/api/timeseries`, `/api/field_value` | точечные запросы |
+| GET | `/api/point_stats`, `/api/point_series`, `/api/point_annual` | статистика/ряды по клику |
+| GET | `/api/anomaly/{year}/{month}` | поле аномалий за месяц |
+| GET | `/api/gfs/meta`, `/api/gfs/wind/{fhour_idx}` | метаданные и ветер GFS (из локальных GRIB) |
 
 ---
 
-## Секции
+## Секции карт ТПО
 
-| ID | Название | Единицы | Цветовая шкала |
+| ID | Название | Цветовая шкала | Статус |
 |---|---|---|---|
-| **s1** | Климатологическое среднее ТПО | °C | RdYlBu\_r (синий→красный) |
-| **s2** | OLS тренд (p<0.05) | °C/дек | RdBu\_r симметричный |
-| **s3** | R² коэффициент детерминации | — | Viridis 0→1 |
-| **s4** | Межгодовая дисперсия | °C² | YlOrRd |
-| **s5** | Тренд дисперсии (p<0.05) | °C²/дек | RdBu\_r симметричный |
-| **s7** | Аномалии ТПО (слайдер по годам) | °C | RdBu\_r ±VM |
+| s1 | Клим. среднее | RdYlBu_r | ⚠️ `data/s1.npz` отсутствует — вернёт 500 |
+| s2 | OLS тренд (p<0.05) | RdBu_r симметричный | ✅ |
+| s3 | R² | Viridis 0→1 | ✅ |
+| s4 | Межгодовая дисперсия | YlOrRd | ⚠️ `data/s4.npz` отсутствует — вернёт 500 |
+| s5 | Тренд дисперсии (p<0.05) | RdBu_r симметричный | ✅ |
+| s6 | Градиент / фронты | Hot_r | ✅ |
+| s7 | Аномалии по годам | RdBu_r ±VM | ✅ |
 
 ---
 
 ## Быстрый старт
 
 ```bash
-# 1. Зависимости
-pip install -r requirements.txt
+# 1. Postgres + n8n локально
+docker compose up -d
 
-# 2. Предвычисление (один раз, ~3–5 мин)
+# 2. Зависимости — requirements.txt неполный (см. ниже), проще:
+pip install fastapi "uvicorn[standard]" asyncpg python-jose "passlib[bcrypt]" \
+            python-dotenv httpx pandas prophet earthengine-api shapely \
+            netCDF4 numpy scipy Pillow pyproj cfgrib python-multipart smbprotocol
+
+# 3. .env (см. таблицу ниже)
+cp .env.example .env   # создать вручную по образцу ниже
+
+# 4. Схема БД + демо-данные
+python migrate.py
+python seed.py
+
+# 5. Карты ТПО (опционально, нужны для s1–s7) — требует исходный .nc файл
 python precompute.py
+python precompute_coastline.py
 
-# 3. Запуск (localhost)
-uvicorn app:app --port 8080 --reload
-
-# 4. Запуск в локальной сети
+# 6. Запуск
 uvicorn app:app --host 0.0.0.0 --port 8080 --reload
-# → http://<ваш-IP>:8080/
 ```
 
----
+Роутеры, для которых не хватает зависимостей или переменных окружения, **не крашат** приложение — `_try_include()` в `app.py` перехватывает исключение и просто логирует warning. То же для планировщика и БД в `lifespan()`.
 
-## Деплой на сервер
+### Переменные окружения (`.env`)
 
-### Вариант 1 — Render.com (бесплатно, рекомендуется)
-
-Конфигурация уже в `render.yaml`. Ограничения бесплатного плана:
-
-| Параметр | Free plan |
-|---|---|
-| RAM | 512 МБ |
-| CPU | shared |
-| Диск (persistent) | **не включён** в free — нужен платный диск ($0.25/ГБ·мес) |
-| Sleep | сервис засыпает после 15 мин простоя |
-
-**Проблема:** `precompute.py` требует NetCDF файл (~5 ГБ) при сборке и сохраняет `.npz` (~200 МБ). На бесплатном Render диск не персистентный — данные теряются при рестарте. **Минимальный платный диск ($1.25/мес)** решает проблему.
-
-Деплой:
-```bash
-git push origin main
-# → Render автоматически читает render.yaml
-# → buildCommand: pip install + python precompute.py
-# → startCommand: uvicorn app:app --host 0.0.0.0 --port $PORT
-```
-
-### Вариант 2 — Railway.app (бесплатно $5 кредитов/мес)
-
-```bash
-# railway.toml
-[build]
-builder = "nixpacks"
-buildCommand = "pip install -r requirements.txt && python precompute.py"
-
-[deploy]
-startCommand = "uvicorn app:app --host 0.0.0.0 --port $PORT"
-```
-
-Волюм для данных подключается через UI. Бесплатных $5 хватает примерно на 500 часов работы.
-
-### Вариант 3 — VPS (полный контроль)
-
-```bash
-# На сервере (Ubuntu/Debian)
-git clone <repo> && cd sst_dashboard_v5
-pip install -r requirements.txt
-python precompute.py          # один раз
-uvicorn app:app --host 0.0.0.0 --port 8080
-```
-
-Для продакшена — через systemd или nginx reverse proxy:
-
-```nginx
-# /etc/nginx/sites-available/sst
-server {
-    listen 80;
-    server_name yourdomain.com;
-    location / {
-        proxy_pass http://127.0.0.1:8080;
-        proxy_set_header Host $host;
-    }
-}
-```
-
-### Вариант 4 — Локальная сеть
-
-```bash
-uvicorn app:app --host 0.0.0.0 --port 8080
-# Доступно по http://<IP-машины>:8080/ с любого устройства в сети
-```
-
----
-
-## Ограничения бесплатного хостинга
-
-| Проблема | Причина | Решение |
+| Переменная | Обязательна | Назначение |
 |---|---|---|
-| Нет персистентного диска | free tier Render/Railway | платный диск ($1–2/мес) или передать `.npz` через Git LFS |
-| Sleep режим | простой >15 мин | платный план или UptimeRobot ping каждые 10 мин |
-| Нет NetCDF при билде | файл ~5 ГБ, не в репо | загрузить `.npz` напрямую без `precompute.py`, или хранить на S3 |
-| RAM 512 МБ | загрузка всех `.npz` в память | суммарно `sst_raw.npz` ~350 МБ, может не уложиться |
+| `DATABASE_URL` / `LOCAL_DB_URL` | да (для всего кроме карт ТПО) | строка подключения Postgres |
+| `NEON_DATABASE_URL` | нет | прод-БД (Neon) |
+| `JWT_SECRET` | да (для auth) | подпись JWT |
+| `TELEGRAM_BOT_TOKEN` | нет | Telegram-бот |
+| `AGENT_API_KEY` | нет | ключ для `/api/webhooks/agent/*` |
+| `GEE_PROJECT_ID` | нет | Google Earth Engine проект |
+| `GEMINI_API_KEY` | нет | основной backend для «GigaChat»-ответов |
+| `GIGACHAT_CLIENT_ID/SECRET` | нет | fallback-backend |
+| `GFS_SMB_*` | нет | используется только мёртвым `services/smb_gfs.py` (см. «Технический долг») |
 
-**Оптимальный вариант для бесплатного деплоя:** предвычислить `.npz` локально, добавить их в репозиторий (или S3), убрать `precompute.py` из buildCommand. Тогда Render free tier справится без NetCDF файла.
+---
+
+## Технический долг
+
+- **`requirements.txt` неполный** — не содержит `asyncpg`, `python-jose`, `passlib`, `python-dotenv`, `httpx`, `pandas`, `prophet`, `earthengine-api`, `shapely`, `pytest`. Реально используемые пакеты — см. список выше.
+- **`routers/sst.py`** и **`routers/gfs_forecast.py`** — не подключены в `app.py` (нет в `_try_include`), дублируют логику, которая давно живёт inline в `app.py`. Мёртвый код.
+- **`services/smb_gfs.py`** и **`services/gfs_simulator.py`** — нигде не импортируются, недостижимы.
+- **`data/s1.npz`, `data/s4.npz`** отсутствуют — секции «клим. среднее» и «дисперсия» вернут 500 без повторного запуска `precompute.py`.
+- **`data/regions.geojson`** отсутствует в репозитории — `/api/regions` не найдёт файл, пока его не добавить вручную.
+- **`render.yaml`** описывает деплой старой версии (`sst-dashboard-v5`, только `precompute.py` + Postgres не поднимается) — не отражает текущую архитектуру с БД и планировщиком.
 
 ---
 
 ## Структура файлов
 
 ```
-sst_dashboard_v5/
-├── app.py              # FastAPI сервер, рендер карт, API
-├── precompute.py       # предвычисление всех данных из NetCDF
-├── recompute_s5.py     # пересчёт тренда дисперсии (вспомогательный)
-├── requirements.txt
-├── render.yaml         # конфиг для Render.com
-├── data/
-│   ├── meta.npz        # координаты, даты, land_mask
-│   ├── sst_raw.npz     # исходные ТПО (float32, ~350 МБ)
-│   ├── s1.npz          # клим. среднее по периодам
-│   ├── s2.npz          # тренды OLS
-│   ├── s3.npz          # R²
-│   ├── s4.npz          # дисперсия
-│   ├── s5.npz          # тренд дисперсии
-│   ├── s6.npz          # градиент / фронты
-│   └── s7.npz          # климатологии для аномалий
+sst_dashboard_v6/
+├── app.py                  # FastAPI: lifespan, роутеры, inline SST/GFS API, статика
+├── auth.py                 # JWT-логин/рефреш/me
+├── config.py                # чтение .env
+├── db.py                    # asyncpg pool
+├── models.py                 # Pydantic-схемы ответов
+├── migrate.py                 # DDL — 13 таблиц
+├── seed.py                    # демо-данные
+├── precompute.py               # предвычисление data/*.npz из .nc (вручную)
+├── recompute_s5.py              # пересчёт тренда дисперсии
+├── precompute_coastline.py       # береговая линия / ocean_mask
+├── docker-compose.yml             # Postgres + n8n
+├── render.yaml                     # деплой (устарел, см. «Технический долг»)
+├── routers/
+│   ├── stations.py, forecast.py, monitoring.py, requests.py,
+│   │   calendar_routes.py, equipment.py, users.py, regions.py,
+│   │   schedule.py, webhooks.py        # 10 подключённых роутеров
+│   └── sst.py, gfs_forecast.py         # НЕ подключены (мёртвый код)
+├── services/
+│   ├── scheduler.py, data_generator.py, prophet_forecast.py,
+│   │   serendipity.py, gee_gfs.py, gigachat.py, notification.py,
+│   │   telegram_bot.py                 # активно используются
+│   └── smb_gfs.py, gfs_simulator.py    # не используются
+├── tests/
+│   ├── test_calendar_security.py       # 401 без авторизации
+│   └── test_schedule_security.py       # 401 без авторизации + нет утечки phone
+├── data/                     # .npz/.npy/.geojson кэш для карт ТПО
 └── static/
-    ├── index.html
-    ├── app.js          # OpenLayers карта, Chart.js графики, UI
-    ├── style.css
-    └── vendor/
-        ├── ol.js       # OpenLayers 10.2.1 (локально)
-        ├── ol.css
-        └── chart.js    # Chart.js (локально)
+    ├── index.html             # SPA: карта, ИИ-прогноз, мониторинг, календарь, заявки
+    ├── app.js, auth.js, analytics.js, cabinet.js, calendar.js,
+    │   forecast.js, gfs_overlay.js, monitoring.js, regions.js,
+    │   requests_ui.js, schedule.js, stations.js
+    ├── style.css, monitoring.css
+    └── vendor/                # OpenLayers, Chart.js (локально)
 ```
 
 ---
 
-## API
+## Тесты
 
-| Endpoint | Описание |
-|---|---|
-| `GET /api/meta` | метаданные сетки, даты, список секций |
-| `GET /api/map/{section}/{season_type}/{season_idx}.png` | карта в PNG (Mercator) |
-| `GET /api/colorscale/{section}` | тики и диапазон цветовой шкалы |
-| `GET /api/point_stats` | статистика пикселя по клику |
-| `GET /api/point_series` | полный временно́й ряд точки |
-| `GET /api/point_annual` | годовой ряд с выбором месяца/сезона |
-| `GET /api/anomaly/{year}/{month}` | поле аномалий за конкретный месяц |
+```bash
+pytest tests/
+```
+
+Оба файла — регрессионные проверки безопасности: `test_calendar_security.py` подтверждает, что `/api/monitoring/calendar/*` требует авторизации; `test_schedule_security.py` — то же для расписания плюс проверка, что ответы не содержат поле `phone` (см. коммит `da9eb6e` — фикс утечки PII).
