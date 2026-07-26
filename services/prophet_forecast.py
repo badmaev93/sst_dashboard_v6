@@ -1,8 +1,8 @@
 """
-Prophet-based SST forecasting for coastal stations.
-- Default forecast method (free, runs locally, no API limits)
-- Used for daily monitoring: anomaly detection + 7-day forecast
-- TimeGPT (AI Serendipity) is used on-demand from forecast.js
+Прогнозирование ТПО на базе Prophet для прибрежных станций.
+- Метод прогнозирования по умолчанию (бесплатный, локальный запуск, без лимитов API)
+- Используется для ежедневного мониторинга: детекция аномалий + 7-дневный прогноз
+- TimeGPT (AI Serendipity) используется по запросу из forecast.js
 """
 import logging
 import math
@@ -11,9 +11,9 @@ from typing import Optional
 
 logger = logging.getLogger(__name__)
 
-# Cache: station_code → {forecast, anomalies, ts}
+# Кэш: station_code → {forecast, anomalies, ts}
 _prophet_cache: dict = {}
-_CACHE_TTL_HOURS = 23  # refresh daily
+_CACHE_TTL_HOURS = 23  # обновление раз в сутки
 
 
 def _cache_fresh(station_code: str) -> bool:
@@ -26,10 +26,10 @@ def _cache_fresh(station_code: str) -> bool:
 
 def run_prophet_forecast(readings: list[dict], periods: int = 6) -> dict:
     """
-    Run Prophet on historical SST readings.
-    readings: list of {"observed_at": ISO str, "sst": float}, newest first.
-    periods: number of future hours to forecast.
-    Returns {"forecast": [float], "anomalies": [bool], "trend": float, "upper": [float], "lower": [float]}
+    Запуск Prophet на исторических измерениях ТПО.
+    readings: список {"observed_at": ISO str, "sst": float}, сначала самые свежие.
+    periods: количество будущих часов для прогнозирования.
+    Возвращает {"forecast": [float], "anomalies": [bool], "trend": float, "upper": [float], "lower": [float]}
     """
     if len(readings) < 10:
         return _fallback_forecast(readings, periods)
@@ -38,7 +38,7 @@ def run_prophet_forecast(readings: list[dict], periods: int = 6) -> dict:
         import pandas as pd
         from prophet import Prophet
 
-        # Prepare dataframe (Prophet expects ds, y)
+        # Подготовка датафрейма (Prophet ожидает ds, y)
         sorted_r = sorted(readings, key=lambda x: x["observed_at"])
         df = pd.DataFrame({
             "ds": pd.to_datetime([r["observed_at"] for r in sorted_r]),
@@ -49,28 +49,28 @@ def run_prophet_forecast(readings: list[dict], periods: int = 6) -> dict:
         if len(df) < 10:
             return _fallback_forecast(readings, periods)
 
-        # Fit Prophet with seasonality appropriate for hourly ocean data
+        # Обучение Prophet с сезонностью, подходящей для почасовых океанографических данных
         m = Prophet(
-            changepoint_prior_scale=0.05,  # conservative trend changes for SST
+            changepoint_prior_scale=0.05,  # консервативные изменения тренда для ТПО
             seasonality_prior_scale=0.5,
             interval_width=0.90,
             daily_seasonality=True,
             weekly_seasonality=False,
-            yearly_seasonality=len(df) > 720,  # only if we have >1 month of data
+            yearly_seasonality=len(df) > 720,  # только если есть данные более чем за 1 месяц
         )
         m.fit(df)
 
-        # Forecast next `periods` hours
+        # Прогноз на следующие `periods` часов
         future = m.make_future_dataframe(periods=periods, freq="h")
         forecast_df = m.predict(future)
 
-        # Extract future forecasts only
+        # Извлечение только будущих прогнозов
         future_fc = forecast_df.tail(periods)
         forecast_vals = [round(float(v), 2) for v in future_fc["yhat"].values]
         upper_vals   = [round(float(v), 2) for v in future_fc["yhat_upper"].values]
         lower_vals   = [round(float(v), 2) for v in future_fc["yhat_lower"].values]
 
-        # Anomaly detection: points outside 90% confidence interval
+        # Детекция аномалий: точки за пределами 90% доверительного интервала
         hist_fc = forecast_df.iloc[: len(df)]
         anomalies = [
             bool(y < yhat_lower or y > yhat_upper)
@@ -81,11 +81,11 @@ def run_prophet_forecast(readings: list[dict], periods: int = 6) -> dict:
             )
         ]
 
-        # Trend: slope over last 24h of forecast
+        # Тренд: наклон за последние 24 часа прогноза
         trend = round(float(forecast_df["trend"].iloc[-1] - forecast_df["trend"].iloc[-24]), 3) \
             if len(forecast_df) >= 24 else 0.0
 
-        n_anomalies = sum(anomalies[-24:])  # last 24h
+        n_anomalies = sum(anomalies[-24:])  # последние 24 часа
         logger.info("Prophet forecast complete: %d points, %d anomalies in last 24h", len(df), n_anomalies)
 
         return {
@@ -107,7 +107,7 @@ def run_prophet_forecast(readings: list[dict], periods: int = 6) -> dict:
 
 
 def _fallback_forecast(readings: list[dict], periods: int) -> dict:
-    """Simple linear extrapolation when Prophet is unavailable."""
+    """Простая линейная экстраполяция, когда Prophet недоступен."""
     if not readings:
         return {"forecast": [0.0] * periods, "upper": [0.5] * periods,
                 "lower": [-0.5] * periods, "anomalies": [], "n_anomalies_24h": 0,
@@ -119,7 +119,7 @@ def _fallback_forecast(readings: list[dict], periods: int) -> dict:
         base = 5.0
     else:
         base = vals[-1]
-        # Estimate trend from last 12 values
+        # Оценка тренда по последним 12 значениям
         if len(vals) >= 12:
             trend = (vals[-1] - vals[-12]) / 12
         else:
@@ -129,7 +129,7 @@ def _fallback_forecast(readings: list[dict], periods: int) -> dict:
     upper = [round(v + 0.5, 2) for v in forecast]
     lower = [round(v - 0.5, 2) for v in forecast]
 
-    # Simple anomaly: values > 2 std from mean
+    # Простая аномалия: значения > 2 стандартных отклонений от среднего
     if len(vals) >= 5:
         mean = sum(vals) / len(vals)
         std = math.sqrt(sum((v - mean) ** 2 for v in vals) / len(vals))
@@ -146,7 +146,7 @@ def _fallback_forecast(readings: list[dict], periods: int) -> dict:
 
 async def get_station_forecast_prophet(station_code: str, readings: list[dict],
                                         periods: int = 6) -> dict:
-    """Get Prophet forecast with caching. Called from daily scheduler and on-demand."""
+    """Получение прогноза Prophet с кэшированием. Вызывается из ежедневного планировщика и по запросу."""
     if _cache_fresh(station_code):
         logger.debug("Prophet: returning cached forecast for %s", station_code)
         return _prophet_cache[station_code]["result"]

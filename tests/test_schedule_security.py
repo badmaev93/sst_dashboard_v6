@@ -19,7 +19,7 @@ def test_schedule_endpoints_unauthorized():
 
 @pytest.fixture
 def mock_db_and_auth():
-    # Setup mock user auth dependency override
+    # Настройка переопределения зависимости аутентификации для мок-пользователя
     app.dependency_overrides[get_current_user] = lambda: {
         "id": 1,
         "username": "observer1",
@@ -28,13 +28,13 @@ def mock_db_and_auth():
         "is_active": True,
     }
 
-    # Store old pool and replace with mock
+    # Сохранение старого пула и замена моком
     old_pool = db.pool
     db.pool = AsyncMock()
 
     yield db.pool
 
-    # Cleanup
+    # Очистка
     app.dependency_overrides.clear()
     db.pool = old_pool
 

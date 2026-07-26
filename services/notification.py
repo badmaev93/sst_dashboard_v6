@@ -1,4 +1,4 @@
-"""Notification service — Telegram + web notifications."""
+"""Сервис уведомлений — Telegram + веб-уведомления."""
 import logging
 import httpx
 from config import TELEGRAM_BOT_TOKEN

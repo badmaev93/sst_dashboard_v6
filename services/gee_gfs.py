@@ -1,6 +1,6 @@
 """
-GFS forecast data via Google Earth Engine (NOAA/GFS0P25).
-Falls back to realistic synthetic grids when GEE is unavailable.
+Данные прогнозов GFS через Google Earth Engine (NOAA/GFS0P25).
+При недоступности GEE используется сгенерированная синтетическая сетка.
 """
 
 import io
@@ -35,8 +35,8 @@ VARIABLES = [
     "v_component_of_wind_10m",
 ]
 
-# Monthly SST proxy climatology (latitude-dependent, degrees C).
-# Row = latitude band 40-73N, rough coastal SST.
+# Климатология ТПО по широтам (почасовая прибрежная ТПО, °C).
+# Строка = диапазон широт 40-73N.
 _MONTHLY_BASE = np.array([
     # Jan   Feb   Mar   Apr   May   Jun   Jul   Aug   Sep   Oct   Nov   Dec
     [ 2.0,  1.5,  2.5,  6.0, 10.0, 15.0, 21.0, 23.0, 19.0, 13.0,  7.0,  3.5],  # 40N
@@ -46,26 +46,26 @@ _MONTHLY_BASE = np.array([
 ])
 _LAT_KNOTS = np.array([40.0, 50.0, 60.0, 70.0])
 
-# Wind climatology by month (mean speed m/s)
+# Месячная климатология ветра (средняя скорость м/с)
 _MONTHLY_WIND = np.array([8.0, 7.5, 7.0, 6.0, 5.5, 5.0, 4.5, 4.5, 5.5, 6.5, 7.5, 8.0])
 
 
 def _clim_sst_grid(month: int) -> np.ndarray:
-    """Build a latitude-dependent SST climatology grid for a given month (1-12)."""
+    """Создание сетки климатологии ТПО по широтам для заданного месяца (1-12)."""
     m = month - 1
     base_vals = _MONTHLY_BASE[:, m]
     grid = np.zeros((NY, NX), dtype=np.float32)
     for j, lat in enumerate(LATS):
         val = float(np.interp(lat, _LAT_KNOTS, base_vals))
         grid[j, :] = val
-    # Add longitude gradient: slightly warmer near continental coast (west), cooler east
+    # Добавление градиента по долготе: немного теплее у материкового побережья (запад), холоднее на востоке
     lon_factor = np.linspace(0.5, -0.5, NX)
     grid += lon_factor[np.newaxis, :]
     return grid
 
 
 def _smooth_noise(shape, scale=8):
-    """Generate spatially correlated noise via coarse-then-interpolate."""
+    """Генерация пространственно-коррелированного шума через грубое прореживание и интерполяцию."""
     from scipy.ndimage import zoom as nd_zoom
     coarse_h = max(2, shape[0] // scale)
     coarse_w = max(2, shape[1] // scale)
@@ -75,7 +75,7 @@ def _smooth_noise(shape, scale=8):
 
 
 def _generate_fallback_grids(cycle_dt: datetime) -> dict:
-    """Generate realistic-looking forecast grids without GEE."""
+    """Генерация реалистичных прогностических сеток без использования GEE."""
     month = cycle_dt.month
     seed = int(cycle_dt.strftime("%Y%m%d%H"))
     rng = np.random.RandomState(seed)
@@ -87,14 +87,14 @@ def _generate_fallback_grids(cycle_dt: datetime) -> dict:
     for fh in FORECAST_HOURS:
         rng_fh = np.random.RandomState(seed + fh)
 
-        # SST grid: climatology + smooth perturbation + small noise
+        # Сетка ТПО: климатология + гладкое возмущение + малый шум
         sst = base_sst.copy()
         sst += _smooth_noise((NY, NX), scale=6) * (1.0 + 0.01 * fh)
         sst += rng_fh.randn(NY, NX).astype(np.float32) * 0.15
-        # Drift slightly with forecast hour
+        # Небольшой дрейф со сроком прогноза
         sst += 0.002 * fh
 
-        # Wind components: smooth patterns resembling synoptic-scale weather
+        # Составляющие ветра: гладкие паттерны, напоминающие синоптические процессы
         wind_u = _smooth_noise((NY, NX), scale=5) * base_wind_mean * 0.6
         wind_u += rng_fh.randn(NY, NX).astype(np.float32) * 0.5
 
@@ -112,7 +112,7 @@ def _generate_fallback_grids(cycle_dt: datetime) -> dict:
 
 
 def _try_gee_fetch(cycle_dt: datetime) -> Optional[dict]:
-    """Attempt to fetch from Google Earth Engine. Returns None on failure."""
+    """Попытка загрузки из Google Earth Engine. Возвращает None в случае ошибки."""
     try:
         import ee
         from config import GEE_PROJECT_ID
@@ -171,14 +171,14 @@ def _try_gee_fetch(cycle_dt: datetime) -> Optional[dict]:
 
 
 class GFSFetcher:
-    """Fetches GFS forecast grids from GEE with fallback to synthetic data."""
+    """Загружает прогностические сетки GFS из GEE с возможностью резервного перехода на синтетические данные."""
 
     def __init__(self):
         self._current_cycle: Optional[datetime] = None
         self._data: dict = {}
 
     def _cycle_time(self) -> datetime:
-        """Latest GFS cycle: 00, 06, 12, or 18 UTC, minus 6h delay."""
+        """Последний прогон GFS: 00, 06, 12 или 18 UTC за вычетом 6-часовой задержки."""
         now = datetime.now(timezone.utc) - timedelta(hours=6)
         cycle_hour = (now.hour // 6) * 6
         return now.replace(hour=cycle_hour, minute=0, second=0, microsecond=0)
@@ -199,13 +199,13 @@ class GFSFetcher:
         np.savez_compressed(str(p), **data)
 
     def fetch_latest_cycle(self) -> dict:
-        """Fetch all forecast hours for the latest GFS cycle.
-        Returns {hour: {"sst": ndarray, "wind_u": ndarray, "wind_v": ndarray, "lats": ndarray, "lons": ndarray}}
+        """Загружает все сроки прогноза для последнего прогона GFS.
+        Возвращает {hour: {"sst": ndarray, "wind_u": ndarray, "wind_v": ndarray, "lats": ndarray, "lons": ndarray}}
         """
         cycle = self._cycle_time()
         self._current_cycle = cycle
 
-        # Check cache first
+        # Сначала проверяем кэш
         cached = {}
         all_cached = True
         for fh in FORECAST_HOURS:
@@ -218,7 +218,7 @@ class GFSFetcher:
             self._data = cached
             return cached
 
-        # Try GEE
+        # Пробуем GEE
         gee_data = _try_gee_fetch(cycle)
         if gee_data is not None:
             for fh, d in gee_data.items():
@@ -226,7 +226,7 @@ class GFSFetcher:
             self._data = gee_data
             return gee_data
 
-        # Fallback
+        # Резервный вариант
         logger.info("Using fallback synthetic GFS grids for cycle %s", cycle)
         fallback = _generate_fallback_grids(cycle)
         for fh, d in fallback.items():
@@ -235,7 +235,7 @@ class GFSFetcher:
         return fallback
 
     def get_cached_or_fetch(self, hour: int) -> dict:
-        """Get data for a specific forecast hour, fetching if needed."""
+        """Получает данные для конкретного срока прогноза с предварительной загрузкой при необходимости."""
         cycle = self._cycle_time()
         cached = self._load_cache(cycle, hour)
         if cached is not None:
@@ -247,7 +247,7 @@ class GFSFetcher:
         if hour in self._data:
             return self._data[hour]
 
-        # Generate single hour fallback
+        # Генерация резервных данных для одного срока
         fallback = _generate_fallback_grids(cycle)
         if hour in fallback:
             self._save_cache(cycle, hour, fallback[hour])
@@ -256,9 +256,9 @@ class GFSFetcher:
         return fallback[FORECAST_HOURS[0]]
 
     def extract_station_values(self, stations: list, hour: int) -> list:
-        """Extract point values for station locations.
-        stations: list of dicts with 'code', 'lat', 'lon' keys.
-        Returns list of dicts with interpolated values.
+        """Извлечение точечных значений для координат станций.
+        stations: список словарей с ключами 'code', 'lat', 'lon'.
+        Возвращает список словарей с интерполированными значениями.
         """
         data = self.get_cached_or_fetch(hour)
         lats = data["lats"]
@@ -269,7 +269,7 @@ class GFSFetcher:
             j = int(np.clip(np.searchsorted(lats, lat) - 1, 0, len(lats) - 2))
             i = int(np.clip(np.searchsorted(lons, lon) - 1, 0, len(lons) - 2))
 
-            # Bilinear weights
+            # Билинейные веса
             fj = np.clip((lat - lats[j]) / (lats[j + 1] - lats[j]), 0, 1)
             fi = np.clip((lon - lons[i]) / (lons[i + 1] - lons[i]), 0, 1)
 
@@ -297,9 +297,9 @@ class GFSFetcher:
     def render_tile(self, variable: str, hour: int,
                     colormap: str = "RdYlBu_r",
                     extent: Optional[tuple] = None) -> bytes:
-        """Render a forecast variable as a colormapped PNG with transparency.
+        """Рендеринг переменной прогноза в PNG с цветовой палитрой и прозрачностью.
         variable: 'sst', 'wind', 'pressure'
-        Returns PNG bytes.
+        Возвращает PNG в байтах.
         """
         data = self.get_cached_or_fetch(hour)
 
@@ -311,27 +311,27 @@ class GFSFetcher:
             vmin, vmax = 0.0, 20.0
             colormap = "viridis"
         elif variable == "pressure":
-            # Synthesize pressure-like field from wind divergence
+            # Синтезирование поля давления из дивергенции ветра
             du = np.gradient(data["wind_u"], axis=1)
             dv = np.gradient(data["wind_v"], axis=0)
             div = du + dv
-            grid = 1013.25 - div * 50  # hPa-like
+            grid = 1013.25 - div * 50  # аналог гПа
             vmin, vmax = 980.0, 1040.0
             colormap = "RdBu_r"
         else:
             grid = data["sst"]
             vmin, vmax = -2.0, 25.0
 
-        # Normalize to 0-1
+        # Нормализация в диапазон 0-1
         norm = np.clip((grid - vmin) / (vmax - vmin), 0, 1)
-        # Flip so north is up
+        # Поворот, чтобы север был вверху
         norm = norm[::-1]
 
         lut = _build_lut(colormap)
         idx = (norm * 255).astype(np.uint8)
         rgb = lut[idx]
 
-        # Add alpha channel (transparent where data is NaN-like / land mask)
+        # Добавление альфа-канала (прозрачно в зонах без данных / маска суши)
         alpha = np.full((*grid.shape,), 180, dtype=np.uint8)
         rgba = np.dstack([rgb, alpha])
 
@@ -339,7 +339,7 @@ class GFSFetcher:
         img = Image.fromarray(rgba, "RGBA")
 
         if extent is not None:
-            # Crop to requested extent
+            # Обрезка по запрошенному охвату
             e_lon_min, e_lat_min, e_lon_max, e_lat_max = extent
             lons = data["lons"]
             lats = data["lats"][::-1]
@@ -354,7 +354,7 @@ class GFSFetcher:
         return buf.getvalue()
 
     def cleanup_old_cycles(self, max_age_hours: int = 48):
-        """Delete cache files older than max_age_hours."""
+        """Удаление файлов кэша старше max_age_hours."""
         cutoff = time.time() - max_age_hours * 3600
         for f in CACHE_DIR.glob("gfs_*.npz"):
             if f.stat().st_mtime < cutoff:
@@ -374,7 +374,7 @@ class GFSFetcher:
 
 
 def _build_lut(name: str) -> np.ndarray:
-    """Build a 256x3 uint8 colormap LUT."""
+    """Создание таблицы поиска цветовой палитры 256x3 uint8."""
     n = 256
     lut = np.zeros((n, 3), dtype=np.uint8)
     t = np.linspace(0.0, 1.0, n)
@@ -426,7 +426,7 @@ def _build_lut(name: str) -> np.ndarray:
     return lut
 
 
-# Module-level singleton
+# Синглтон уровня модуля
 _fetcher: Optional[GFSFetcher] = None
 
 

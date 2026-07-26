@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """
-Download the Natural Earth 1:10m land polygons used by the coastline endpoints
+Скачивает полигоны суши Natural Earth 1:10m, используемые эндпоинтами береговой линии
 (`/api/coastline.svg`, `/api/coastline.geojson`).
 
-The clipping and Mercator projection happen at request time in `app.py`; this
-script only makes sure `data/ne_10m_land.geojson` exists locally.
+Обрезка и проекция Меркатора происходят во время выполнения запроса в `app.py`; этот
+скрипт лишь проверяет наличие `data/ne_10m_land.geojson` локально.
 
-Run once:
+Запуск:
     python precompute_coastline.py
 """
 import os, urllib.request

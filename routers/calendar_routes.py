@@ -55,7 +55,7 @@ async def delete_event(event_id: int, user=Depends(require_role("supervisor"))):
     return {"ok": True}
 
 
-# ── Tasks ──────────────────────────────────────────
+# ── Задачи ──────────────────────────────────────────
 
 @calendar_router.get("/tasks")
 async def list_tasks(date: str = None, user_id: int = None, user=Depends(get_current_user)):
@@ -114,7 +114,7 @@ async def update_task(task_id: int, data: dict, user=Depends(get_current_user)):
     return {"ok": True}
 
 
-# ── Focus Blocks ───────────────────────────────────
+# ── Блоки фокусировки ───────────────────────────────
 
 @calendar_router.get("/focus-blocks")
 async def list_focus_blocks(user_id: int = None, user=Depends(get_current_user)):

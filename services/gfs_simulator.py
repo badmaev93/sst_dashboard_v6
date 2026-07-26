@@ -1,9 +1,9 @@
 """
-GFS Weather Forecast Simulator with AI Serendipity Neural Network Correction.
+Симулятор прогнозов погоды GFS с коррекцией нейросетью AI Serendipity.
 
-Generates realistic GFS-style sea surface temperature, wind speed, and wave height
-forecasts for 20 Russian Far East / Arctic coast monitoring stations.
-All data is simulated but designed to look plausible for demo purposes.
+Генерирует реалистичные прогнозы температуры поверхности моря, скорости ветра и высоты волн в стиле GFS
+для 20 станций мониторинга Дальнего Востока и Арктического побережья России.
+Все данные сгенерированы в демонстрационных целях, но соответствуют реальной климатологии.
 """
 
 import hashlib
@@ -20,15 +20,15 @@ STATION_CODES = [
     "YSK", "KOR", "VVO", "NKH",
 ]
 
-# Monthly SST climatology (Jan..Dec) for each station.
-# Based on approximate latitude / geography:
-#   Arctic stations (TIK, PEV, ANA, DKS) ~ 70-75N  -> cold year-round
-#   Sub-Arctic (PRV, MGD) ~ 60-63N
-#   Sea of Okhotsk (OKH, AYN, UKM) ~ 50-55N
-#   Kamchatka (PKC, NKA) ~ 53N Pacific side
-#   Sakhalin (SKR, POR, KOR) ~ 47-50N
-#   Primorye (SVG, VAN, KHM, VVO, NKH) ~ 42-46N
-#   Yakutsk coast (YSK) ~ 62N
+# Месячная климатология ТПО (Янв..Дек) для каждой станции.
+# Основана на приблизительной широте / географии:
+#   Арктические станции (TIK, PEV, ANA, DKS) ~ 70-75N -> холодно круглый год
+#   Субарктика (PRV, MGD) ~ 60-63N
+#   Охотское море (OKH, AYN, UKM) ~ 50-55N
+#   Камчатка (PKC, NKA) ~ 53N тихоокеанская сторона
+#   Сахалин (SKR, POR, KOR) ~ 47-50N
+#   Приморье (SVG, VAN, KHM, VVO, NKH) ~ 42-46N
+#   Якутское побережье (YSK) ~ 62N
 MONTHLY_CLIM: dict[str, list[float]] = {
     "TIK": [-1.5, -1.5, -1.5, -1.5, -0.5, 2.0, 5.0, 4.0, 1.0, -0.5, -1.5, -1.5],
     "PEV": [-1.5, -1.5, -1.5, -1.5, -0.3, 2.5, 5.5, 4.5, 1.5, -0.3, -1.5, -1.5],
@@ -52,8 +52,8 @@ MONTHLY_CLIM: dict[str, list[float]] = {
     "NKH": [0.8, 0.3, 1.5, 5.0, 9.0, 14.0, 19.5, 21.5, 18.5, 13.0, 7.5, 3.0],
 }
 
-# Per-station, per-month bias correction vector (degrees C).
-# Represents the systematic bias that AI Serendipity learns to remove.
+# Вектор коррекции систематической погрешности для каждой станции по месяцам (°C).
+# Представляет собой систематическую погрешность, которую нейросеть AI Serendipity учится устранять.
 _BIAS_SEED = {
     "TIK": 0.15, "PEV": 0.18, "ANA": 0.12, "PRV": 0.22, "MGD": 0.25,
     "OKH": 0.30, "AYN": 0.28, "UKM": 0.20, "PKC": 0.35, "NKA": 0.33,
@@ -63,7 +63,7 @@ _BIAS_SEED = {
 
 
 def _station_bias_correction(station_code: str) -> list[float]:
-    """Return 12-element monthly bias correction vector for a station."""
+    """Возвращает 12-элементный вектор месячной коррекции систематической погрешности для станции."""
     base = _BIAS_SEED.get(station_code, 0.25)
     return [
         round(base * (1.0 + 0.15 * math.sin(2 * math.pi * m / 12)), 4)
@@ -71,8 +71,8 @@ def _station_bias_correction(station_code: str) -> list[float]:
     ]
 
 
-# Weibull scale parameter for wind speed, by station.
-# Higher for Kamchatka / exposed Pacific coast, lower for sheltered areas.
+# Параметр масштаба Вейбулла для скорости ветра по станциям.
+# Выше для Камчатки / открытого Тихоокеанского побережья, ниже для защищенных акваторий.
 _WIND_SCALE: dict[str, float] = {
     "TIK": 8.0, "PEV": 8.5, "ANA": 7.5, "PRV": 7.0, "MGD": 7.5,
     "OKH": 8.0, "AYN": 7.5, "UKM": 7.0, "PKC": 10.0, "NKA": 10.0,
@@ -82,14 +82,14 @@ _WIND_SCALE: dict[str, float] = {
 
 
 def _hash_seed(station_code: str, issued_at: str, extra: int = 0) -> int:
-    """Deterministic seed from station + issued time + extra index."""
+    """Детерминированное зерно из кода станции + времени выпуска + дополнительного индекса."""
     raw = f"{station_code}:{issued_at}:{extra}"
     h = hashlib.sha256(raw.encode()).hexdigest()
     return int(h[:12], 16)
 
 
 def _lcg_random(seed: int) -> tuple[float, int]:
-    """Simple linear congruential generator returning (0..1, next_seed)."""
+    """Простой линейный конгруэнтный генератор, возвращающий (0..1, next_seed)."""
     a = 6364136223846793005
     c = 1442695040888963407
     m = 2**63
@@ -98,7 +98,7 @@ def _lcg_random(seed: int) -> tuple[float, int]:
 
 
 def _box_muller(seed: int) -> tuple[float, int]:
-    """Generate a standard normal variate via Box-Muller transform."""
+    """Генерация стандартной нормальной величины через преобразование Бокса-Мюллера."""
     u1, seed = _lcg_random(seed)
     u2, seed = _lcg_random(seed)
     u1 = max(u1, 1e-10)
@@ -107,7 +107,7 @@ def _box_muller(seed: int) -> tuple[float, int]:
 
 
 def _weibull_sample(seed: int, shape: float, scale: float) -> tuple[float, int]:
-    """Generate a Weibull-distributed variate."""
+    """Генерация случайной величины с распределением Вейбулла."""
     u, seed = _lcg_random(seed)
     u = max(u, 1e-10)
     w = scale * (-math.log(u)) ** (1.0 / shape)
@@ -121,23 +121,23 @@ def generate_forecast(
     issued_at: str | datetime,
 ) -> list[dict[str, Any]]:
     """
-    Generate a realistic GFS weather forecast with AI Serendipity correction.
+    Генерация реалистичного прогноза погоды GFS с коррекцией AI Serendipity.
 
-    Parameters
+    Параметры
     ----------
     station_code : str
-        One of the 20 supported station codes.
+        Один из 20 поддерживаемых кодов станций.
     lat : float
-        Station latitude (degrees N, negative for S).
+        Широта станции (градусы С.Ш.).
     lon : float
-        Station longitude (degrees E).
-    issued_at : str or datetime
-        Forecast issue time, e.g. "2026-04-08T00:00:00".
+        Долгота станции (градусы В.Д.).
+    issued_at : str или datetime
+        Время выпуска прогноза, например "2026-04-08T00:00:00".
 
-    Returns
+    Возвращает
     -------
     list[dict]
-        One dict per forecast hour with raw GFS and corrected values.
+        Список словарей для каждого срока прогноза с сырыми и скорректированными значениями GFS.
     """
     if isinstance(issued_at, datetime):
         issued_str = issued_at.strftime("%Y-%m-%dT%H:%M:%S")

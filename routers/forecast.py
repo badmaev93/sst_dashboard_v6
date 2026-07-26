@@ -1,4 +1,4 @@
-"""Station AI Serendipity forecast endpoint."""
+"""Эндпоинт прогноза станции AI Serendipity."""
 import logging
 from datetime import datetime, timezone
 
@@ -16,7 +16,7 @@ FORECAST_HOURS = [0, 6, 12, 24, 48, 72]
 
 @forecast_router.get("/stations/{station_id}/forecast")
 async def get_station_forecast(station_id: int):
-    """AI Serendipity forecast for a station: GFS + Nixtla ML correction."""
+    """Прогноз AI Serendipity для станции: GFS + ML-коррекция Nixtla."""
     if not db.pool:
         raise HTTPException(503, "DB not ready")
 
@@ -30,7 +30,7 @@ async def get_station_forecast(station_id: int):
     now = datetime.now(timezone.utc)
     month = now.month
 
-    # Get recent readings (last 30 for Nixtla)
+    # Получение недавних измерений (последние 30 для Nixtla)
     readings = await db.pool.fetch(
         """SELECT observed_at, sst FROM readings
            WHERE station_id = $1 AND sst IS NOT NULL
@@ -39,14 +39,14 @@ async def get_station_forecast(station_id: int):
     )
     readings_list = [{"observed_at": str(r["observed_at"]), "sst": float(r["sst"])} for r in readings]
 
-    # If no readings yet, fetch from Open-Meteo
+    # Если измерений ещё нет, получаем данные из Open-Meteo
     if not readings_list:
         synthetic = await fetch_station_reading(station["lat"], station["lon"])
         base_sst = synthetic["sst"] if synthetic and synthetic.get("sst") else 5.0
     else:
         base_sst = sum(r["sst"] for r in readings_list[:5]) / min(5, len(readings_list))
 
-    # ── Step 1: GFS nearest node (no tile rendering — just point values) ──
+    # ── Шаг 1: Ближайший узел GFS (без рендеринга тайлов — только точечные значения) ──
     gfs_sst_now = base_sst
     gfs_wind_now = 0.0
     try:
@@ -59,31 +59,31 @@ async def get_station_forecast(station_id: int):
     except Exception as e:
         logger.debug("GFS node extraction: %s", e)
 
-    # ── Step 2: Prophet forecast (default, free, runs locally) ──
+    # ── Шаг 2: Прогноз Prophet (по умолчанию, локальный запуск) ──
     from services.prophet_forecast import get_station_forecast_prophet
     prophet_fc = await get_station_forecast_prophet(
         station["code"], readings_list, periods=len(FORECAST_HOURS)
     )
 
-    # Use Prophet forecast as base corrected values
+    # Использование прогноза Prophet в качестве базовых скорректированных значений
     corrected_sst = prophet_fc.get("forecast", [])
     if len(corrected_sst) < len(FORECAST_HOURS):
         corrected_sst += [base_sst] * (len(FORECAST_HOURS) - len(corrected_sst))
 
-    # GFS SST for comparison (nearest node + diurnal variation)
+    # ТПО GFS для сравнения (ближайший узел + суточный ход)
     import math
     gfs_sst = []
     for h in FORECAST_HOURS:
         noise = 0.12 * math.sin(2 * math.pi * h / 24)
         gfs_sst.append(round(gfs_sst_now + noise, 2))
 
-    # Apply bias correction to GFS node values (AI Serendipity label)
+    # Применение коррекции систематической погрешности к значениям узлов GFS (метка AI Serendipity)
     gfs_corrected = []
     for v in gfs_sst:
         corr, _ = correct_gfs_sst(station["code"], month, v)
         gfs_corrected.append(corr)
 
-    # ── Step 3: Nixtla TimeGPT as AI Serendipity override (sparingly) ──
+    # ── Шаг 3: Переопределение Nixtla TimeGPT для AI Serendipity (при необходимости) ──
     nixtla_result = None
     nixtla_used = False
     anomalies = prophet_fc.get("anomalies")
@@ -106,11 +106,11 @@ async def get_station_forecast(station_id: int):
         except Exception as e:
             logger.warning("Nixtla anomaly: %s", e)
 
-    # Compute confidence band
+    # Расчет доверительного интервала
     upper = [round(v + 0.45, 2) for v in corrected_sst]
     lower = [round(v - 0.45, 2) for v in corrected_sst]
 
-    # Verification metrics (from historical readings if available)
+    # Метрики верификации (из исторических измерений при их наличии)
     metrics = {"rmse": 0.31, "bias": -0.05, "r2": 0.94}
     if len(readings_list) >= 5:
         actual = [r["sst"] for r in readings_list[:6]]
@@ -121,7 +121,7 @@ async def get_station_forecast(station_id: int):
             metrics["bias"] = round(statistics.mean(errors), 3)
             metrics["rmse"] = round(math.sqrt(statistics.mean(e ** 2 for e in errors)), 3)
 
-    # Wind speed and wave height forecast (from latest readings + variation)
+    # Прогноз скорости ветра и высоты волн (из последних измерений + вариация)
     latest = await db.pool.fetchrow(
         "SELECT wind_speed, wave_height FROM readings WHERE station_id = $1 AND wind_speed IS NOT NULL ORDER BY observed_at DESC LIMIT 1",
         station_id)

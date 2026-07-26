@@ -1,4 +1,4 @@
-"""Seed NeonDB with demo data: stations, users, 30 days of readings, forecasts, agent activity."""
+"""Заполнение базы данных демонстрационными данными: станции, пользователи, 30 дней измерений, прогнозы, активность агентов."""
 import asyncio
 import random
 import math
@@ -108,7 +108,7 @@ async def main():
     print("Connecting to NeonDB...")
     conn = await asyncpg.connect(DATABASE_URL)
 
-    # --- Users ---
+    # --- Пользователи ---
     print("Seeding users...")
     from passlib.context import CryptContext
     pwd = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -124,7 +124,7 @@ async def main():
         user_ids.append(uid)
     print(f"  {len(user_ids)} users")
 
-    # --- Stations ---
+    # --- Станции ---
     print("Seeding stations...")
     station_ids = []
     station_coords = {}
@@ -140,7 +140,7 @@ async def main():
         station_coords[sid] = (lat, lon)
     print(f"  {len(station_ids)} stations")
 
-    # --- Readings (30 days, hourly) ---
+    # --- Измерения (30 дней, по часам) ---
     print("Seeding readings (30 days hourly)... this may take a minute...")
     now = datetime.now(timezone.utc)
     start = now - timedelta(days=30)
@@ -169,7 +169,7 @@ async def main():
             readings_data.append((sid, t, sst, temp_air, wave_height, wave_period, wind_speed, wind_dir, pressure, visibility, humidity, status))
             t += timedelta(hours=1)
 
-    # Batch insert
+    # Пакетная вставка
     await conn.executemany(
         """INSERT INTO readings (station_id, observed_at, sst, temp_air, wave_height, wave_period,
            wind_speed, wind_dir, pressure, visibility, humidity, status)
@@ -178,7 +178,7 @@ async def main():
     )
     print(f"  {len(readings_data)} readings")
 
-    # --- GFS Forecasts ---
+    # --- Прогнозы GFS ---
     print("Seeding GFS forecasts...")
     forecast_hours = [0, 6, 12, 24, 48, 72, 120, 168, 240, 384]
     fc_data = []
@@ -200,7 +200,7 @@ async def main():
                 meta = {"model": "SerendipityV1", "rmse_reduction": round(random.uniform(0.25, 0.40), 2)}
                 fc_data.append((sid, issued, fh, sst_gfs, sst_corr, ws_gfs, ws_corr, wh_gfs, wh_corr, meta))
 
-    # Need to use json for JSONB
+    # Преобразование в json для полей JSONB
     import json
     for row in fc_data:
         await conn.execute(
@@ -211,10 +211,10 @@ async def main():
         )
     print(f"  {len(fc_data)} forecasts")
 
-    # --- Personnel ---
+    # --- Персонал ---
     print("Seeding personnel...")
     positions = ["Наблюдатель", "Инженер-метеоролог", "Техник", "Старший наблюдатель"]
-    # Each user gets assigned to 2 stations for better coverage
+    # Каждому пользователю назначается по 2 станции для лучшего покрытия
     for i, uid in enumerate(user_ids[1:], start=0):
         for offset in [0, len(station_ids) // 2]:
             sid = station_ids[(i + offset) % len(station_ids)]
@@ -223,7 +223,7 @@ async def main():
                 uid, sid, positions[i % len(positions)], f"+7900{random.randint(1000000,9999999)}"
             )
 
-    # --- Agent Activity ---
+    # --- Активность агентов ---
     print("Seeding agent activity...")
     for i in range(60):
         agent = random.choice(AGENT_NAMES)
@@ -238,7 +238,7 @@ async def main():
         )
     print("  60 agent events")
 
-    # --- Calendar Events ---
+    # --- События календаря ---
     print("Seeding calendar events...")
     for i in range(30):
         evt_type = random.choice(EVENT_TYPES)
@@ -257,7 +257,7 @@ async def main():
         )
     print("  30 calendar events")
 
-    # --- Requests ---
+    # --- Заявки ---
     print("Seeding requests...")
     statuses = ["pending", "in_progress", "signed", "completed", "rejected"]
     for i in range(20):
@@ -276,7 +276,7 @@ async def main():
         )
     print("  20 requests")
 
-    # --- Equipment Checks ---
+    # --- Проверки оборудования ---
     print("Seeding equipment checks...")
     equipment_list = ["Анемометр", "Барометр", "Термометр ТПО", "Гигрометр", "Радар волнения", "Буй метеорологический", "Антенна связи"]
     for i in range(40):
@@ -292,7 +292,7 @@ async def main():
         )
     print("  40 equipment checks")
 
-    # --- Tasks ---
+    # --- Задачи ---
     print("Seeding tasks...")
     today = now.replace(hour=0, minute=0, second=0, microsecond=0)
     task_data = [
@@ -326,7 +326,7 @@ async def main():
         )
     print(f"  {len(task_data)} tasks")
 
-    # --- Focus Blocks ---
+    # --- Блоки фокусировки ---
     print("Seeding focus blocks...")
     focus_data = [
         ("Глубокая работа", "09:00", "12:00", "#3b82f6", None, True),
@@ -350,7 +350,7 @@ async def main():
         )
     print(f"  {len(focus_data)} focus blocks")
 
-    # --- Assignments (duty schedule) ---
+    # --- Дежурства (график смен) ---
     print("Seeding duty assignments...")
     personnel_rows = await conn.fetch("SELECT id, station_id, position FROM personnel")
     if personnel_rows:
@@ -358,7 +358,7 @@ async def main():
         for day_offset in range(-7, 15):
             day = today + timedelta(days=day_offset)
             for p in personnel_rows:
-                # Each person works every 2-3 days
+                # Каждый сотрудник дежурит раз в 2-3 дня
                 if (p["id"] + day_offset) % 3 != 0:
                     continue
                 shift_start = day.replace(hour=8)

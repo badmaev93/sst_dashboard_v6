@@ -1,7 +1,7 @@
 from __future__ import annotations
 """
-AI Serendipity — bias correction + Nixtla TimeGPT integration.
-Nixtla limit: 50 req/month → cache results 7 days per station.
+AI Serendipity — коррекция систематической погрешности + интеграция с Nixtla TimeGPT.
+Лимит Nixtla: 50 запросов/месяц → кэширование результатов на 7 дней для каждой станции.
 """
 import math
 import logging
@@ -10,7 +10,7 @@ from datetime import datetime, timezone, timedelta
 
 logger = logging.getLogger(__name__)
 
-# ── Nixtla config ───────────────────────────────────────────────────────────
+# ── Конфигурация Nixtla ───────────────────────────────────────────────────────────
 NIXTLA_API_KEY = "nixak-1f134f1e4f3ebde0143f6afd8f86a22ea55fc042d8090d2c1ff1db795f4eaaf850f7730b105d8c7b"
 NIXTLA_BASE = "https://api.nixtla.io"
 _CACHE_TTL_DAYS = 7
@@ -41,7 +41,7 @@ def _cache_fresh(station_code: str) -> bool:
     return age < timedelta(days=_CACHE_TTL_DAYS)
 
 
-# ── Bias correction tables ──────────────────────────────────────────────────
+# ── Таблицы коррекции систематической погрешности ──────────────────────────────────
 MONTHLY_SST_BIAS: Dict[str, list[float]] = {
     "TIK": [0.15, 0.14, 0.16, 0.18, 0.22, 0.25, 0.28, 0.26, 0.20, 0.17, 0.15, 0.14],
     "PEV": [0.18, 0.17, 0.19, 0.21, 0.25, 0.30, 0.32, 0.29, 0.24, 0.20, 0.18, 0.17],
@@ -101,29 +101,29 @@ def correct_gfs_wind(station_code: str, gfs_wind: float) -> tuple[float, dict]:
                        "wind_bias_removed": bias}
 
 
-# ── Nixtla async calls ──────────────────────────────────────────────────────
+# ── Асинхронные вызовы Nixtla ──────────────────────────────────────────────────────
 async def call_nixtla_forecast(station_code: str, readings: List[dict]) -> dict | None:
-    """Call Nixtla TimeGPT for SST forecast. Respects 50/month limit with 7-day cache."""
-    # Return cached result if fresh
+    """Вызов Nixtla TimeGPT для прогноза ТПО. Соблюдает лимит 50/мес с кэшем на 7 дней."""
+    # Возврат закэшированного результата при его свежести
     if _cache_fresh(station_code):
         cached = _nixtla_cache[station_code]
         if "forecast" in cached:
             logger.debug("Nixtla: returning cached forecast for %s", station_code)
             return {"forecast": cached["forecast"]}
 
-    # Check monthly limit
+    # Проверка месячного лимита
     if _calls_this_month() >= _MONTHLY_LIMIT:
         logger.info("Nixtla: monthly limit reached (%d/%d), skipping", _calls_this_month(), _MONTHLY_LIMIT)
         return None
 
-    # Need at least 10 readings for a meaningful forecast
+    # Для осмысленного прогноза требуется не менее 10 измерений
     if len(readings) < 10:
         logger.debug("Nixtla: insufficient readings for %s (%d)", station_code, len(readings))
         return None
 
     try:
         import httpx
-        # Prepare time series (sorted ascending)
+        # Подготовка временного ряда (сортировка по возрастанию)
         sorted_r = sorted(readings, key=lambda x: x["observed_at"])
         timestamps = [r["observed_at"] for r in sorted_r]
         values = [r["sst"] for r in sorted_r]
@@ -131,7 +131,7 @@ async def call_nixtla_forecast(station_code: str, readings: List[dict]) -> dict 
         payload = {
             "model": "timegpt-1",
             "freq": "h",
-            "fh": 6,  # Forecast 6 hours ahead
+            "fh": 6,  # Прогноз на 6 часов вперёд
             "y": {"timestamp": timestamps, "value": values},
             "clean_ex_first": True,
         }
@@ -156,7 +156,7 @@ async def call_nixtla_forecast(station_code: str, readings: List[dict]) -> dict 
         if not forecast_vals:
             return None
 
-        # Cache the result
+        # Кэширование результата
         entry = _nixtla_cache.setdefault(station_code, {})
         entry["forecast"] = [round(float(v), 2) for v in forecast_vals]
         entry["ts"] = datetime.now(timezone.utc)
@@ -169,7 +169,7 @@ async def call_nixtla_forecast(station_code: str, readings: List[dict]) -> dict 
 
 
 async def call_nixtla_anomaly(station_code: str, readings: List[dict]) -> dict | None:
-    """Call Nixtla anomaly detection. Respects 50/month limit with 7-day cache."""
+    """Вызов детекции аномалий Nixtla. Соблюдает лимит 50/мес с кэшем на 7 дней."""
     if _cache_fresh(station_code):
         cached = _nixtla_cache.get(station_code, {})
         if "anomaly_scores" in cached:

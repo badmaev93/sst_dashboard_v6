@@ -1,4 +1,4 @@
-"""GFS forecast API — tiles, station values, metadata."""
+"""API прогнозов GFS — тайлы, значения по станциям, метаданные."""
 import logging
 from datetime import datetime, timezone
 from fastapi import APIRouter, Query
@@ -6,7 +6,7 @@ from fastapi.responses import Response
 
 import db
 from services.smb_gfs import get_smb_fetcher, FORECAST_HOURS, LON_MIN, LON_MAX, LAT_MIN, LAT_MAX
-from services.gee_gfs import _build_lut  # reuse colormap LUT
+from services.gee_gfs import _build_lut  # повторное использование таблицы поиска цветовой палитры
 from services.serendipity import correct_gfs_sst, correct_gfs_wind
 
 import numpy as np
@@ -113,7 +113,7 @@ async def gfs_single_station(station_id: int, hour: int):
 
 
 # ---------------------------------------------------------------------------
-# Rendering helpers (moved from gee_gfs, adapted for SMBGFSFetcher)
+# Вспомогательные функции отрисовки (перенесены из gee_gfs, адаптированы для SMBGFSFetcher)
 # ---------------------------------------------------------------------------
 
 def _render_tile(fetcher, variable: str, hour: int, colormap: str) -> bytes:
@@ -140,7 +140,7 @@ def _render_tile(fetcher, variable: str, hour: int, colormap: str) -> bytes:
         vmin, vmax = -2.0, 25.0
 
     norm = np.clip((grid - vmin) / (vmax - vmin), 0, 1)
-    norm = norm[::-1]  # flip north-up
+    norm = norm[::-1]  # разворот севером вверх
 
     lut = _build_lut(colormap)
     idx = (norm * 255).astype(np.uint8)

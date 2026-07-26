@@ -16,7 +16,7 @@ def _load_geojson():
 
 
 def _compute_bbox(geom):
-    """Compute [lon_min, lat_min, lon_max, lat_max] from a GeoJSON geometry."""
+    """Вычисляет [lon_min, lat_min, lon_max, lat_max] из геометрии GeoJSON."""
     coords_list = []
     geom_type = geom.get("type", "")
     raw_coords = geom.get("coordinates", [])
@@ -48,7 +48,7 @@ async def list_regions():
         code = props["code"]
         station_codes = props["stations"]
 
-        # Compute bbox from geometry
+        # Вычисление bbox из геометрии
         geom = feat.get("geometry", {})
         bbox = _compute_bbox(geom)
 

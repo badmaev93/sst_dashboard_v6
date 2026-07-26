@@ -20,7 +20,7 @@ import db
 logger = logging.getLogger(__name__)
 TG_API = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}"
 
-SUPERVISOR_CHAT_IDS: set[int] = set()  # populated from DB on /start
+SUPERVISOR_CHAT_IDS: set[int] = set()  # заполняется из БД при выполнении /start
 
 
 async def send_message(chat_id: int, text: str, parse_mode: str = "HTML"):
@@ -48,7 +48,7 @@ async def send_chat_action(chat_id: int, action: str = "typing"):
 
 
 async def broadcast_to_supervisors(text: str):
-    """Send message to all supervisor chat IDs."""
+    """Отправка сообщения всем супервайзерам."""
     if not SUPERVISOR_CHAT_IDS:
         return
     for cid in list(SUPERVISOR_CHAT_IDS):
@@ -67,7 +67,7 @@ async def handle_telegram_update(update: dict, pool):
         return {"ok": True}
 
     parts = text.split()
-    cmd = parts[0].lower().split("@")[0]  # strip bot name from /cmd@botname
+    cmd = parts[0].lower().split("@")[0]  # удаление имени бота из /cmd@botname
 
     handlers = {
         "/start":    _cmd_start,
@@ -87,7 +87,7 @@ async def handle_telegram_update(update: dict, pool):
         code = parts[1].upper() if len(parts) > 1 else None
         reply = await _cmd_forecast(chat_id, code, pool)
     else:
-        # Pass free-form text to AI — plain text, no HTML parse
+        # Передача произвольного текста ИИ — обычный текст без парсинга HTML
         await send_chat_action(chat_id)
         reply = await _cmd_free_text(chat_id, text, pool)
         if reply:
@@ -99,10 +99,10 @@ async def handle_telegram_update(update: dict, pool):
     return {"ok": True}
 
 
-# ── Command handlers ──────────────────────────────────────────────────────────
+# ── Обработчики команд ──────────────────────────────────────────────────────────
 
 async def _cmd_start(chat_id: int, pool) -> str:
-    # Register if supervisor
+    # Регистрация, если пользователь является супервайзером
     if pool:
         row = await pool.fetchrow(
             "SELECT role FROM users WHERE telegram_chat_id = $1", chat_id)
@@ -192,7 +192,7 @@ async def _cmd_summary(chat_id: int, pool) -> str:
 
     station_list = [dict(s) for s in stations]
 
-    # Try GigaChat summary
+    # Попытка создать сводку через GigaChat
     try:
         from services.gigachat import summarize_daily_report
         summary = await summarize_daily_report(station_list, anomaly_count, pending_count)
@@ -206,7 +206,7 @@ async def _cmd_summary(chat_id: int, pool) -> str:
     except Exception as e:
         logger.warning("GigaChat summary failed: %s", e)
 
-    # Fallback: plain summary
+    # Резервный вариант: обычная сводка
     lines = []
     warning_stations = [s for s in station_list if s["status"] in ("warning", "critical")]
     for s in warning_stations[:5]:
@@ -238,7 +238,7 @@ async def _cmd_station(chat_id: int, code: str | None, pool) -> str:
         "SELECT * FROM readings WHERE station_id = $1 ORDER BY observed_at DESC LIMIT 5",
         station["id"])
 
-    # Get GFS nearest node data as "observer supplement"
+    # Получение данных ближайшего узла GFS как «дополнение наблюдателя»
     gfs_note = await _get_gfs_node_data(station)
 
     if not readings:
@@ -265,7 +265,7 @@ async def _cmd_station(chat_id: int, code: str | None, pool) -> str:
     if gfs_note:
         base += f"\n{gfs_note}\n"
 
-    # GigaChat analysis
+    # Анализ GigaChat
     try:
         from services.gigachat import analyze_station_data
         readings_list = [{"sst": r["sst"], "wind_speed": r["wind_speed"],
@@ -298,7 +298,7 @@ async def _cmd_forecast(chat_id: int, code: str | None, pool) -> str:
     readings_list = [{"observed_at": str(r["observed_at"]), "sst": float(r["sst"])}
                      for r in readings]
 
-    # Prophet forecast (default)
+    # Прогноз Prophet (по умолчанию)
     from services.prophet_forecast import get_station_forecast_prophet
     fc = await get_station_forecast_prophet(code.upper(), readings_list, periods=6)
 
@@ -314,7 +314,7 @@ async def _cmd_forecast(chat_id: int, code: str | None, pool) -> str:
         if fc.get("n_anomalies_24h", 0) > 0 else ""
     )
 
-    # Also note AI Serendipity (TimeGPT) is available via web
+    # Примечание о доступности AI Serendipity (TimeGPT) в веб-интерфейсе
     serendipity_note = ""
     if fc["method"] == "prophet":
         serendipity_note = "\n<i>🤖 AI Serendipity (TimeGPT) доступен в веб-интерфейсе</i>"
@@ -394,8 +394,8 @@ async def _cmd_events(chat_id: int, pool) -> str:
 
 
 async def _cmd_free_text(chat_id: int, text: str, pool) -> str:
-    """Handle free-form text as an AI assistant with context from the monitoring system."""
-    # Gather live context for the AI
+    """Обработка произвольного текста ИИ-ассистентом с контекстом из системы мониторинга."""
+    # Сбор актуального контекста для ИИ
     context_parts = []
     if pool:
         try:
@@ -606,7 +606,7 @@ async def _cmd_free_text(chat_id: int, text: str, pool) -> str:
 
 
 async def _get_gfs_node_data(station) -> str | None:
-    """Get nearest GFS grid node data for a station (presented as observer supplement)."""
+    """Получает данные ближайшего узла сетки GFS для станции (представляются как дополнение)."""
     try:
         from services.gee_gfs import get_fetcher
         fetcher = get_fetcher()
@@ -623,12 +623,12 @@ async def _get_gfs_node_data(station) -> str | None:
     return None
 
 
-# ── Daily summary broadcast ───────────────────────────────────────────────────
+# ── Рассылка ежедневной сводки ────────────────────────────────────────────────
 
 async def send_daily_summary(pool):
-    """Called by scheduler once per day. Sends summary to all supervisors."""
+    """Вызывается планировщиком раз в день. Отправляет сводку всем супервайзерам."""
     if not pool or not SUPERVISOR_CHAT_IDS:
-        # Try to load supervisor chat IDs from DB
+        # Попытка загрузить ID чатов супервайзеров из БД
         if pool:
             rows = await pool.fetch(
                 "SELECT telegram_chat_id FROM users WHERE role = 'supervisor' "
@@ -646,7 +646,7 @@ async def send_daily_summary(pool):
     logger.info("Daily summary sent to %d supervisors", len(SUPERVISOR_CHAT_IDS))
 
 
-# ── Helpers ───────────────────────────────────────────────────────────────────
+# ── Вспомогательные функции ───────────────────────────────────────────────────
 
 def _fmt(val, decimals: int = 1) -> str:
     if val is None:

@@ -1,14 +1,14 @@
 """
-GFS forecast from mounted filesystem or SMB share.
+Прогноз GFS со смонтированной файловой системы или сетевого ресурса SMB.
 
-Primary (Вариант B): mount share via OS, set GFS_LOCAL_PATH:
+Основной (Вариант B): монтирование ресурса ОС, настройка GFS_LOCAL_PATH:
   sudo mount -t cifs //10.11.60.25/meteo /mnt/meteo -o username=...,password=...,uid=$(id -u)
   GFS_LOCAL_PATH=/mnt/meteo/data/NOAA/NCEP/FTPPRD/pub/data/nccf/com/gfs/prod0p25.sfc
 
-Fallback: read via smbprotocol (requires GFS_SMB_USER / GFS_SMB_PASS).
+Резервный: чтение через smbprotocol (требуются GFS_SMB_USER / GFS_SMB_PASS).
 
-Directory structure:  <base>/<YYYY>/<MM>/<DD>/00/gfs.t00z.pgrb2.0p25.f<FFF>
-Cycle hour is always 00. Latest date is determined by listing the tree.
+Структура каталогов: <base>/<YYYY>/<MM>/<DD>/00/gfs.t00z.pgrb2.0p25.f<FFF>
+Срок прогона всегда 00. Последняя дата определяется листингом дерева каталогов.
 """
 
 import logging
@@ -22,10 +22,10 @@ import numpy as np
 
 logger = logging.getLogger(__name__)
 
-# If set, read from mounted filesystem (Вариант B). Takes priority over SMB.
+# Если задано, считывается со смонтированной файловой системы (Вариант B). Имеет приоритет перед SMB.
 GFS_LOCAL_PATH = os.getenv("GFS_LOCAL_PATH", "")
 
-# SMB fallback params
+# Резервные параметры SMB
 SMB_HOST = os.getenv("GFS_SMB_HOST", "10.11.60.25")
 SMB_SHARE = os.getenv("GFS_SMB_SHARE", "meteo")
 SMB_USER = os.getenv("GFS_SMB_USER", "")
@@ -52,11 +52,11 @@ CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
 
 # ---------------------------------------------------------------------------
-# Filesystem backend (Вариант B — mounted share)
+# Бэкенд файловой системы (Вариант B — смонтированный ресурс)
 # ---------------------------------------------------------------------------
 
 def _local_find_latest_date(base: Path) -> Optional[tuple[str, str, str]]:
-    """Walk <base>/YYYY/MM/DD/00/ to find the most recent date."""
+    """Обход <base>/YYYY/MM/DD/00/ для поиска наиболее свежей даты."""
     if not base.is_dir():
         logger.error("GFS_LOCAL_PATH does not exist or is not mounted: %s", base)
         return None
@@ -87,7 +87,7 @@ def _local_read_file(base: Path, year: str, month: str, day: str, hour: int) -> 
 
 
 # ---------------------------------------------------------------------------
-# SMB backend (fallback when GFS_LOCAL_PATH not set)
+# Бэкенд SMB (резервный, когда GFS_LOCAL_PATH не задан)
 # ---------------------------------------------------------------------------
 
 def _smb_path(*parts: str) -> str:
@@ -149,7 +149,7 @@ def _smb_read_file(year: str, month: str, day: str, hour: int) -> Optional[bytes
 
 
 # ---------------------------------------------------------------------------
-# Unified read interface
+# Единый интерфейс чтения
 # ---------------------------------------------------------------------------
 
 def find_latest_date() -> Optional[tuple[str, str, str]]:
@@ -165,7 +165,7 @@ def read_grib_bytes(year: str, month: str, day: str, hour: int) -> Optional[byte
 
 
 # ---------------------------------------------------------------------------
-# GRIB2 parsing (cfgrib)
+# Парсинг GRIB2 (cfgrib)
 # ---------------------------------------------------------------------------
 
 def _parse_grib2(data: bytes, forecast_hour: int) -> Optional[dict]:
@@ -200,7 +200,7 @@ def _parse_grib2(data: bytes, forecast_hour: int) -> Optional[dict]:
             return None
 
         t_arr = t_sub.values.astype(np.float32)
-        if t_arr.mean() > 100:   # Kelvin → Celsius
+        if t_arr.mean() > 100:   # Кельвины → Цельсии
             t_arr -= 273.15
 
         result = {
@@ -231,19 +231,19 @@ def _extract_var(dsets, short_names: list, level: int):
             if name not in ds:
                 continue
             da = ds[name]
-            # Check level if coordinate present
+            # Кельвины → Цельсии
             for coord_name in ("heightAboveGround", "level"):
                 if coord_name in da.coords:
                     if abs(float(da.coords[coord_name]) - level) > 0.5:
                         break
             else:
                 return da
-            # level mismatch — keep looking
+            # Несовпадение уровня — продолжаем поиск
     return None
 
 
 def _subset(da):
-    """Subset to region and interpolate to LATS/LONS grid."""
+    """Обрезает область и интерполирует на сетку LATS/LONS."""
     try:
         lat_dim = next(d for d in da.dims if "lat" in d.lower())
         lon_dim = next(d for d in da.dims if "lon" in d.lower())
@@ -263,7 +263,7 @@ def _subset(da):
 
 
 # ---------------------------------------------------------------------------
-# Cache (.npz, same format as gee_gfs)
+# Кэш (.npz, аналогичный формат gee_gfs)
 # ---------------------------------------------------------------------------
 
 def _cache_path(date_str: str, hour: int) -> Path:
@@ -285,13 +285,13 @@ def _save_cache(date_str: str, hour: int, data: dict):
 
 
 # ---------------------------------------------------------------------------
-# Public fetcher
+# Публичный сборщик данных
 # ---------------------------------------------------------------------------
 
 class SMBGFSFetcher:
     """
-    Fetches GFS GRIB2 files from mounted share (or SMB) and caches as .npz.
-    Falls back to synthetic grids when unavailable.
+    Загружает файлы GFS GRIB2 со смонтированного ресурса (или SMB) и кэширует их как .npz.
+    При недоступности выполняет переход на синтетические сетки.
     """
 
     def __init__(self):
@@ -316,7 +316,7 @@ class SMBGFSFetcher:
 
         result = {}
         for fh in FORECAST_HOURS:
-            # Try cache first
+            # Сначала проверяем кэш
             cached = _load_cache(date_str, fh)
             if cached is not None:
                 result[fh] = cached

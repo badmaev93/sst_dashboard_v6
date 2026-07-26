@@ -1,4 +1,4 @@
-"""Background scheduler for hourly data generation + event simulation + Telegram polling."""
+"""Фоновый планировщик для почасовой генерации данных, симуляции событий и опроса Telegram."""
 import logging
 import asyncio
 import random
@@ -19,7 +19,7 @@ REQUEST_TEMPLATES = [
     ("Плановая замена аккумуляторных батарей", "maintenance", "normal", "Ёмкость текущих батарей снизилась до 45%. Плановая замена согласно регламенту."),
 ]
 
-# agent_activity columns: agent_name, event_type (NOT NULL), severity, title, body
+# столбцы agent_activity: agent_name, event_type (NOT NULL), severity, title, body
 AGENT_EVENT_TEMPLATES = [
     ("SerendipityV2", "anomaly", "Обнаружена аномалия ТПО +2.1°C относительно климатической нормы",
      "warning", "Значение превышает климатическую норму для данного сезона"),
@@ -86,7 +86,7 @@ def start_scheduler():
             await asyncio.sleep(3600)
 
     async def _telegram_polling():
-        """Long-polling for Telegram updates (localhost can't receive webhooks)."""
+        """Long-polling для обновлений Telegram (localhost не может получать вебхуки)."""
         import httpx
         from config import TELEGRAM_BOT_TOKEN
         if not TELEGRAM_BOT_TOKEN:
@@ -97,7 +97,7 @@ def start_scheduler():
         offset = 0
         logger.info("Telegram polling started")
 
-        # Delete any existing webhook and flush pending updates
+        # Удаление существующего вебхука и сброс ожидающих обновлений
         try:
             async with httpx.AsyncClient(timeout=10) as client:
                 await client.post(f"{api}/deleteWebhook", json={"drop_pending_updates": True})
@@ -136,8 +136,8 @@ def start_scheduler():
                 await asyncio.sleep(5)
 
     async def _generate_requests():
-        """Simulate realistic requests as if operators file them in real time."""
-        # Initial delay so DB is ready
+        """Симуляция реалистичных заявок, как если бы операторы подавали их в реальном времени."""
+        # Начальная задержка для готовности БД
         await asyncio.sleep(120)
         while True:
             try:
@@ -172,11 +172,11 @@ def start_scheduler():
             except Exception as e:
                 logger.error("Request generation failed: %s", e)
 
-            # Sleep 2-4 hours between request batches
+            # Пауза 2-4 часа между пакетами заявок
             await asyncio.sleep(random.randint(7200, 14400))
 
     async def _generate_agent_events():
-        """Generate AI agent activity events periodically."""
+        """Периодическая генерация событий активности AI-агентов."""
         await asyncio.sleep(180)
         while True:
             try:
@@ -199,11 +199,11 @@ def start_scheduler():
 
     async def _daily_monitoring():
         """
-        Daily Prophet forecast run + anomaly detection for all stations.
-        Sends Telegram summary to supervisors at 08:00 UTC.
+        Ежедневный запуск прогноза Prophet + детекция аномалий для всех станций.
+        Отправляет сводку в Telegram супервайзерам в 08:00 UTC.
         """
         import datetime as _dt
-        # Initial delay: wait until 08:00 UTC next occurrence
+        # Начальная задержка: ожидание до 08:00 UTC следующего дня
         now = _dt.datetime.now(_dt.timezone.utc)
         target = now.replace(hour=8, minute=0, second=0, microsecond=0)
         if target <= now:
@@ -244,7 +244,7 @@ def start_scheduler():
                         total_anomalies += n_anom
 
                         if n_anom > 0:
-                            # Log anomaly event to agent_activity
+                            # Логирование события аномалии в agent_activity
                             await db.pool.execute("""
                                 INSERT INTO agent_activity
                                     (agent_name, event_type, severity, title, body, created_at)
@@ -261,7 +261,7 @@ def start_scheduler():
                 logger.info("Daily monitoring: %d total anomalies across %d stations",
                             total_anomalies, len(stations))
 
-                # Send Telegram summary
+                # Отправка сводки в Telegram
                 try:
                     from services.telegram_bot import send_daily_summary
                     await send_daily_summary(db.pool)

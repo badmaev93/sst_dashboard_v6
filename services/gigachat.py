@@ -1,6 +1,6 @@
 """
-AI LLM client — Gemini Flash Lite (primary) with GigaChat (Sber) fallback.
-Displayed as "GigaChat" in the UI for branding consistency.
+ИИ LLM-клиент — Gemini Flash Lite (основной) с резервным fallback на GigaChat (Сбер).
+Отображается как "GigaChat" в интерфейсе для единообразия бренд-нейминга.
 """
 import base64
 import logging
@@ -17,7 +17,7 @@ from config import (
 
 logger = logging.getLogger(__name__)
 
-# ── Google Gemini Flash Lite (primary) ───────────────────────────────────────
+# ── Google Gemini Flash Lite (основной) ───────────────────────────────────────
 GEMINI_MODEL = "gemini-2.5-flash-lite"
 GEMINI_API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent"
 
@@ -52,7 +52,7 @@ async def _gemini_chat(system_prompt: str, user_message: str,
         return None
 
 
-# ── GigaChat (Sber) fallback ────────────────────────────────────────────────
+# ── Резервный вариант GigaChat (Сбер) ────────────────────────────────────────────────
 AUTH_URL = "https://ngw.devices.sberbank.ru:9443/api/v2/oauth"
 GIGACHAT_API_BASE = "https://gigachat.devices.sberbank.ru/api/v1"
 GIGACHAT_MODEL = "GigaChat"
@@ -123,7 +123,7 @@ async def _gigachat_chat(system_prompt: str, user_message: str,
         return None
 
 
-# ── Public API (tries Gemini first, then GigaChat) ───────────────────────────
+# ── Публичный API (сначала пробы Gemini, затем GigaChat) ───────────────────────────
 
 async def chat(system_prompt: str, user_message: str,
                max_tokens: int = 800, temperature: float = 0.7) -> Optional[str]:

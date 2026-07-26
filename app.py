@@ -9,8 +9,8 @@ import os, io, math, logging, time, datetime, tempfile
 from contextlib import asynccontextmanager
 from typing import Optional
 
-# Startup timestamp — passed to clients so they can bust browser caches
-# after a server restart.
+# Метка времени запуска сервера — передаётся клиентам для сброса кэша браузера
+# после перезапуска.
 _SERVER_START_TS = str(int(time.time()))
 
 logging.basicConfig(level=logging.INFO,
@@ -28,14 +28,14 @@ STATIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
 
 @asynccontextmanager
 async def lifespan(app):
-    # Init DB pool
+    # Инициализация пула БД
     try:
         import db as _db
         await _db.init_db()
         logger.info("DB pool initialized")
     except Exception as e:
         logger.warning("DB not available: %s", e)
-    # Start background scheduler
+    # Запуск фонового планировщика
     try:
         from services.scheduler import start_scheduler
         start_scheduler()
@@ -52,7 +52,7 @@ async def lifespan(app):
 
 app = FastAPI(title="GFS Dashboard v6", lifespan=lifespan)
 
-# ── Include additional routers (gracefully degrade if deps missing) ──
+# ── Подключение дополнительных роутеров (с изящной деградацией при отсутствии зависимостей) ──
 def _try_include(module_path: str, attr: str):
     try:
         import importlib
@@ -76,24 +76,24 @@ _try_include("routers.schedule", "schedule_router")
 _try_include("routers.webhooks", "webhooks_router")
 
 # ──────────────────────────────────────────────
-# GFS configuration
+# Конфигурация GFS
 # ──────────────────────────────────────────────
 _GFS_BASE     = os.getenv("GFS_LOCAL_PATH", "/mnt/meteo/data/NOAA/NCEP/FTPPRD/pub/data/nccf/com/gfs/prod0p25.sfc")
 
-# Geographic domain (0–360 lon convention), shared by maps and coastline
+# Географический домен (конвенция долготы 0–360°), общий для карт и береговой линии
 LON_MIN, LON_MAX = 117.0, 246.0
 LAT_MIN, LAT_MAX = 26.0,  72.0
 
-# Forecast hours shown in the compare grid (6 maps)
+# Сроки прогноза (в часах) для сетки сравнения (6 карт)
 GFS_FHOURS = [0, 24, 48, 72, 96, 120]
 GFS_FHOUR_LABELS = ["Анализ (+0ч)", "+24ч (+1 сут)", "+48ч (+2 сут)",
                     "+72ч (+3 сут)", "+96ч (+4 сут)", "+120ч (+5 сут)"]
 
-# Single source of truth for every renderable GFS parameter:
-# GRIB2 selectors, unit, colormap and UI label.
-#   scale       — multiplier applied to raw GRIB values
-#   to_celsius  — subtract 273.15 instead of scaling
-#   wind_speed  — field is sqrt(u10² + v10²) instead of a single shortName
+# Единый источник правды для каждого визуализируемого параметра GFS:
+# селекторы GRIB2, единица измерения, цветовая палитра и подпись в интерфейсе.
+#   scale       — множитель, применяемый к сырым значениям GRIB
+#   to_celsius  — вычитание 273.15 вместо масштабирования
+#   wind_speed  — поле рассчитывается как sqrt(u10² + v10²) вместо одного shortName
 GFS_PARAMS: dict[str, dict] = {
     "gfs_t": {
         "label": "Темп. поверхности", "unit": "°C", "cmap": "RdYlBu_r",
@@ -134,9 +134,9 @@ def _fhour(fhour_idx: int) -> int:
 
 
 # ──────────────────────────────────────────────
-# Colormaps — pure-numpy LUT (256 × 3, uint8)
+# Цветовые палитры — Таблица поиска (LUT) на чистом NumPy (256 × 3, uint8)
 # ──────────────────────────────────────────────
-# name → [(position 0..1, (r, g, b)), …]; intermediate colours are interpolated.
+# имя → [(позиция 0..1, (r, g, b)), …]; промежуточные цвета интерполируются.
 _CMAP_STOPS: dict[str, list] = {
     "RdYlBu_r": [
         (0.000, (49,  54,  149)), (0.125, (69,  117, 180)),
@@ -167,7 +167,7 @@ _CMAP_STOPS: dict[str, list] = {
 
 
 def _make_lut(stops: list) -> np.ndarray:
-    """Build a 256×3 uint8 lookup table by interpolating between colour stops."""
+    """Создание таблицы поиска 256×3 uint8 с интерполяцией между контрольными точками цвета."""
     pos  = np.array([p for p, _ in stops], dtype=np.float64)
     cols = np.array([c for _, c in stops], dtype=np.float64)
     t    = np.linspace(0.0, 1.0, 256)
@@ -181,10 +181,10 @@ _LUTS = {name: _make_lut(stops) for name, stops in _CMAP_STOPS.items()}
 
 
 # ──────────────────────────────────────────────
-# Percentile → (lo, hi) mapping for colorscale clipping
+# Отображение процентилей в диапазоны (lo, hi) для отсечения цветовой шкалы
 # ──────────────────────────────────────────────
 def _pct_bounds(percentile: float) -> tuple[float, float]:
-    """Return (lo, hi) percentile bounds for vmin/vmax computation."""
+    """Возвращает границы процентилей (lo, hi) для расчета vmin/vmax."""
     p = float(percentile)
     if p >= 100:
         return (0.0, 100.0)
@@ -194,11 +194,11 @@ def _pct_bounds(percentile: float) -> tuple[float, float]:
         return (1.0, 99.0)
 
 
-# ── Mercator constants (lon 117-246°, lat 26-72°) ──
-_EARTH_CIRC = 40075016.685578488  # meters, WGS-84 equatorial circumference
+# ── Константы проекции Меркатора (долгота 117-246°, широта 26-72°) ──
+_EARTH_CIRC = 40075016.685578488  # метры, длина экватора WGS-84
 
 def _mercator_extent():
-    """Return (x_min, y_min, x_max, y_max) in EPSG:3857 for the data domain."""
+    """Возвращает (x_min, y_min, x_max, y_max) в EPSG:3857 для области данных."""
     from pyproj import Transformer
     tr = Transformer.from_crs("EPSG:4326", "EPSG:3857", always_xy=True)
     x_min, y_min = tr.transform(LON_MIN, LAT_MIN)
@@ -206,17 +206,17 @@ def _mercator_extent():
     _, y_max     = tr.transform(0.0, LAT_MAX)
     return x_min, y_min, x_max, y_max
 
-_MERC_EXTENT = _mercator_extent()   # computed once at import time
+_MERC_EXTENT = _mercator_extent()   # вычисляется один раз при импорте модуля
 
 
 # ──────────────────────────────────────────────
-# Rendering
+# Отрисовка
 # ──────────────────────────────────────────────
 def _overlay_contours(img, vals: np.ndarray, finite: np.ndarray,
                       vmin: float, vmax: float,
                       show_labels: bool = False,
                       lut: "np.ndarray | None" = None) -> "PIL.Image.Image":
-    """Overlay isoline contours (and optional value labels) on a PIL RGBA image."""
+    """Накладывает контуры изолиний (и опциональные подписи значений) на PIL RGBA изображение."""
     try:
         import matplotlib
         matplotlib.use("Agg")
@@ -241,7 +241,7 @@ def _overlay_contours(img, vals: np.ndarray, finite: np.ndarray,
         MOVETO    = mpath.Path.MOVETO
         CLOSEPOLY = mpath.Path.CLOSEPOLY
 
-        # CS.collections was removed in matplotlib 3.9; use CS.get_paths() instead
+        # CS.collections был удален в matplotlib 3.9; используем CS.get_paths()
         for path in CS.get_paths():
             verts = path.vertices
             codes = path.codes
@@ -263,12 +263,12 @@ def _overlay_contours(img, vals: np.ndarray, finite: np.ndarray,
             if len(seg) >= 2:
                 draw.line(seg, fill=CONT_COLOR, width=2)
 
-        # Draw value labels — smart text colour matching the colourscale, no background
+        # Отрисовка подписей значений — умный цвет текста под цветовую шкалу, без фона
         if show_labels:
             try:
                 fmt_comma = lambda x: f"{x:.1f}".replace(".", ",")
                 label_texts = ax.clabel(CS, inline=True, fontsize=7, fmt=fmt_comma)
-                # Filter overlapping labels — keep only those > MIN_DIST pixels apart
+                # Фильтрация перекрывающихся подписей — оставляем только те, расстояние между которыми > MIN_DIST пикселей
                 MIN_DIST_SQ = 80 ** 2
                 kept = []
                 for lt in label_texts:
@@ -278,7 +278,7 @@ def _overlay_contours(img, vals: np.ndarray, finite: np.ndarray,
                                for k in kept):
                         kept.append(lt)
                 label_texts = kept
-                # Use a system sans-serif TTF for clean rendering; fall back to PIL default
+                # Использование системного TTF-шрифта без засечек; при отсутствии fallback на шрифт по умолчанию PIL
                 _FONT_CANDIDATES = [
                     "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
                     "/usr/share/fonts/liberation/LiberationSans-Regular.ttf",
@@ -307,7 +307,7 @@ def _overlay_contours(img, vals: np.ndarray, finite: np.ndarray,
                     except AttributeError:
                         tw, th = len(text) * 6, 9
                     px, py = int(lx) - tw // 2, int(ly) - th // 2
-                    # Choose text colour to contrast against the colourscale value
+                    # Выбор цвета текста для контраста со значением цветовой шкалы
                     if lut is not None:
                         try:
                             lv = float(text.replace(',', '.'))
@@ -340,12 +340,12 @@ def _render_mercator(field: np.ndarray, lat_arr: np.ndarray, lon_arr: np.ndarray
                      blur: bool = True,
                      contours: bool = True,
                      contour_labels: bool = False) -> bytes:
-    """Render a rectangular 2D GFS field to a Mercator-projected RGBA PNG.
+    """Рендеринг прямоугольного 2D поля GFS в RGBA PNG в проекции Меркатора.
 
-    field    : 2D (nlat × nlon), NaN = no data
-    lat_arr  : 1-D, may be decreasing
-    lon_arr  : 1-D, 0-360 convention
-    scale    : output upscale factor (1=1200×550, 2=2400×1100, etc.)
+    field    : 2D (nlat × nlon), NaN = нет данных
+    lat_arr  : 1-D, может убывать
+    lon_arr  : 1-D, конвенция 0-360
+    scale    : коэффициент увеличения (1=1200×550, 2=2400×1100 и т.д.)
     """
     from pyproj import Transformer
     from scipy.interpolate import RegularGridInterpolator
@@ -364,7 +364,7 @@ def _render_mercator(field: np.ndarray, lat_arr: np.ndarray, lon_arr: np.ndarray
     lons_grid, lats_grid = inv.transform(X, Y)
     lons_grid = lons_grid % 360.0
 
-    # Ensure increasing lat axis
+    # Обеспечение возрастающей оси широты
     if lat_arr[0] > lat_arr[-1]:
         lat_inc  = lat_arr[::-1]
         field_rc = field[::-1, :]
@@ -390,7 +390,7 @@ def _render_mercator(field: np.ndarray, lat_arr: np.ndarray, lon_arr: np.ndarray
                  (lons_grid > float(lon_arr.max()) - lon_step * 5))
     vals[edge_mask] = np.nan
 
-    # Colorize — NaN pixels remain identified
+    # Окрашивание — пиксели NaN остаются идентифицированными
     lut    = _LUTS[cmap]
     finite = np.isfinite(vals)
     safe   = np.where(finite, vals, vmin)
@@ -399,16 +399,16 @@ def _render_mercator(field: np.ndarray, lat_arr: np.ndarray, lon_arr: np.ndarray
 
     rgba = np.zeros((H, W, 4), dtype=np.uint8)
     rgba[:, :, :3] = lut[idx]
-    rgba[~finite, 3] = 0   # NaN pixels: alpha=0 (RGB keeps lut[0] = vmin colour for now)
+    rgba[~finite, 3] = 0   # Пиксели NaN: альфа=0 (RGB пока сохраняет цвет lut[0] = vmin)
 
-    # Optional Gaussian blur (smooths pixel edges)
+    # Опциональное гауссово размытие (сглаживает границы пикселей)
     if blur:
         from scipy.ndimage import distance_transform_edt
-        # Fill only INTERIOR NaN pixels — never edge_mask pixels.
-        # Edge pixels keep RGB=0 so blur cannot spread their colour into valid pixels.
+        # Заполнение только ВНУТРЕННИХ пикселей NaN — исключая edge_mask.
+        # Краевые пиксели сохраняют RGB=0, чтобы размытие не распространяло цвет на валидные пиксели.
         nf_interior = ~finite & ~edge_mask
         if nf_interior.any() and finite.any():
-            # EDT source: only finite non-edge pixels
+            # Источник EDT: только конечные некраевые пиксели
             _, nn = distance_transform_edt(~finite | edge_mask, return_indices=True)
             rgba[nf_interior, :3] = rgba[nn[0][nf_interior], nn[1][nf_interior], :3]
         rgb_arr = _PIL.fromarray(rgba[:, :, :3], "RGB")
@@ -424,7 +424,7 @@ def _render_mercator(field: np.ndarray, lat_arr: np.ndarray, lon_arr: np.ndarray
     r2, g2, b2 = rgb.split()
     img = _PIL.merge("RGBA", (r2, g2, b2, a))
 
-    # Overlay isoline contours (skipped when contours=False)
+    # Наложение контуров изолиний (пропускается, если contours=False)
     if contours:
         img = _overlay_contours(img, vals, finite, vmin, vmax,
                                 show_labels=contour_labels, lut=lut)
@@ -435,14 +435,14 @@ def _render_mercator(field: np.ndarray, lat_arr: np.ndarray, lon_arr: np.ndarray
 
 
 # ──────────────────────────────────────────────
-# GFS data access (local GRIB2 files)
+# Доступ к данным GFS (локальные файлы GRIB2)
 # ──────────────────────────────────────────────
 _gfs_png_cache: dict = {}
-_gfs_data_cache: dict = {}   # raw field cache (lat, lon, data arrays)
+_gfs_data_cache: dict = {}   # кэш сырых полей (массивы широты, долготы и данных)
 
 
 def _find_latest_gfs_00z_file(fhour: int = 0) -> tuple[Optional[str], str]:
-    """Return (path, run_label) for the latest available 00Z GFS file at fhour."""
+    """Возвращает (path, run_label) для последнего доступного файла GFS 00Z для fhour."""
     today = datetime.date.today()
     fname = f"gfs.t00z.pgrb2.0p25.f{fhour:03d}.grb2"
     for delta in range(8):
@@ -456,14 +456,14 @@ def _find_latest_gfs_00z_file(fhour: int = 0) -> tuple[Optional[str], str]:
 
 
 def _gfs_subset(arr: np.ndarray, lat: np.ndarray, lon: np.ndarray):
-    """Subset array + axes to North Pacific domain."""
+    """Обрезает массив и оси до домена Северной Пацифики."""
     lat_m = (lat >= LAT_MIN) & (lat <= LAT_MAX)
     lon_m = (lon >= LON_MIN) & (lon <= LON_MAX)
     return arr[np.ix_(lat_m, lon_m)], lat[lat_m], lon[lon_m]
 
 
 def _open_grib(path: str, short_name: str, level_type: str, idx_path: str):
-    """Open one GRIB2 message set and return (values, lat, lon) with increasing lat."""
+    """Открывает один набор сообщений GRIB2 и возвращает (values, lat, lon) с возрастающей широтой."""
     import cfgrib
     try:
         ds = cfgrib.open_dataset(
@@ -484,14 +484,14 @@ def _open_grib(path: str, short_name: str, level_type: str, idx_path: str):
 
 
 def _load_gfs_field(param: str, fhour: int = 0) -> tuple[np.ndarray, np.ndarray, np.ndarray, str]:
-    """Load a GFS field from GRIB2, subset to North Pacific.
-    Returns (field, lat_arr_inc, lon_arr_0_360, run_label)."""
+    """Загружает поле GFS из GRIB2 и обрезает до Северной Пацифики.
+    Возвращает (field, lat_arr_inc, lon_arr_0_360, run_label)."""
     cache_key = (param, fhour)
     if cache_key in _gfs_data_cache:
         return _gfs_data_cache[cache_key]
 
     try:
-        import cfgrib  # noqa: F401  — imported for the availability check only
+        import cfgrib  # noqa: F401  — импортируется только для проверки доступности
     except ImportError:
         raise HTTPException(500, "cfgrib not installed — pip install cfgrib")
 
@@ -504,7 +504,7 @@ def _load_gfs_field(param: str, fhour: int = 0) -> tuple[np.ndarray, np.ndarray,
         idx = os.path.join(tmpdir, "gfs.idx")
 
         if cfg.get("wind_speed"):
-            # Wind speed = sqrt(u² + v²) from 10m u and v
+            # Скорость ветра = sqrt(u² + v²) из составляющих u и v на высоте 10м
             u, lat, lon = _open_grib(path, "10u", "heightAboveGround", idx + "u")
             v, _,   _   = _open_grib(path, "10v", "heightAboveGround", idx + "v")
             raw = np.sqrt(u ** 2 + v ** 2).astype(np.float32)
@@ -526,7 +526,7 @@ def _load_gfs_field(param: str, fhour: int = 0) -> tuple[np.ndarray, np.ndarray,
 
 
 def _get_gfs_wind_vectors(fhour: int = 0) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, str]:
-    """Return (u, v, lat, lon, label) for 10m wind at given forecast hour."""
+    """Возвращает (u, v, lat, lon, label) для ветра 10m на заданный срок прогноза."""
     cache_key = ("wind_uv", fhour)
     if cache_key in _gfs_data_cache:
         return _gfs_data_cache[cache_key]
@@ -545,7 +545,7 @@ def _get_gfs_wind_vectors(fhour: int = 0) -> tuple[np.ndarray, np.ndarray, np.nd
         u, lat, lon = _open_grib(path, "10u", "heightAboveGround", idx + "u")
         v, _,   _   = _open_grib(path, "10v", "heightAboveGround", idx + "v")
 
-    # Subsample to every 4th grid point for the JSON response
+    # Прореживание до каждой 4-й точки сетки для ответа JSON
     u_s, lat_s, lon_s = _gfs_subset(u, lat, lon)
     v_s, _,     _     = _gfs_subset(v, lat, lon)
     step = 4
@@ -558,7 +558,7 @@ def _get_gfs_wind_vectors(fhour: int = 0) -> tuple[np.ndarray, np.ndarray, np.nd
 def _get_gfs_png(param: str, fhour: int = 0, scale: int = 1, blur: bool = True,
                  contours: bool = True, contour_labels: bool = False,
                  percentile: float = 99) -> tuple[bytes, float, float, str]:
-    """Render a GFS parameter PNG. Returns (png_bytes, vmin, vmax, run_label)."""
+    """Рендерит PNG для параметра GFS. Возвращает (png_bytes, vmin, vmax, run_label)."""
     key = (param, fhour, scale, blur, contours, contour_labels, percentile)
     if key in _gfs_png_cache:
         return _gfs_png_cache[key]
@@ -586,16 +586,16 @@ def _get_gfs_png(param: str, fhour: int = 0, scale: int = 1, blur: bool = True,
 
 
 def _fmt_tick_prec(v: float, prec: int) -> str:
-    """Format tick value with given decimal places, using comma as decimal separator."""
+    """Форматирует значение деления шкалы с заданным количеством знаков после запятой (разделитель — запятая)."""
     return f"{v:.{prec}f}".replace('.', ',')
 
 
 # ──────────────────────────────────────────────
-# GFS API routes
+# Маршруты API GFS
 # ──────────────────────────────────────────────
 @app.get("/api/gfs/meta")
 def api_gfs_meta():
-    """Return info about the latest available GFS 00Z run."""
+    """Возвращает информацию о последнем доступном прогоне GFS 00Z."""
     path, label = _find_latest_gfs_00z_file(0)
     available_fhours = []
     if path is not None:
@@ -681,7 +681,7 @@ def api_gfs_colorscale(param: str, fhour_idx: int = 0, percentile: float = 99):
 
 @app.get("/api/gfs/wind/{fhour_idx}")
 def api_gfs_wind_vectors(fhour_idx: int):
-    """Return wind u/v vector field as JSON for wind particle animation."""
+    """Возвращает векторное поле ветра u/v в формате JSON для анимации частиц ветра."""
     fhour = _fhour(fhour_idx)
     try:
         u, v, lat, lon, label = _get_gfs_wind_vectors(fhour)
@@ -700,7 +700,7 @@ def api_gfs_wind_vectors(fhour_idx: int):
 
 
 # ──────────────────────────────────────────────
-# Coastline (Natural Earth)
+# Береговая линия (Natural Earth)
 # ──────────────────────────────────────────────
 _coastline_cache: dict = {}
 
@@ -708,11 +708,11 @@ _COAST_W, _COAST_H = 1200, 550
 
 def _coast_boxes():
     from shapely.geometry import box as _box
-    # Outer margin (lat/lon) for polygon clipping.  A large antimeridian overlap
-    # (M_ANTI = 5°) ensures polygons that straddle 180° are rendered by BOTH the
-    # western and eastern projection, eliminating the visible seam at 180°.
-    M      = 1.0   # outer edge margin
-    M_ANTI = 5.0   # antimeridian overlap — wide enough to cover any clipping seam
+    # Внешний отступ (широта/долгота) для обрезки полигонов. Большое перекрытие
+    # антимеридиана (M_ANTI = 5°) гарантирует, что полигоны, пересекающие 180°,
+    # рендерятся ОБЕИМИ проекциями (западной и восточной), устраняя видимый шов на 180°.
+    M      = 1.0   # отступ внешнего края
+    M_ANTI = 5.0   # перекрытие антимеридиана — достаточно широкое, чтобы перекрыть шов обрезки
     return (
         _box(LON_MIN - M, LAT_MIN - M, 180.0 + M_ANTI, LAT_MAX + M),
         _box(-180.0 - M_ANTI, LAT_MIN - M, -(360.0 - LON_MAX) - M, LAT_MAX + M),
@@ -746,7 +746,7 @@ def _load_coast_geojson():
 
 @app.get("/api/coastline.svg")
 def api_coastline_svg():
-    """Vector coastline pre-projected to 1200×550 Mercator pixel space."""
+    """Векторная береговая линия, спроецированная в пиксельное пространство Меркатора 1200×550."""
     if "svg" in _coastline_cache:
         return Response(content=_coastline_cache["svg"], media_type="image/svg+xml",
                         headers={"Cache-Control": "public, max-age=86400"})
@@ -769,7 +769,7 @@ def api_coastline_svg():
             except Exception:
                 continue
             if prev_px is not None and abs(px - prev_px) > _COAST_W * 0.3:
-                pts.append(None)   # antimeridian break
+                pts.append(None)   # разрыв на антимеридиане
             pts.append((px, py))
             prev_px = px
         if not pts:
@@ -841,7 +841,7 @@ def api_coastline_svg():
 
 @app.get("/api/coastline.geojson")
 def api_coastline_geojson():
-    """Natural Earth land polygons clipped to domain, split west/east for OL rendering."""
+    """Полигоны суши Natural Earth, обрезанные по домену и разделенные на запад/восток для рендеринга в OpenLayers."""
     if "geojson" in _coastline_cache:
         return Response(content=_coastline_cache["geojson"],
                         media_type="application/geo+json",
@@ -878,7 +878,7 @@ def api_coastline_geojson():
 
 
 # ──────────────────────────────────────────────
-# Static files + index
+# Статические файлы и главная страница
 # ──────────────────────────────────────────────
 @app.get("/")
 def index():

@@ -1,4 +1,4 @@
-"""Fetch real weather data from Open-Meteo Marine + Weather APIs for Far East stations."""
+"""Получение реальных метеоданных из API Open-Meteo Marine + Weather для дальневосточных станций."""
 import logging
 import httpx
 
@@ -9,7 +9,7 @@ WEATHER_API = "https://api.open-meteo.com/v1/forecast"
 
 
 async def fetch_station_reading(lat: float, lon: float) :
-    """Fetch current weather + marine data for a single station from Open-Meteo."""
+    """Получение текущих метеорологических и морских данных для одной станции из Open-Meteo."""
     try:
         async with httpx.AsyncClient(timeout=15) as client:
             marine_resp, weather_resp = await _fetch_both(client, lat, lon)
@@ -59,7 +59,7 @@ async def fetch_station_reading(lat: float, lon: float) :
 
 
 async def fetch_bulk_readings(stations: list) -> dict:
-    """Fetch readings for multiple stations. Returns {station_id: reading_dict}."""
+    """Получение измерений для нескольких станций. Возвращает {station_id: reading_dict}."""
     results = {}
     lats = ",".join(str(s["lat"]) for s in stations)
     lons = ",".join(str(s["lon"]) for s in stations)

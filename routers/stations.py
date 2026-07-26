@@ -48,7 +48,7 @@ async def latest_readings():
 
 @stations_router.post("/readings")
 async def create_reading(data: dict, user=Depends(require_role("observer", "supervisor"))):
-    # Insert reading
+    # Добавление измерения
     row = await db.pool.fetchrow("""
         INSERT INTO readings (station_id, observed_at, sst, temp_air, wave_height, wave_period,
             wind_speed, wind_dir, pressure, visibility, humidity, status)

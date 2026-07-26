@@ -66,7 +66,7 @@ async def dashboard_summary(user=Depends(get_current_user)):
     """)
     sc = dict(counts) if counts else {"normal":0,"warning":0,"critical":0,"offline":0}
 
-    # Station list with latest readings for clickable status counts
+    # Список станций с последними измерениями для кликабельных счетчиков статуса
     station_rows = await db.pool.fetch("""
         SELECT s.id, s.code, s.name, s.region, s.lat, s.lon, s.status,
                r.sst, r.temp_air, r.wind_speed, r.wave_height, r.pressure, r.humidity,
@@ -85,7 +85,7 @@ async def dashboard_summary(user=Depends(get_current_user)):
         d["latest_reading"] = {k: (v.isoformat() if hasattr(v,"isoformat") else v) for k,v in lr.items()}
         stations_list.append(d)
 
-    # Station events from recent agent activity
+    # События станций из недавней активности агентов
     events_rows = await db.pool.fetch("""
         SELECT agent_name, severity, title as message, created_at as timestamp
         FROM agent_activity
@@ -97,11 +97,11 @@ async def dashboard_summary(user=Depends(get_current_user)):
                        "timestamp": r["timestamp"].isoformat() if r["timestamp"] else None}
                       for r in events_rows]
 
-    # SST chart (7 days)
+    # График ТПО (7 дней)
     sst_labels = [r["day"].strftime("%d %b") for r in avg_sst]
     sst_data   = [round(float(r["avg_sst"]), 1) for r in avg_sst]
 
-    # Anomaly chart (30 days)
+    # График аномалий (30 дней)
     from datetime import date, timedelta
     all_days = [(date.today() - timedelta(days=29-i)) for i in range(30)]
     anom_map = {r["day"].date(): int(r["cnt"]) for r in anomaly_days}
@@ -124,7 +124,7 @@ async def dashboard_summary(user=Depends(get_current_user)):
     }
 
 
-## Note: /stations endpoint is in routers/stations.py, not duplicated here
+## Примечание: эндпоинт /stations находится в routers/stations.py, не дублируется здесь
 
 
 @monitoring_router.post("/actions/{action}")
