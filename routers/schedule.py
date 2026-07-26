@@ -50,7 +50,7 @@ async def get_schedule(
 
     rows = await db.pool.fetch(f"""
         SELECT a.id, a.shift_start, a.shift_end, a.role_on_duty,
-               p.id as personnel_id, p.position, p.phone,
+               p.id as personnel_id, p.position,
                u.full_name, u.role as user_role,
                s.id as station_id, s.code as station_code, s.name as station_name
         FROM assignments a
@@ -72,7 +72,7 @@ async def get_stations_for_schedule(user=Depends(get_current_user)):
 @schedule_router.get("/personnel")
 async def get_personnel_for_schedule(user=Depends(get_current_user)):
     rows = await db.pool.fetch("""
-        SELECT p.id, p.position, p.phone, p.station_id,
+        SELECT p.id, p.position, p.station_id,
                u.full_name, u.role as user_role,
                s.code as station_code, s.name as station_name
         FROM personnel p
@@ -122,7 +122,7 @@ async def get_today_schedule(user=Depends(get_current_user)):
     now = datetime.now(timezone.utc)
     rows = await db.pool.fetch("""
         SELECT a.id, a.shift_start, a.shift_end, a.role_on_duty,
-               u.full_name, p.position, p.phone,
+               u.full_name, p.position,
                s.code as station_code, s.name as station_name
         FROM assignments a
         JOIN personnel p ON p.id = a.personnel_id
@@ -140,7 +140,7 @@ async def get_upcoming_schedule(days: int = Query(7), user=Depends(get_current_u
     end = now + timedelta(days=days)
     rows = await db.pool.fetch("""
         SELECT a.id, a.shift_start, a.shift_end, a.role_on_duty,
-               u.full_name, p.position, p.phone,
+               u.full_name, p.position,
                s.code as station_code, s.name as station_name
         FROM assignments a
         JOIN personnel p ON p.id = a.personnel_id
