@@ -1,4 +1,4 @@
-/* SST Dashboard v6 — GFS Forecast Frontend */
+/* GFS Dashboard v6 — карты прогноза GFS по Северной Пацифике */
 "use strict";
 
 // GFS forecast hours available in compare view
@@ -71,8 +71,8 @@ const S = {
   _monTab:         "dashboard",
 };
 
-// Mercator extent for North Pacific (matches v5 ERA5 domain — same region)
-// These are computed from EPSG:4326 → EPSG:3857 for lon 117-246°, lat 26-72°
+// Mercator extent for the North Pacific domain (lon 117-246°, lat 26-72°),
+// computed from EPSG:4326 → EPSG:3857.
 const _EARTH_CIRC = 40075016.686;
 
 // ──────────────────────────────────────────────
@@ -127,9 +127,9 @@ async function init() {
   const cl = document.getElementById("cmp-run-label");
   if (cl) cl.textContent = runLabel;
 
-  // Compute Mercator extent same as v5 (lon 117-246, lat 26-72)
-  // We reuse the known extent from the backend — request from /api/meta or hardcode
-  // For GFS dashboard, compute it here directly.
+  // Mercator extent of the render domain — computed locally so the map can be
+  // built before any tile request completes (backend reports the same values
+  // in gfsMeta.mercator_extent).
   const _tr = (lon, lat) => {
     const x = lon / 360 * _EARTH_CIRC;
     const latR = lat * Math.PI / 180;
@@ -347,14 +347,28 @@ function _mapParams(extra = {}) {
   return new URLSearchParams(p).toString();
 }
 
+// Current forecast-hour index, clamped to the available range
+function _fhIdx() {
+  return Math.max(0, Math.min(S.periodIdx, GFS_FHOURS.length - 1));
+}
+
+function _mapUrl(param, fhIdx, extra = {}) {
+  return `/api/gfs/map/${param}/${fhIdx}.png?${_mapParams(extra)}`;
+}
+
+function _colorscaleUrl(param, fhIdx) {
+  const q = new URLSearchParams({ fhour_idx: fhIdx, percentile: S.percentile });
+  return `/api/gfs/colorscale/${param}?${q}`;
+}
+
 // ──────────────────────────────────────────────
 // Refresh map image
 // ──────────────────────────────────────────────
 async function refreshMap() {
-  const fhIdx  = Math.max(0, Math.min(S.periodIdx, GFS_FHOURS.length - 1));
+  const fhIdx  = _fhIdx();
   const param  = S.gfsParam || "gfs_t";
-  const mapUrl = `/api/map/${param}/forecast/${fhIdx}.png?${_mapParams()}`;
-  const csUrl  = `/api/colorscale/${param}?season_type=forecast&season_idx=${fhIdx}&${_mapParams()}`;
+  const mapUrl = _mapUrl(param, fhIdx);
+  const csUrl  = _colorscaleUrl(param, fhIdx);
 
   if (S._imageExtent) {
     S.imageLayer.setSource(null);
@@ -492,9 +506,9 @@ function _renderLegendH(cs) {
 // Refresh legend (both compare and detail)
 // ──────────────────────────────────────────────
 async function _refreshLegend() {
-  const fhIdx = Math.max(0, Math.min(S.periodIdx, GFS_FHOURS.length - 1));
+  const fhIdx = _fhIdx();
   const param = S.gfsParam || "gfs_t";
-  const csUrl = `/api/colorscale/${param}?season_type=forecast&season_idx=${fhIdx}&${_mapParams()}`;
+  const csUrl = _colorscaleUrl(param, fhIdx);
   try {
     const cs = await fetch(csUrl).then(r => r.json());
     if (S.viewMode === "compare") {
@@ -545,20 +559,11 @@ async function _buildCompareGrid() {
   while (grid.firstChild) grid.removeChild(grid.firstChild);
   grid.style.gridTemplateColumns = "repeat(3, 1fr)";
 
-  const extraParams = new URLSearchParams({
-    percentile: S.percentile,
-    ...(S.scale > 1 ? { scale: S.scale } : {}),
-    ...(!S.blur ? { blur: 0 } : {}),
-    ...(!S.contours ? { contours: 0 } : {}),
-    ...(S.contourLabels ? { contour_labels: 1 } : {}),
-    _v: `${S._serverTs}_${buildId}`,
-  }).toString();
-
   const param    = S.gfsParam || "gfs_t";
   const runLabel = S.gfsMeta?.run_label || "";
   GFS_LABELS.forEach((lbl, i) => {
     const fhour = GFS_FHOURS[i];
-    const url = `/api/map/${param}/forecast/${i}.png?${extraParams}`;
+    const url = _mapUrl(param, i, { _v: `${S._serverTs}_${buildId}` });
     const validTime = _formatValidTime(runLabel, fhour);
 
     const cell = document.createElement("div");
@@ -793,7 +798,7 @@ let _windAnimFrame  = null;
 let _windData       = null;
 
 async function _startWindAnimation() {
-  const fhIdx = Math.max(0, Math.min(S.periodIdx, GFS_FHOURS.length - 1));
+  const fhIdx = _fhIdx();
   try {
     _windData = await fetch(`/api/gfs/wind/${fhIdx}`).then(r => r.json());
   } catch (e) {
@@ -944,7 +949,7 @@ function showMonTab(tab) {
 function _updateDetailPeriodLabel() {
   const el = document.getElementById("detail-period-label");
   if (!el) return;
-  const fhour    = GFS_FHOURS[Math.max(0, Math.min(S.periodIdx, GFS_FHOURS.length - 1))];
+  const fhour    = GFS_FHOURS[_fhIdx()];
   const runLabel = S.gfsMeta?.run_label || "";
   const paramLbl = GFS_PARAMS[S.gfsParam] || S.gfsParam;
   const validTime = _formatValidTime(runLabel, fhour);

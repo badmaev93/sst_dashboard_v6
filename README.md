@@ -1,8 +1,8 @@
 # SST Dashboard v6
 
-Платформа мониторинга гидрометеостанций Дальнего Востока и Арктики: живые показания станций, ИИ-прогноз (Prophet + GFS + опциональный TimeGPT), календарь/график дежурств, заявки на обслуживание, Telegram-бот — поверх PostgreSQL. Внутри того же FastAPI-приложения по-прежнему живёт исходный проект: рендер климатических карт ТПО (ERA5, precompute → PNG) и GFS-оверлей поверх карты.
+Платформа мониторинга гидрометеостанций Дальнего Востока и Арктики: живые показания станций, ИИ-прогноз (Prophet + GFS + опциональный TimeGPT), календарь/график дежурств, заявки на обслуживание, Telegram-бот — поверх PostgreSQL. Внутри того же FastAPI-приложения живёт картографический слой: рендер прогностических полей **NCEP GFS 0.25°** по Северной Пацифике в PNG-тайлы (проекция Меркатора) поверх OpenLayers-карты.
 
-> Это НЕ простой netCDF-дашборд, как было написано в старом README. Это гибрид: станционный мониторинг на Postgres + унаследованный слой климатических карт.
+> Климатические карты ТПО по ERA5 (секции s1–s7, `precompute.py` → `data/*.npz`) удалены: карты рисуются только из GFS GRIB2.
 
 ---
 
@@ -17,8 +17,8 @@
 - **Проверки оборудования** — журнал по станциям
 - **Telegram-бот** — `/status`, `/station`, `/forecast`, `/pending`, `/summary`, `/events`, свободный текст через GigaChat/Gemini
 - **Вебхуки** — приём insight/status/anomaly от внешних агентов (`X-Agent-Key`)
-- **Карты ТПО (наследие)** — климатология, OLS-тренд, R², дисперсия, тренд дисперсии, градиент фронтов, аномалии по годам — рендерятся на лету из `.npz`, спроецированы в Меркатор
-- **GFS-оверлей** — ветровые поля поверх карты из локальных GRIB-файлов (`cfgrib`)
+- **Карты GFS** — 6 параметров (темп. поверхности, темп. воздуха 2 м, давление на ур. моря, скорость ветра 10 м, облачность, PWAT) × 6 горизонтов прогноза (+0…+120 ч), рендер на лету из локальных GRIB2 (`cfgrib`), проекция Меркатора, изолинии и подписи
+- **Анимация ветра** — частицы по полю u/v 10 м поверх карты
 
 ---
 
@@ -31,14 +31,14 @@
                          │ requests/calendar/...   │
                          └───────────┬─────────────┘
                                      │ asyncpg
-┌───────────────┐   npz-кэш   ┌──────▼──────────────────────┐
-│ precompute.py │ ───────────▶│         app.py (FastAPI)     │
-│ (запуск вручную,           │  • lifespan: init_db,         │
-│  строит data/*.npz)        │    start_scheduler            │
-└───────────────┘             │  • роуты карт ТПО/GFS —      │
-                               │    прямо в app.py            │
-                               │  • include_router(...) —     │
-                               │    11 роутеров из routers/   │
+┌───────────────┐  GRIB2 0.25°  ┌────▼──────────────────────┐
+│ локальные GFS │ ─────────────▶│       app.py (FastAPI)     │
+│ *.grb2 (00Z)  │   (cfgrib)    │  • lifespan: init_db,      │
+│ GFS_LOCAL_PATH│               │    start_scheduler         │
+└───────────────┘               │  • роуты карт GFS —        │
+                                 │    прямо в app.py          │
+                                 │  • include_router(...) —   │
+                                 │    11 роутеров из routers/ │
                                └──────────┬────────────────────┘
                                           │
                     ┌─────────────────────┼─────────────────────┐
@@ -53,7 +53,7 @@
                                    OpenLayers + Chart.js
 ```
 
-**Запуск**: сервер поднимается без БД и без Prophet/GEE (роутеры и планировщик просто не грузятся, в логах — warning). Карты ТПО работают независимо от Postgres, читая `data/*.npz`.
+**Запуск**: сервер поднимается без БД и без Prophet/GEE (роутеры и планировщик просто не грузятся, в логах — warning). Карты GFS работают независимо от Postgres, читая GRIB2 из `GFS_LOCAL_PATH`.
 
 ---
 
@@ -62,28 +62,28 @@
 ### Backend
 | Компонент | Роль |
 |---|---|
-| **FastAPI** | REST API, статика, 11 роутеров + inline SST/GFS-эндпоинты |
+| **FastAPI** | REST API, статика, 11 роутеров + inline GFS-эндпоинты |
 | **asyncpg** | пул соединений к PostgreSQL (Neon в проде / локальный docker в деве) |
 | **python-jose + passlib[bcrypt]** | JWT-аутентификация (access/refresh), хеши паролей |
 | **APScheduler-подобный фон** (`services/scheduler.py`, чистый `asyncio`) | почасовой сбор данных, поллинг Telegram, синтетическая активность |
 | **Prophet** | базовый прогноз ТПО по станции |
 | **Nixtla TimeGPT** (`services/serendipity.py`) | опциональный оверрайд прогноза + коррекция смещения GFS |
 | **Google Earth Engine** (`ee`, `services/gee_gfs.py`) | извлечение GFS-узла по координатам станции |
-| **cfgrib** | чтение локальных GRIB2-файлов GFS для карт ветра |
-| **NumPy / SciPy / Pillow / netCDF4 / pyproj** | вычисления и рендер PNG-карт ТПО (Меркатор, LUT, Гауссово размытие) |
+| **cfgrib** | чтение локальных GRIB2-файлов GFS |
+| **NumPy / SciPy / Pillow / pyproj / shapely / matplotlib** | рендер PNG-карт GFS (Меркатор, LUT, размытие, изолинии) и береговой линии |
 | **httpx** | запросы к Open-Meteo, Telegram Bot API, GigaChat/Gemini |
 
 ### Frontend
 | Компонент | Роль |
 |---|---|
-| **OpenLayers** | карта станций, карты ТПО/GFS (ImageStatic слой) |
+| **OpenLayers** | карта станций, карты GFS (ImageStatic слой) |
 | **Chart.js** | графики прогнозов, аналитика, мониторинг |
 | **Vanilla JS** (11 модулей в `static/`) | вся логика без сборщика/фреймворка |
 
 ### Данные
-- **ERA5 Monthly Averaged SST** — исходный `.nc`, регион 26–72°N 117–246°E, 1979–2026
+- **GFS GRIB2 0.25°** — локальные файлы прогона 00Z, читаются `cfgrib`; путь задаётся `GFS_LOCAL_PATH`, шаблон `<base>/<YYYY>/<MM>/<DD>/00/gfs.t00z.pgrb2.0p25.f{fhh}.grb2`, домен подрезается до 26–72°N / 117–246°E
+- **Natural Earth 1:10m land** — `data/ne_10m_land.geojson` для береговой линии (скачивается `precompute_coastline.py`)
 - **PostgreSQL** — 13 таблиц (см. ниже), заполняются `migrate.py` + `seed.py`
-- **GFS GRIB2** — локальные файлы, читаются `cfgrib`
 
 ---
 
@@ -188,31 +188,33 @@
 | POST | `/agent/insight`, `/agent/status`, `/agent/anomaly` | приём от внешних агентов (`X-Agent-Key`) |
 | POST | `/telegram` | вебхук Telegram-бота |
 
-### Карты ТПО / GFS — inline в `app.py` (без префикса)
+### Карты GFS — inline в `app.py` (без префикса)
 | Метод | Путь | Описание |
 |---|---|---|
-| GET | `/api/meta` | метаданные сетки, секции, даты |
-| GET | `/api/map/{section}/{season_type}/{season_idx}.png` | PNG-карта (Меркатор) |
+| GET | `/api/gfs/meta` | прогон 00Z, доступные горизонты, список параметров, mercator_extent |
+| GET | `/api/gfs/map/{param}/{fhour_idx}.png` | PNG-карта параметра (Меркатор) |
+| GET | `/api/gfs/colorscale/{param}` | LUT + тики цветовой шкалы (`fhour_idx`, `percentile`) |
+| GET | `/api/gfs/wind/{fhour_idx}` | поле u/v 10 м (JSON) для анимации частиц |
 | GET | `/api/coastline.svg`, `/api/coastline.geojson` | береговая линия |
-| GET | `/api/colorscale/{section}` | тики цветовой шкалы |
-| GET | `/api/timeseries`, `/api/field_value` | точечные запросы |
-| GET | `/api/point_stats`, `/api/point_series`, `/api/point_annual` | статистика/ряды по клику |
-| GET | `/api/anomaly/{year}/{month}` | поле аномалий за месяц |
-| GET | `/api/gfs/meta`, `/api/gfs/wind/{fhour_idx}` | метаданные и ветер GFS (из локальных GRIB) |
+
+Параметры запроса карты: `percentile` (99 / 99.9 / 100), `scale` (1–3), `blur`, `contours`, `contour_labels`.
 
 ---
 
-## Секции карт ТПО
+## Параметры карт GFS
 
-| ID | Название | Цветовая шкала | Статус |
-|---|---|---|---|
-| s1 | Клим. среднее | RdYlBu_r | ⚠️ `data/s1.npz` отсутствует — вернёт 500 |
-| s2 | OLS тренд (p<0.05) | RdBu_r симметричный | ✅ |
-| s3 | R² | Viridis 0→1 | ✅ |
-| s4 | Межгодовая дисперсия | YlOrRd | ⚠️ `data/s4.npz` отсутствует — вернёт 500 |
-| s5 | Тренд дисперсии (p<0.05) | RdBu_r симметричный | ✅ |
-| s6 | Градиент / фронты | Hot_r | ✅ |
-| s7 | Аномалии по годам | RdBu_r ±VM | ✅ |
+Единый реестр — `GFS_PARAMS` в `app.py` (GRIB2-селекторы + единицы + палитра + подпись).
+
+| ID | Название | GRIB2 | Единицы | Палитра |
+|---|---|---|---|---|
+| `gfs_t` | Темп. поверхности | `t` / surface | °C | RdYlBu_r |
+| `gfs_2t` | Темп. воздуха 2 м | `2t` / heightAboveGround | °C | RdYlBu_r |
+| `gfs_prmsl` | Давление на ур. моря | `prmsl` / meanSea | гПа | Blues |
+| `gfs_wind` | Скорость ветра 10 м | `10u` + `10v` → √(u²+v²) | м/с | Plasma |
+| `gfs_tcc` | Облачность | `tcc` / atmosphere | % | Greys |
+| `gfs_pwat` | Запас воды (PWAT) | `pwat` / atmosphereSingleLayer | кг/м² | Greens |
+
+Горизонты (`GFS_FHOURS`): +0, +24, +48, +72, +96, +120 ч — по ним строится сетка сравнения из 6 карт.
 
 ---
 
@@ -225,7 +227,7 @@ docker compose up -d
 # 2. Зависимости — requirements.txt неполный (см. ниже), проще:
 pip install fastapi "uvicorn[standard]" asyncpg python-jose "passlib[bcrypt]" \
             python-dotenv httpx pandas prophet earthengine-api shapely \
-            netCDF4 numpy scipy Pillow pyproj cfgrib python-multipart smbprotocol
+            numpy scipy Pillow pyproj matplotlib cfgrib python-multipart smbprotocol
 
 # 3. .env (см. таблицу ниже)
 cp .env.example .env   # создать вручную по образцу ниже
@@ -234,8 +236,7 @@ cp .env.example .env   # создать вручную по образцу ни�
 python migrate.py
 python seed.py
 
-# 5. Карты ТПО (опционально, нужны для s1–s7) — требует исходный .nc файл
-python precompute.py
+# 5. Береговая линия для карт (скачивает data/ne_10m_land.geojson)
 python precompute_coastline.py
 
 # 6. Запуск
@@ -248,7 +249,8 @@ uvicorn app:app --host 0.0.0.0 --port 8080 --reload
 
 | Переменная | Обязательна | Назначение |
 |---|---|---|
-| `DATABASE_URL` / `LOCAL_DB_URL` | да (для всего кроме карт ТПО) | строка подключения Postgres |
+| `DATABASE_URL` / `LOCAL_DB_URL` | да (для всего кроме карт GFS) | строка подключения Postgres |
+| `GFS_LOCAL_PATH` | нет | корень локального архива GRIB2 GFS (по умолчанию `/mnt/meteo/data/NOAA/NCEP/FTPPRD/pub/data/nccf/com/gfs/prod0p25.sfc`) |
 | `NEON_DATABASE_URL` | нет | прод-БД (Neon) |
 | `JWT_SECRET` | да (для auth) | подпись JWT |
 | `TELEGRAM_BOT_TOKEN` | нет | Telegram-бот |
@@ -262,12 +264,12 @@ uvicorn app:app --host 0.0.0.0 --port 8080 --reload
 
 ## Технический долг
 
-- **`requirements.txt` неполный** — не содержит `asyncpg`, `python-jose`, `passlib`, `python-dotenv`, `httpx`, `pandas`, `prophet`, `earthengine-api`, `shapely`, `pytest`. Реально используемые пакеты — см. список выше.
-- **`routers/sst.py`** и **`routers/gfs_forecast.py`** — не подключены в `app.py` (нет в `_try_include`), дублируют логику, которая давно живёт inline в `app.py`. Мёртвый код.
+- **`requirements.txt` неполный** — не содержит `asyncpg`, `python-jose`, `passlib`, `python-dotenv`, `httpx`, `pandas`, `prophet`, `earthengine-api`, `pytest`. Реально используемые пакеты — см. список выше.
+- **`routers/gfs_forecast.py`** — не подключён в `app.py` (нет в `_try_include`), дублирует логику, которая живёт inline в `app.py`. Мёртвый код.
 - **`services/smb_gfs.py`** и **`services/gfs_simulator.py`** — нигде не импортируются, недостижимы.
-- **`data/s1.npz`, `data/s4.npz`** отсутствуют — секции «клим. среднее» и «дисперсия» вернут 500 без повторного запуска `precompute.py`.
+- **`data/*.npz`** (`meta`, `sst_raw`, `s2`, `s3`, `s5`, `s6`, `s7`) и **`data/ocean_mask.npy`** — остатки удалённого ERA5-слоя, кодом больше не читаются, можно удалить (~101 МБ).
 - **`data/regions.geojson`** отсутствует в репозитории — `/api/regions` не найдёт файл, пока его не добавить вручную.
-- **`render.yaml`** описывает деплой старой версии (`sst-dashboard-v5`, только `precompute.py` + Postgres не поднимается) — не отражает текущую архитектуру с БД и планировщиком.
+- **`render.yaml`** не поднимает Postgres и планировщик — деплой рассчитан только на слой карт.
 
 ---
 
@@ -275,23 +277,21 @@ uvicorn app:app --host 0.0.0.0 --port 8080 --reload
 
 ```
 sst_dashboard_v6/
-├── app.py                  # FastAPI: lifespan, роутеры, inline SST/GFS API, статика
+├── app.py                  # FastAPI: lifespan, роутеры, inline GFS API, статика
 ├── auth.py                 # JWT-логин/рефреш/me
 ├── config.py                # чтение .env
 ├── db.py                    # asyncpg pool
 ├── models.py                 # Pydantic-схемы ответов
 ├── migrate.py                 # DDL — 13 таблиц
 ├── seed.py                    # демо-данные
-├── precompute.py               # предвычисление data/*.npz из .nc (вручную)
-├── recompute_s5.py              # пересчёт тренда дисперсии
-├── precompute_coastline.py       # береговая линия / ocean_mask
-├── docker-compose.yml             # Postgres + n8n
-├── render.yaml                     # деплой (устарел, см. «Технический долг»)
+├── precompute_coastline.py     # скачивание ne_10m_land.geojson
+├── docker-compose.yml           # Postgres + n8n
+├── render.yaml                   # деплой
 ├── routers/
 │   ├── stations.py, forecast.py, monitoring.py, requests.py,
 │   │   calendar_routes.py, equipment.py, users.py, regions.py,
 │   │   schedule.py, webhooks.py        # 10 подключённых роутеров
-│   └── sst.py, gfs_forecast.py         # НЕ подключены (мёртвый код)
+│   └── gfs_forecast.py                 # НЕ подключён (мёртвый код)
 ├── services/
 │   ├── scheduler.py, data_generator.py, prophet_forecast.py,
 │   │   serendipity.py, gee_gfs.py, gigachat.py, notification.py,
@@ -300,11 +300,11 @@ sst_dashboard_v6/
 ├── tests/
 │   ├── test_calendar_security.py       # 401 без авторизации
 │   └── test_schedule_security.py       # 401 без авторизации + нет утечки phone
-├── data/                     # .npz/.npy/.geojson кэш для карт ТПО
+├── data/                     # ne_10m_land.geojson + кэш GFS
 └── static/
-    ├── index.html             # SPA: карта, ИИ-прогноз, мониторинг, календарь, заявки
+    ├── index.html             # SPA: карты GFS, ИИ-прогноз, мониторинг, календарь, заявки
     ├── app.js, auth.js, analytics.js, cabinet.js, calendar.js,
-    │   forecast.js, gfs_overlay.js, monitoring.js, regions.js,
+    │   forecast.js, monitoring.js, regions.js,
     │   requests_ui.js, schedule.js, stations.js
     ├── style.css, monitoring.css
     └── vendor/                # OpenLayers, Chart.js (локально)

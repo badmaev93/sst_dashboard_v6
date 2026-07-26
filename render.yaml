@@ -1,12 +1,12 @@
 services:
   - type: web
-    name: sst-dashboard-v5
+    name: sst-dashboard-v6
     env: python
     region: oregon
     plan: free
     buildCommand: |
       pip install -r requirements.txt &&
-      python precompute.py
+      python precompute_coastline.py
     startCommand: uvicorn app:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: PYTHON_VERSION
