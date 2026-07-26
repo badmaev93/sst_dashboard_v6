@@ -1,55 +1,55 @@
-2026-07-25 23:25:03,459 INFO app — Router auth_router included
-2026-07-25 23:25:03,464 INFO app — Router stations_router included
-2026-07-25 23:25:03,505 INFO app — Router forecast_router included
-2026-07-25 23:25:03,510 INFO app — Router monitoring_router included
-2026-07-25 23:25:03,517 INFO app — Router requests_router included
-2026-07-25 23:25:03,529 INFO app — Router calendar_router included
-2026-07-25 23:25:03,532 INFO app — Router equipment_router included
-2026-07-25 23:25:03,534 INFO app — Router users_router included
-2026-07-25 23:25:03,536 INFO app — Router regions_router included
-2026-07-25 23:25:03,545 INFO app — Router schedule_router included
-2026-07-25 23:25:03,550 INFO app — Router webhooks_router included
-INFO:     Started server process [28567]
+2026-07-26 19:39:58,219 INFO app — Router auth_router included
+2026-07-26 19:39:58,224 INFO app — Router stations_router included
+2026-07-26 19:39:58,261 INFO app — Router forecast_router included
+2026-07-26 19:39:58,267 INFO app — Router monitoring_router included
+2026-07-26 19:39:58,273 INFO app — Router requests_router included
+2026-07-26 19:39:58,285 INFO app — Router calendar_router included
+2026-07-26 19:39:58,288 INFO app — Router equipment_router included
+2026-07-26 19:39:58,290 INFO app — Router users_router included
+2026-07-26 19:39:58,292 INFO app — Router regions_router included
+2026-07-26 19:39:58,300 INFO app — Router schedule_router included
+2026-07-26 19:39:58,305 INFO app — Router webhooks_router included
+INFO:     Started server process [105039]
 INFO:     Waiting for application startup.
-2026-07-25 23:25:03,731 WARNING app — DB not available: [Errno 2] No such file or directory
-2026-07-25 23:25:03,737 INFO services.scheduler — Scheduler started: hourly readings + requests + agent events + daily monitoring
-2026-07-25 23:25:03,737 INFO app — Scheduler started
-2026-07-25 23:25:03,737 INFO services.scheduler — Daily monitoring: first run in 30896 seconds (at 08:00 UTC)
-2026-07-25 23:25:03,737 INFO services.scheduler — Telegram polling skipped: no token
+2026-07-26 19:39:58,395 WARNING app — DB not available: [Errno 2] No such file or directory
+2026-07-26 19:39:58,400 INFO services.scheduler — Scheduler started: hourly readings + requests + agent events + daily monitoring
+2026-07-26 19:39:58,400 INFO app — Scheduler started
+2026-07-26 19:39:58,400 INFO services.scheduler — Daily monitoring: first run in 44402 seconds (at 08:00 UTC)
+2026-07-26 19:39:58,400 INFO services.scheduler — Telegram polling skipped: no token
 INFO:     Application startup complete.
 INFO:     Uvicorn running on http://127.0.0.1:8080 (Press CTRL+C to quit)
-INFO:     127.0.0.1:54818 - "GET / HTTP/1.1" 200 OK
-INFO:     127.0.0.1:54818 - "GET /static/vendor/ol.css HTTP/1.1" 200 OK
-INFO:     127.0.0.1:43166 - "GET /static/monitoring.css HTTP/1.1" 200 OK
-INFO:     127.0.0.1:43172 - "GET /static/vendor/chart.js HTTP/1.1" 200 OK
-INFO:     127.0.0.1:43170 - "GET /static/vendor/ol.js HTTP/1.1" 200 OK
-INFO:     127.0.0.1:43174 - "GET /static/app.js HTTP/1.1" 200 OK
-INFO:     127.0.0.1:54818 - "GET /static/stations.js HTTP/1.1" 200 OK
-INFO:     127.0.0.1:43156 - "GET /static/style.css HTTP/1.1" 200 OK
-INFO:     127.0.0.1:43156 - "GET /static/calendar.js HTTP/1.1" 200 OK
-INFO:     127.0.0.1:54818 - "GET /static/requests_ui.js HTTP/1.1" 200 OK
-INFO:     127.0.0.1:43166 - "GET /static/monitoring.js HTTP/1.1" 200 OK
-INFO:     127.0.0.1:43174 - "GET /static/forecast.js HTTP/1.1" 200 OK
-INFO:     127.0.0.1:43170 - "GET /api/gfs/meta HTTP/1.1" 200 OK
-2026-07-25 23:26:06,914 INFO app — GFS map gfs_t +24h scale=2 blur=True
-2026-07-25 23:26:06,914 INFO app — GFS map gfs_t +48h scale=2 blur=True
-2026-07-25 23:26:06,915 INFO app — GFS map gfs_t +72h scale=2 blur=True
-2026-07-25 23:26:06,916 INFO app — GFS map gfs_t +0h scale=2 blur=True
-INFO:     127.0.0.1:43156 - "GET /api/map/gfs_t/forecast/1.png?percentile=99&scale=2&contour_labels=1&_v=1785021966817_1 HTTP/1.1" 503 Service Unavailable
-INFO:     127.0.0.1:43174 - "GET /api/map/gfs_t/forecast/2.png?percentile=99&scale=2&contour_labels=1&_v=1785021966817_1 HTTP/1.1" 503 Service Unavailable
-INFO:     127.0.0.1:43172 - "GET /api/map/gfs_t/forecast/3.png?percentile=99&scale=2&contour_labels=1&_v=1785021966817_1 HTTP/1.1" 503 Service Unavailable
-INFO:     127.0.0.1:43166 - "GET /api/map/gfs_t/forecast/0.png?percentile=99&scale=2&contour_labels=1&_v=1785021966817_1 HTTP/1.1" 503 Service Unavailable
-2026-07-25 23:26:10,366 INFO app — GFS map gfs_t +96h scale=2 blur=True
-2026-07-25 23:26:10,367 INFO app — GFS map gfs_t +120h scale=2 blur=True
-INFO:     127.0.0.1:43174 - "GET /api/map/gfs_t/forecast/4.png?percentile=99&scale=2&contour_labels=1&_v=1785021966817_1 HTTP/1.1" 503 Service Unavailable
-INFO:     127.0.0.1:43156 - "GET /api/colorscale/gfs_t?season_type=forecast&season_idx=0&percentile=99&scale=2&contour_labels=1 HTTP/1.1" 503 Service Unavailable
-INFO:     127.0.0.1:43172 - "GET /api/map/gfs_t/forecast/5.png?percentile=99&scale=2&contour_labels=1&_v=1785021966817_1 HTTP/1.1" 503 Service Unavailable
-INFO:     127.0.0.1:54818 - "GET /api/coastline.svg HTTP/1.1" 200 OK
-INFO:     127.0.0.1:43170 - "GET /api/coastline.geojson HTTP/1.1" 200 OK
-INFO:     127.0.0.1:43170 - "GET /api/colorscale/gfs_t?season_type=forecast&season_idx=0&percentile=99&scale=2&contour_labels=1 HTTP/1.1" 503 Service Unavailable
-2026-07-25 23:26:16,650 INFO app — GFS map gfs_t +0h scale=2 blur=True
-INFO:     127.0.0.1:43170 - "GET /api/map/gfs_t/forecast/0.png?percentile=99&scale=2&contour_labels=1 HTTP/1.1" 503 Service Unavailable
-INFO:     127.0.0.1:43170 - "GET /api/monitoring/stations HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:44046 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44046 - "GET /static/vendor/ol.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44062 - "GET /static/style.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44072 - "GET /static/monitoring.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44078 - "GET /static/vendor/ol.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44092 - "GET /static/vendor/chart.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44096 - "GET /static/app.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44046 - "GET /static/stations.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44096 - "GET /static/monitoring.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44046 - "GET /static/forecast.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44072 - "GET /static/requests_ui.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44062 - "GET /static/calendar.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44078 - "GET /api/gfs/meta HTTP/1.1" 200 OK
+2026-07-26 19:42:40,640 INFO app — GFS map gfs_t +0h scale=2 blur=True contours=True labels=True
+2026-07-26 19:42:40,659 INFO app — GFS map gfs_t +48h scale=2 blur=True contours=True labels=True
+2026-07-26 19:42:40,663 INFO app — GFS map gfs_t +72h scale=2 blur=True contours=True labels=True
+2026-07-26 19:42:40,670 INFO app — GFS map gfs_t +24h scale=2 blur=True contours=True labels=True
+INFO:     127.0.0.1:44096 - "GET /api/gfs/map/gfs_t/2.png?percentile=99&scale=2&contour_labels=1&_v=1785094960545_1 HTTP/1.1" 503 Service Unavailable
+INFO:     127.0.0.1:44092 - "GET /api/gfs/map/gfs_t/3.png?percentile=99&scale=2&contour_labels=1&_v=1785094960545_1 HTTP/1.1" 503 Service Unavailable
+INFO:     127.0.0.1:44046 - "GET /api/gfs/map/gfs_t/1.png?percentile=99&scale=2&contour_labels=1&_v=1785094960545_1 HTTP/1.1" 503 Service Unavailable
+2026-07-26 19:42:43,562 INFO app — GFS map gfs_t +120h scale=2 blur=True contours=True labels=True
+2026-07-26 19:42:43,563 INFO app — GFS map gfs_t +96h scale=2 blur=True contours=True labels=True
+INFO:     127.0.0.1:44046 - "GET /api/gfs/map/gfs_t/5.png?percentile=99&scale=2&contour_labels=1&_v=1785094960545_1 HTTP/1.1" 503 Service Unavailable
+INFO:     127.0.0.1:44092 - "GET /api/gfs/map/gfs_t/4.png?percentile=99&scale=2&contour_labels=1&_v=1785094960545_1 HTTP/1.1" 503 Service Unavailable
+INFO:     127.0.0.1:44096 - "GET /api/gfs/colorscale/gfs_t?fhour_idx=0&percentile=99 HTTP/1.1" 503 Service Unavailable
+INFO:     127.0.0.1:44062 - "GET /api/gfs/map/gfs_t/0.png?percentile=99&scale=2&contour_labels=1&_v=1785094960545_1 HTTP/1.1" 503 Service Unavailable
+INFO:     127.0.0.1:44078 - "GET /api/coastline.geojson HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44072 - "GET /api/coastline.svg HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44072 - "GET /api/gfs/colorscale/gfs_t?fhour_idx=1&percentile=99 HTTP/1.1" 503 Service Unavailable
+2026-07-26 19:42:47,737 INFO app — GFS map gfs_t +24h scale=2 blur=True contours=True labels=True
+INFO:     127.0.0.1:44072 - "GET /api/gfs/map/gfs_t/1.png?percentile=99&scale=2&contour_labels=1 HTTP/1.1" 503 Service Unavailable
+INFO:     127.0.0.1:44072 - "GET /api/monitoring/stations HTTP/1.1" 500 Internal Server Error
 ERROR:    Exception in ASGI application
 Traceback (most recent call last):
   File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/site-packages/uvicorn/protocols/http/httptools_impl.py", line 422, in run_asgi
@@ -105,7 +105,30 @@ Traceback (most recent call last):
     rows = await db.pool.fetch("""
                  ^^^^^^^^^^^^^
 AttributeError: 'NoneType' object has no attribute 'fetch'
-INFO:     Shutting down
-INFO:     Waiting for application shutdown.
-INFO:     Application shutdown complete.
-INFO:     Finished server process [28567]
+INFO:     127.0.0.1:44078 - "GET /api/gfs/colorscale/gfs_2t?fhour_idx=1&percentile=99 HTTP/1.1" 503 Service Unavailable
+2026-07-26 19:42:48,366 INFO app — GFS map gfs_2t +24h scale=2 blur=True contours=True labels=True
+INFO:     127.0.0.1:44078 - "GET /api/gfs/map/gfs_2t/1.png?percentile=99&scale=2&contour_labels=1 HTTP/1.1" 503 Service Unavailable
+INFO:     127.0.0.1:44078 - "GET /api/gfs/colorscale/gfs_prmsl?fhour_idx=1&percentile=99 HTTP/1.1" 503 Service Unavailable
+2026-07-26 19:42:49,401 INFO app — GFS map gfs_prmsl +24h scale=2 blur=True contours=True labels=True
+INFO:     127.0.0.1:44078 - "GET /api/gfs/map/gfs_prmsl/1.png?percentile=99&scale=2&contour_labels=1 HTTP/1.1" 503 Service Unavailable
+INFO:     127.0.0.1:44078 - "GET /api/gfs/colorscale/gfs_prmsl?fhour_idx=2&percentile=99 HTTP/1.1" 503 Service Unavailable
+2026-07-26 19:42:50,435 INFO app — GFS map gfs_prmsl +48h scale=2 blur=True contours=True labels=True
+INFO:     127.0.0.1:44078 - "GET /api/gfs/map/gfs_prmsl/2.png?percentile=99&scale=2&contour_labels=1 HTTP/1.1" 503 Service Unavailable
+INFO:     127.0.0.1:44078 - "GET /api/gfs/colorscale/gfs_prmsl?fhour_idx=3&percentile=99 HTTP/1.1" 503 Service Unavailable
+2026-07-26 19:42:51,470 INFO app — GFS map gfs_prmsl +72h scale=2 blur=True contours=True labels=True
+INFO:     127.0.0.1:44078 - "GET /api/gfs/map/gfs_prmsl/3.png?percentile=99&scale=2&contour_labels=1 HTTP/1.1" 503 Service Unavailable
+INFO:     127.0.0.1:44078 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44078 - "GET /api/gfs/meta HTTP/1.1" 200 OK
+2026-07-26 19:42:53,738 INFO app — GFS map gfs_prmsl +24h scale=2 blur=True contours=True labels=True
+2026-07-26 19:42:53,739 INFO app — GFS map gfs_prmsl +48h scale=2 blur=True contours=True labels=True
+2026-07-26 19:42:53,740 INFO app — GFS map gfs_prmsl +72h scale=2 blur=True contours=True labels=True
+INFO:     127.0.0.1:53430 - "GET /api/gfs/map/gfs_prmsl/1.png?percentile=99&scale=2&contour_labels=1&_v=1785094973709_1 HTTP/1.1" 503 Service Unavailable
+INFO:     127.0.0.1:53432 - "GET /api/gfs/map/gfs_prmsl/2.png?percentile=99&scale=2&contour_labels=1&_v=1785094973709_1 HTTP/1.1" 503 Service Unavailable
+INFO:     127.0.0.1:53440 - "GET /api/gfs/map/gfs_prmsl/3.png?percentile=99&scale=2&contour_labels=1&_v=1785094973709_1 HTTP/1.1" 503 Service Unavailable
+2026-07-26 19:42:53,741 INFO app — GFS map gfs_prmsl +96h scale=2 blur=True contours=True labels=True
+2026-07-26 19:42:53,742 INFO app — GFS map gfs_prmsl +0h scale=2 blur=True contours=True labels=True
+INFO:     127.0.0.1:53442 - "GET /api/gfs/map/gfs_prmsl/4.png?percentile=99&scale=2&contour_labels=1&_v=1785094973709_1 HTTP/1.1" 503 Service Unavailable
+INFO:     127.0.0.1:44078 - "GET /api/gfs/map/gfs_prmsl/0.png?percentile=99&scale=2&contour_labels=1&_v=1785094973709_1 HTTP/1.1" 503 Service Unavailable
+INFO:     127.0.0.1:53450 - "GET /api/gfs/colorscale/gfs_prmsl?fhour_idx=3&percentile=99 HTTP/1.1" 503 Service Unavailable
+2026-07-26 19:42:53,747 INFO app — GFS map gfs_prmsl +120h scale=2 blur=True contours=True labels=True
+INFO:     127.0.0.1:53432 - "GET /api/gfs/map/gfs_prmsl/5.png?percentile=99&scale=2&contour_labels=1&_v=1785094973709_1 HTTP/1.1" 503 Service Unavailable
