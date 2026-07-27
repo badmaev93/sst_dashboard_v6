@@ -7,3 +7,8 @@
 **Vulnerability:** Standard scheduling and assignment endpoints (such as `GET /api/monitoring/schedule/`, `/personnel`, `/today`, and `/upcoming`) returned the phone numbers of all personnel (`p.phone`) to all logged-in users regardless of their roles (e.g., low-privilege observers). This leaked PII to unauthorized users, as the frontend did not even display phone numbers.
 **Learning:** SQL queries were copy-pasted or written with excessive SELECT parameters, pulling in sensitive database columns that were unnecessary for the scheduling view, thereby ignoring the Principle of Least Privilege and Data Minimization.
 **Prevention:** Only select and return columns that are strictly necessary for the intended frontend UI view. Implement role-based property filtering or restrict sensitive column retrieval entirely to secure administrative endpoints (e.g., `GET /api/monitoring/users/personnel`).
+
+## 2026-07-27 - [Empty-Key Authentication Bypass and Timing Attack in Webhooks]
+**Vulnerability:** The webhooks endpoints relied on direct string comparisons against the `AGENT_API_KEY` setting. When `AGENT_API_KEY` was empty or unset in the environment, any client sending an empty `X-Agent-Key` header would bypass the security check because `"" == ""` evaluates to True. Additionally, standard `==` string comparisons are vulnerable to timing attacks.
+**Learning:** Webhook validation should always prevent empty/unset keys from matching empty/unset user inputs, and should use a constant-time comparison helper.
+**Prevention:** Centralize authentication validation into a secure dependency, check that both the environment secret and the provided key are non-empty, and compare them using `secrets.compare_digest`.
