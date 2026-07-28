@@ -43,6 +43,17 @@ async def update_request(req_id: int, data: dict, user=Depends(get_current_user)
     existing = await db.pool.fetchrow("SELECT * FROM requests WHERE id = $1", req_id)
     if not existing:
         raise HTTPException(404, "Request not found")
+
+    # Security check: only supervisors or the request creator can modify it
+    if user["role"] != "supervisor" and existing["created_by"] != user["id"]:
+        raise HTTPException(403, "Not authorized to update this request")
+
+    # Prevent privilege escalation: non-supervisors cannot set administrative statuses like 'signed' or 'rejected'
+    new_status = data.get("status")
+    if new_status and user["role"] != "supervisor":
+        if new_status not in ("pending", "draft"):
+            raise HTTPException(403, "Only supervisors can sign or approve/reject requests")
+
     await db.pool.execute("""
         UPDATE requests SET title=COALESCE($1,title), description=COALESCE($2,description),
             status=COALESCE($3,status), priority=COALESCE($4,priority) WHERE id=$5
