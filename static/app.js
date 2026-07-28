@@ -109,6 +109,7 @@ function hideLoading() {
 // Init
 // ──────────────────────────────────────────────
 async function init() {
+  _loadStateFromLocalStorage();
   showLoading("Загрузка метаданных GFS…");
   try {
     const res = await fetch("/api/gfs/meta");
@@ -160,6 +161,80 @@ async function init() {
     if (e.key === "Escape") {
       _hidePopup();
       closePanel();
+      return;
+    }
+
+    // Ignore keyboard shortcuts if the user is currently typing in an input, textarea, or select element
+    const activeEl = document.activeElement;
+    if (activeEl && (
+      activeEl.tagName === "INPUT" ||
+      activeEl.tagName === "TEXTAREA" ||
+      activeEl.tagName === "SELECT" ||
+      activeEl.isContentEditable
+    )) {
+      return;
+    }
+
+    // Normalizing key string to lower-case and checking Cyrillic equivalents
+    const key = e.key.toLowerCase();
+
+    // 1. Cycle forecast hours with ArrowLeft and ArrowRight
+    if (e.key === "ArrowLeft") {
+      e.preventDefault();
+      let prevIdx = S.periodIdx - 1;
+      if (prevIdx < 0) prevIdx = GFS_FHOURS.length - 1;
+      S.periodIdx = prevIdx;
+      S._periodSelected = true;
+      _saveStateToLocalStorage("periodIdx");
+      syncUI();
+      if (S.viewMode === "compare") {
+        _buildCompareGrid();
+      } else {
+        refreshMap();
+      }
+    } else if (e.key === "ArrowRight") {
+      e.preventDefault();
+      let nextIdx = S.periodIdx + 1;
+      if (nextIdx >= GFS_FHOURS.length) nextIdx = 0;
+      S.periodIdx = nextIdx;
+      S._periodSelected = true;
+      _saveStateToLocalStorage("periodIdx");
+      syncUI();
+      if (S.viewMode === "compare") {
+        _buildCompareGrid();
+      } else {
+        refreshMap();
+      }
+    }
+
+    // 2. Toggle wind animation ('w' or 'ц')
+    else if (key === "w" || key === "ц") {
+      e.preventDefault();
+      toggleWindAnim(!S.showWindAnim);
+    }
+
+    // 3. Toggle stations layer ('s' or 'ы')
+    else if (key === "s" || key === "ы") {
+      e.preventDefault();
+      toggleStations(!S.showStations);
+    }
+
+    // 4. Toggle coastline layer ('c' or 'с')
+    else if (key === "c" || key === "с") {
+      e.preventDefault();
+      setCoastline(!S.coastline);
+    }
+
+    // 5. Cycle GFS parameters ('p' or 'з')
+    else if (key === "p" || key === "з") {
+      e.preventDefault();
+      const paramsList = Object.keys(GFS_PARAMS);
+      const currIdx = paramsList.indexOf(S.gfsParam);
+      let nextParamIdx = currIdx + 1;
+      if (nextParamIdx >= paramsList.length || nextParamIdx < 0) {
+        nextParamIdx = 0;
+      }
+      setParam(paramsList[nextParamIdx]);
     }
   });
 }
@@ -534,6 +609,7 @@ function buildPeriodButtons() {
     btn.onclick = () => {
       S.periodIdx = i;
       S._periodSelected = true;
+      _saveStateToLocalStorage("periodIdx");
       closePanel();
       if (S.viewMode === "compare") {
         S.viewMode = "detail";
@@ -595,6 +671,7 @@ async function _buildCompareGrid() {
     cell.onclick = () => {
       S.periodIdx       = i;
       S._periodSelected = true;
+      _saveStateToLocalStorage("periodIdx");
       S.viewMode        = "detail";
       closePanel();
       _applyViewMode();
@@ -717,35 +794,89 @@ async function _applyViewMode() {
 // ──────────────────────────────────────────────
 // Settings handlers
 // ──────────────────────────────────────────────
+function _saveStateToLocalStorage(key) {
+  try {
+    localStorage.setItem(`gfs_dashboard_${key}`, String(S[key]));
+  } catch (e) {
+    console.warn("localStorage write failed:", e);
+  }
+}
+
+function _loadStateFromLocalStorage() {
+  const keys = [
+    { key: "periodIdx", type: "int" },
+    { key: "gfsParam", type: "string" },
+    { key: "percentile", type: "string" },
+    { key: "scale", type: "int" },
+    { key: "smooth", type: "bool" },
+    { key: "blur", type: "bool" },
+    { key: "coastline", type: "bool" },
+    { key: "contours", type: "bool" },
+    { key: "contourLabels", type: "bool" },
+    { key: "showStations", type: "bool" },
+    { key: "showWindAnim", type: "bool" }
+  ];
+  keys.forEach(({ key, type }) => {
+    try {
+      const val = localStorage.getItem(`gfs_dashboard_${key}`);
+      if (val !== null) {
+        if (type === "int") {
+          S[key] = parseInt(val, 10);
+          if (key === "periodIdx") S._periodSelected = true;
+        } else if (type === "bool") {
+          S[key] = val === "true";
+        } else {
+          S[key] = val;
+        }
+      }
+    } catch (e) {
+      console.warn("localStorage read failed:", e);
+    }
+  });
+}
+
 function setBlur(on) {
-  S.blur = on; syncUI();
+  S.blur = on;
+  _saveStateToLocalStorage("blur");
+  syncUI();
   if (S.viewMode === "compare") { _buildCompareGrid(); _refreshLegend(); }
   else refreshMap();
 }
 function setContours(on) {
   S.contours = on;
   if (!on) S.contourLabels = false;
+  _saveStateToLocalStorage("contours");
+  _saveStateToLocalStorage("contourLabels");
   syncUI();
   if (S.viewMode === "compare") { _buildCompareGrid(); _refreshLegend(); }
   else refreshMap();
 }
 function setContourLabels(on) {
-  S.contourLabels = on; syncUI();
+  S.contourLabels = on;
+  _saveStateToLocalStorage("contourLabels");
+  syncUI();
   if (S.viewMode === "compare") { _buildCompareGrid(); _refreshLegend(); }
   else refreshMap();
 }
 function setPct(pct) {
-  S.percentile = pct; syncUI();
+  S.percentile = pct;
+  _saveStateToLocalStorage("percentile");
+  syncUI();
   if (S.viewMode === "compare") { _buildCompareGrid(); _refreshLegend(); }
   else refreshMap();
 }
 function setScale(n) {
-  S.scale = n; syncUI();
+  S.scale = n;
+  _saveStateToLocalStorage("scale");
+  syncUI();
   if (S.viewMode === "compare") _buildCompareGrid();
   else refreshMap();
 }
 function setSmooth(on) {
-  S.smooth = on; _applySmoothing(); syncUI();
+  S.smooth = on;
+  _saveStateToLocalStorage("smooth");
+  _applySmoothing();
+  syncUI();
   if (S.viewMode === "detail") refreshMap();
   else _buildCompareGrid();
 }
@@ -753,11 +884,13 @@ function setCoastline(on) {
   S.coastline = on;
   if (S.coastlineLayer) S.coastlineLayer.setVisible(on);
   document.querySelectorAll(".cmp-coast").forEach(el => { el.style.display = on ? "" : "none"; });
+  _saveStateToLocalStorage("coastline");
   syncUI();
 }
 
 function setParam(param) {
   S.gfsParam = param;
+  _saveStateToLocalStorage("gfsParam");
   _gfs_png_cache_bust();
   syncUI();
   if (S.viewMode === "compare") { _buildCompareGrid(); _refreshLegend(); }
@@ -771,6 +904,7 @@ function _gfs_png_cache_bust() {
 
 function toggleStations(on) {
   S.showStations = on;
+  _saveStateToLocalStorage("showStations");
   document.querySelectorAll(".station-toggle-btn").forEach(b => {
     const active = b.textContent.includes("Вкл") === on;
     b.classList.toggle("active", active);
@@ -781,6 +915,7 @@ function toggleStations(on) {
 
 function toggleWindAnim(on) {
   S.showWindAnim = on;
+  _saveStateToLocalStorage("showWindAnim");
   document.querySelectorAll(".wind-anim-btn").forEach(b => {
     const active = (b.textContent.includes("Вкл") && on) || (b.textContent.includes("Выкл") && !on);
     b.classList.toggle("active", active);
