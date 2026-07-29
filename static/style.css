@@ -1324,3 +1324,25 @@ body.detail-mode #panel-toggle { top: 56px; }
   opacity: 1;
 }
 .cmp-coast.hidden { display: none; }
+
+/* ══════════════════════════════════════════════
+   KEYBOARD FOCUS OUTLINE & FOCUS-VISIBLE STYLES
+   ══════════════════════════════════════════════ */
+/* Consistent high-contrast keyboard focus styling for all interactive elements */
+:focus-visible {
+  outline: 2px solid #0055aa !important;
+  outline-offset: 2px !important;
+  box-shadow: 0 0 0 4px rgba(0, 85, 170, 0.25) !important;
+}
+
+/* Ensure comparison cells have a beautiful focus transition and visual ring */
+.cmp-cell:focus-visible {
+  border-color: #0055aa !important;
+}
+
+/* Specific styling for select dropdowns to ensure they display custom focus outlines clearly */
+.cmp-param-select:focus-visible,
+.lp-select:focus-visible,
+.db-period-select:focus-visible {
+  border-color: #0055aa !important;
+}
