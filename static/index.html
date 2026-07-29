@@ -54,6 +54,11 @@
   <!-- Horizontal legend -->
   <div id="cmp-legend-h" class="hidden"></div>
 
+  <!-- Hint text at bottom of compare view -->
+  <div id="cmp-hint">
+    Подсказка: используйте клавиши <kbd>←</kbd> / <kbd>→</kbd> для выбора горизонта, <kbd>P</kbd> для смены параметра, <kbd>W</kbd>, <kbd>S</kbd>, <kbd>C</kbd> для слоёв.
+  </div>
+
 </div>
 
 <!-- ══ DETAIL-MODE TOP NAV ══ -->
@@ -188,6 +193,42 @@
           <button class="lp-btn smooth-btn active" data-smooth="1" onclick="setSmooth(true)">Вкл</button>
           <button class="lp-btn smooth-btn"        data-smooth="0" onclick="setSmooth(false)">Выкл</button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Shortcuts (collapsible) -->
+  <div class="lp-section" id="lp-shortcuts" style="margin-top: 8px;">
+    <button class="lp-section-hdr" aria-expanded="false" onclick="toggleLpSection('lp-shortcuts')">
+      <span>Горячие клавиши</span>
+      <svg class="lp-chevron" width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.8">
+        <path d="M2 3.5 L5 7 L8 3.5"/>
+      </svg>
+    </button>
+    <div class="lp-section-body" style="font-size: 11px; line-height: 1.4; color: rgba(30,40,60,0.8); gap: 5px; padding: 6px 10px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed rgba(0,0,0,0.08); padding-bottom: 4px;">
+        <span>Горизонт</span>
+        <kbd style="background: rgba(0,0,0,0.05); padding: 1px 4px; border-radius: 4px; border: 1px solid rgba(0,0,0,0.12); font-family: monospace; font-weight: bold; font-size: 10px;">← / →</kbd>
+      </div>
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed rgba(0,0,0,0.08); padding-bottom: 4px;">
+        <span>Параметр GFS</span>
+        <kbd style="background: rgba(0,0,0,0.05); padding: 1px 4px; border-radius: 4px; border: 1px solid rgba(0,0,0,0.12); font-family: monospace; font-weight: bold; font-size: 10px;">P</kbd>
+      </div>
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed rgba(0,0,0,0.08); padding-bottom: 4px;">
+        <span>Анимация ветра</span>
+        <kbd style="background: rgba(0,0,0,0.05); padding: 1px 4px; border-radius: 4px; border: 1px solid rgba(0,0,0,0.12); font-family: monospace; font-weight: bold; font-size: 10px;">W</kbd>
+      </div>
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed rgba(0,0,0,0.08); padding-bottom: 4px;">
+        <span>Станции</span>
+        <kbd style="background: rgba(0,0,0,0.05); padding: 1px 4px; border-radius: 4px; border: 1px solid rgba(0,0,0,0.12); font-family: monospace; font-weight: bold; font-size: 10px;">S</kbd>
+      </div>
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed rgba(0,0,0,0.08); padding-bottom: 4px;">
+        <span>Берег</span>
+        <kbd style="background: rgba(0,0,0,0.05); padding: 1px 4px; border-radius: 4px; border: 1px solid rgba(0,0,0,0.12); font-family: monospace; font-weight: bold; font-size: 10px;">C</kbd>
+      </div>
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <span>Закрыть всё</span>
+        <kbd style="background: rgba(0,0,0,0.05); padding: 1px 4px; border-radius: 4px; border: 1px solid rgba(0,0,0,0.12); font-family: monospace; font-weight: bold; font-size: 10px;">Esc</kbd>
       </div>
     </div>
   </div>
