@@ -159,6 +159,62 @@ async function init() {
   document.addEventListener("click", _onDocClick);
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
+      let closedModal = false;
+
+      // Select active close buttons of modals/overlays and click them to close safely
+      const closeSelectors = [
+        "#cal-ef-close",       // Calendar event form close
+        "#cal-tf-close",       // Calendar task form close
+        "#cal-popup-close",    // Calendar event detail popup close
+        "#req-form-close",     // Requests create form close
+        "#detail-close",       // Requests detail view close
+        "#req-close"           // Requests main view close
+      ];
+
+      for (const selector of closeSelectors) {
+        const btn = document.querySelector(selector);
+        // Only click if it exists and is visible
+        if (btn && btn.getBoundingClientRect().width > 0) {
+          btn.click();
+          closedModal = true;
+          break; // Close one at a time
+        }
+      }
+
+      // Check monitoring modals which have close buttons
+      if (!closedModal) {
+        const monModals = ["#mon-status-modal", "#mon-station-alert-modal"];
+        for (const id of monModals) {
+          const modal = document.getElementById(id);
+          if (modal) {
+            const btn = modal.querySelector("button");
+            if (btn) {
+              btn.click();
+              closedModal = true;
+              break;
+            }
+          }
+        }
+      }
+
+      // Check schedule modal
+      if (!closedModal) {
+        const schedEl = document.getElementById("sched-modal");
+        if (schedEl && schedEl.style.display !== "none") {
+          if (typeof window._schedCloseModal === "function") {
+            window._schedCloseModal();
+          } else {
+            schedEl.style.display = "none";
+          }
+          closedModal = true;
+        }
+      }
+
+      if (closedModal) {
+        e.preventDefault();
+        return;
+      }
+
       _hidePopup();
       closePanel();
       return;
