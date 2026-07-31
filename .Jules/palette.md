@@ -43,3 +43,7 @@ Super Productivity is an elite, open-source, local-first personal organizer desi
 ## 2026-07-28 - Elevating Shortcut Discovery for High-Throughput Web GIS Maps
 **Learning:** For application dashboards with rich keyboard-first layout control, hidden hotkeys remain completely unused unless discoverability is designed natively into the viewport. Placing a subtle hotkey legend at the footer of the initial multi-grid screen and providing a dedicated collapsible "Hotkeys" panel within the primary sidebar drastically accelerates layout onboarding and improves feature adoption without cluttering the visual interface.
 **Action:** When mapping global keyboard shortcuts in complex mapping/data interfaces, always accompany them with a subtle footer hint on comparison screens and a collapsible hotkey guide in the main sidebar.
+
+## 2026-07-31 - Keyboard Navigability and Accessibility for Custom Grid Components
+**Learning:** In custom vanilla JS dashboard interfaces, non-interactive elements (such as `div` blocks) representing key data units or visualization states must be explicitly retrofitted for screen readers and keyboard-only users. Failing to bind `tabindex`, correct semantic `role` attributes, and explicit keydown handlers (for Enter/Space keys) isolates users dependent on assistive technologies from the primary workspace navigation flow.
+**Action:** Always assign explicit roles, focus capabilities, descriptive ARIA labels, and custom Enter/Space keydown listeners on click-navigable custom card or grid elements.
