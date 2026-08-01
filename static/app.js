@@ -159,8 +159,51 @@ async function init() {
   document.addEventListener("click", _onDocClick);
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
-      _hidePopup();
-      closePanel();
+      // 1. Dismiss inner-most modal sub-overlays (forms, details, alerts)
+      const subModalSelectors = [
+        '#cal-event-popup-overlay #cal-popup-close',
+        '#cal-event-form-overlay #cal-ef-close',
+        '#cal-task-form-overlay #cal-tf-close',
+        '#req-detail-modal #detail-close',
+        '#req-create-form #req-form-close',
+        '#mon-status-modal button',
+        '#mon-station-alert-modal button'
+      ];
+      for (const sel of subModalSelectors) {
+        const btn = document.querySelector(sel);
+        if (btn) {
+          btn.click();
+          return;
+        }
+      }
+
+      // 2. Dismiss main module view overlays
+      const mainOverlaySelectors = [
+        '#calendar-view .cal-close-btn',
+        '#requests-view #req-close',
+        '#monitoring-root #mon-btn-back'
+      ];
+      for (const sel of mainOverlaySelectors) {
+        const btn = document.querySelector(sel);
+        const container = btn ? btn.closest('#calendar-view, #requests-view, #monitoring-root') : null;
+        if (btn && container && container.style.display !== 'none') {
+          btn.click();
+          return;
+        }
+      }
+
+      // 3. Fallback to dismissing GFS Map Popup or Left Control Panel
+      const mapPopup = document.getElementById("map-popup");
+      if (mapPopup && mapPopup.style.display !== "none") {
+        _hidePopup();
+        return;
+      }
+
+      const panel = document.getElementById("left-panel");
+      if (panel && panel.classList.contains("panel-open")) {
+        closePanel();
+        return;
+      }
       return;
     }
 
@@ -644,6 +687,9 @@ async function _buildCompareGrid() {
 
     const cell = document.createElement("div");
     cell.className = "cmp-cell" + (S._periodSelected && i === S.periodIdx ? " active" : "");
+    cell.tabIndex = 0;
+    cell.setAttribute("role", "button");
+    cell.setAttribute("aria-label", `Прогноз на ${GFS_SHORT[i]}. Действителен ${validTime}`);
 
     const lbl_el = document.createElement("div");
     lbl_el.className = "cmp-label";
@@ -662,19 +708,27 @@ async function _buildCompareGrid() {
     const coast = document.createElement("img");
     coast.className = "cmp-coast";
     coast.src       = "/api/coastline.svg";
-    coast.alt       = "";
+    coast.alt = "";
     coast.style.display = S.coastline ? "" : "none";
 
     wrap.appendChild(img);
     wrap.appendChild(coast);
 
-    cell.onclick = () => {
+    const activateCell = () => {
       S.periodIdx       = i;
       S._periodSelected = true;
       _saveStateToLocalStorage("periodIdx");
       S.viewMode        = "detail";
       closePanel();
       _applyViewMode();
+    };
+
+    cell.onclick = activateCell;
+    cell.onkeydown = (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        activateCell();
+      }
     };
 
     cell.appendChild(lbl_el);
