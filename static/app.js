@@ -644,6 +644,9 @@ async function _buildCompareGrid() {
 
     const cell = document.createElement("div");
     cell.className = "cmp-cell" + (S._periodSelected && i === S.periodIdx ? " active" : "");
+    cell.tabIndex = 0;
+    cell.role = "button";
+    cell.setAttribute("aria-label", `${GFS_PARAMS[param] || "Параметр"} на горизонте ${validTime}`);
 
     const lbl_el = document.createElement("div");
     lbl_el.className = "cmp-label";
@@ -668,13 +671,21 @@ async function _buildCompareGrid() {
     wrap.appendChild(img);
     wrap.appendChild(coast);
 
-    cell.onclick = () => {
+    const activateCell = () => {
       S.periodIdx       = i;
       S._periodSelected = true;
       _saveStateToLocalStorage("periodIdx");
       S.viewMode        = "detail";
       closePanel();
       _applyViewMode();
+    };
+
+    cell.onclick = activateCell;
+    cell.onkeydown = (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        activateCell();
+      }
     };
 
     cell.appendChild(lbl_el);
