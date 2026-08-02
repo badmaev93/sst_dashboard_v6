@@ -43,3 +43,31 @@ Super Productivity is an elite, open-source, local-first personal organizer desi
 ## 2026-07-28 - Elevating Shortcut Discovery for High-Throughput Web GIS Maps
 **Learning:** For application dashboards with rich keyboard-first layout control, hidden hotkeys remain completely unused unless discoverability is designed natively into the viewport. Placing a subtle hotkey legend at the footer of the initial multi-grid screen and providing a dedicated collapsible "Hotkeys" panel within the primary sidebar drastically accelerates layout onboarding and improves feature adoption without cluttering the visual interface.
 **Action:** When mapping global keyboard shortcuts in complex mapping/data interfaces, always accompany them with a subtle footer hint on comparison screens and a collapsible hotkey guide in the main sidebar.
+
+## 2026-07-30 - Deep-Dive Usability Practices & Integration Ideas from Super Productivity
+
+By investigating `super-productivity` (https://github.com/super-productivity/super-productivity), we can synthesize key usability principles and formulate direct integration ideas for the SST Dashboard application:
+
+### A. Key Usability Best Practices of Super Productivity
+1. **Low-Friction Task Attachment & Context Retention (Side Notes):**
+   - Each project or task can store its own notes, attachments, or links directly inside a sidebar or slide-out overlay. This keeps context ("the why" and "the how") exactly where the work is done rather than scattering documentation.
+2. **Yesterday Review & End-of-Day Flows (Self-Reflection and Continuous Calibration):**
+   - At the beginning of the day, users review leftover tasks from yesterday (re-prioritize, reschedule, or archive).
+   - At the end of the day, a celebratory three-step wizard guides users to review completed tasks, rate/evaluate their focus/productivity, and plan tomorrow. This gamifies closing the loop and structures the next day before logoff.
+3. **Pomodoro Timer & Micro-break Reminders:**
+   - Active time tracking integrates with micro-break reminders (non-intrusive overlays reminding users to stretch) and Pomodoro-style cycles to keep users alert and healthy.
+4. **Complete Local-First Autonomy with Selective Sync:**
+   - All data is encrypted and saved locally first. No subscription or cloud registration is required, but robust optional sync is available (via WebDAV, Dropbox, or custom SuperSync).
+
+### B. SST Dashboard v6 Usability Enhancement Ideas
+1. **Contextual Side Notes for Calendar Events & Station Requests:**
+   - Add a collapsible "Side Notes" drawer to each station details view and maintenance request card. Station engineers can immediately attach local reminders, external links (e.g. to equipment manuals), or troubleshooting tips.
+2. **Duty-Handover / "End-of-Shift Review" Wizard for Personnel Schedule:**
+   - Inspired by the End-of-Day flow, we can implement an "End-of-Shift" checklist wizard for station observers or duty supervisors. Upon finishing a shift assignment, they:
+     - Review all pending telemetry anomalies and check list items.
+     - Evaluate the shift (rate equipment status, weather difficulties).
+     - Leave handover notes for the incoming duty officer.
+3. **Task Timeboxing & Estimates on Dashboard Calendar Tasks:**
+   - Integrate time estimation (e.g., "Estimated: 2h") directly on calendar tasks and checklist checks. Compare estimates against actual closure times to gather local station maintenance efficiency analytics.
+4. **Interactive Hotkey Cheat Sheet overlay (`?`):**
+   - Implement a simple overlay modal (triggered by pressing `?`) detailing all available global keyboard hotkeys, bringing keyboard-first usability out of the shadow.
