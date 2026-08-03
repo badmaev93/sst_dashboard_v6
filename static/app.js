@@ -105,6 +105,14 @@ function hideLoading() {
   if (el) el.classList.add("hidden");
 }
 
+function _isVisible(el) {
+  if (!el) return false;
+  const rect = el.getBoundingClientRect();
+  if (rect.width === 0 || rect.height === 0) return false;
+  const style = window.getComputedStyle(el);
+  return style.display !== "none" && style.visibility !== "hidden" && style.opacity !== "0";
+}
+
 // ──────────────────────────────────────────────
 // Init
 // ──────────────────────────────────────────────
@@ -159,6 +167,59 @@ async function init() {
   document.addEventListener("click", _onDocClick);
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
+      // 1. Submodals / dialogs inside modules
+      const calPopupClose = document.getElementById("cal-popup-close");
+      if (_isVisible(calPopupClose)) { calPopupClose.click(); return; }
+
+      const calEfClose = document.getElementById("cal-ef-close");
+      if (_isVisible(calEfClose)) { calEfClose.click(); return; }
+
+      const calTfClose = document.getElementById("cal-tf-close");
+      if (_isVisible(calTfClose)) { calTfClose.click(); return; }
+
+      const reqDetailClose = document.getElementById("detail-close");
+      if (_isVisible(reqDetailClose)) { reqDetailClose.click(); return; }
+
+      const reqFormClose = document.getElementById("req-form-close");
+      if (_isVisible(reqFormClose)) { reqFormClose.click(); return; }
+
+      const monStatusClose = document.querySelector("#mon-status-modal button");
+      if (_isVisible(monStatusClose)) { monStatusClose.click(); return; }
+
+      const monStationClose = document.querySelector("#mon-station-alert-modal button");
+      if (_isVisible(monStationClose)) { monStationClose.click(); return; }
+
+      const schedModal = document.getElementById("sched-modal");
+      if (_isVisible(schedModal)) {
+        if (typeof window._schedCloseModal === "function") {
+          window._schedCloseModal();
+        } else {
+          schedModal.style.display = "none";
+        }
+        return;
+      }
+
+      // 2. Main overlay views
+      const reqClose = document.getElementById("req-close");
+      if (_isVisible(reqClose)) {
+        reqClose.click();
+        if (typeof showDetailTab === "function") showDetailTab("map");
+        return;
+      }
+
+      const calView = document.getElementById("calendar-view");
+      if (_isVisible(calView)) {
+        if (typeof window.hideCalendarView === "function") {
+          window.hideCalendarView();
+          if (typeof showDetailTab === "function") showDetailTab("map");
+          return;
+        }
+      }
+
+      const monBtnBack = document.getElementById("mon-btn-back");
+      if (_isVisible(monBtnBack)) { monBtnBack.click(); return; }
+
+      // 3. Fallback: hide popup and close left panel
       _hidePopup();
       closePanel();
       return;
