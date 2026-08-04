@@ -2,6 +2,10 @@
 
 This journal contains critical learnings on UX and accessibility enhancements for the SST Dashboard application.
 
+## 2026-08-04 - Native Keyboard Semantics for Custom Comparison Grid Cells
+**Learning:** In dashboards utilizing grid cells (`.cmp-cell`) as primary navigation triggers, using vanilla `div` elements with `onclick` handlers creates severe accessibility barriers. Keyboard-only and assistive technology users cannot focus on or activate these cells. Programmatically injecting `tabIndex = 0`, `role = "button"`, descriptive `aria-label`s, and a keydown listener for Enter and Space keys seamlessly integrates these custom elements into the natural accessibility tree without altering the visual design.
+**Action:** For all custom interactive wrapper elements that serve as buttons, always bind appropriate ARIA roles, tabindex, localized labels, and keyboard-driven activation handlers during creation.
+
 ## 2026-07-18 - Synchronizing Accessible States for Off-Canvas Menus
 **Learning:** Icon-only slide-out panel toggle buttons must communicate both their purpose (using descriptive `aria-label` text) and their open/closed states (`aria-expanded`) to assistive technologies. Simply toggling a CSS class on the panel container is insufficient for screen readers; the interactive trigger button itself must statefully reflect the menu's visibility dynamically via JavaScript.
 **Action:** Always ensure off-canvas toggle triggers have static `aria-label` labels and that their `aria-expanded` attributes are programmatically updated inside the corresponding toggle and close JavaScript handler functions.
