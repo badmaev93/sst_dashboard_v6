@@ -1,5 +1,9 @@
-import json, logging
-from fastapi import APIRouter, HTTPException, Header, Request
+import json
+import logging
+import secrets
+
+from fastapi import APIRouter, Depends, Header, HTTPException, Request
+
 import db
 from config import AGENT_API_KEY
 from models import AgentInsight
@@ -8,13 +12,15 @@ logger = logging.getLogger(__name__)
 webhooks_router = APIRouter(prefix="/api/webhooks", tags=["webhooks"])
 
 def _check_key(key: str = Header(None, alias="X-Agent-Key")):
-    if key != AGENT_API_KEY:
+    # Fail closed if either the header or the configured AGENT_API_KEY is missing/empty
+    if not key or not AGENT_API_KEY:
+        raise HTTPException(403, "Invalid agent key")
+    # Timing-attack resistant constant-time comparison
+    if not secrets.compare_digest(key, AGENT_API_KEY):
         raise HTTPException(403, "Invalid agent key")
 
 @webhooks_router.post("/agent/insight")
-async def agent_insight(data: AgentInsight, key: str = Header(None, alias="X-Agent-Key")):
-    if key != AGENT_API_KEY:
-        raise HTTPException(403, "Invalid agent key")
+async def agent_insight(data: AgentInsight, _=Depends(_check_key)):  # noqa: B008
     row = await db.pool.fetchrow("""
         INSERT INTO agent_activity (agent_name, event_type, severity, title, body, metadata)
         VALUES ($1, 'insight', $2, $3, $4, $5) RETURNING id
@@ -23,9 +29,7 @@ async def agent_insight(data: AgentInsight, key: str = Header(None, alias="X-Age
     return {"id": row["id"], "status": "accepted"}
 
 @webhooks_router.post("/agent/status")
-async def agent_status(data: AgentInsight, key: str = Header(None, alias="X-Agent-Key")):
-    if key != AGENT_API_KEY:
-        raise HTTPException(403, "Invalid agent key")
+async def agent_status(data: AgentInsight, _=Depends(_check_key)):  # noqa: B008
     row = await db.pool.fetchrow("""
         INSERT INTO agent_activity (agent_name, event_type, severity, title, body, metadata)
         VALUES ($1, 'status', $2, $3, $4, $5) RETURNING id
@@ -34,9 +38,7 @@ async def agent_status(data: AgentInsight, key: str = Header(None, alias="X-Agen
     return {"id": row["id"], "status": "accepted"}
 
 @webhooks_router.post("/agent/anomaly")
-async def agent_anomaly(data: AgentInsight, key: str = Header(None, alias="X-Agent-Key")):
-    if key != AGENT_API_KEY:
-        raise HTTPException(403, "Invalid agent key")
+async def agent_anomaly(data: AgentInsight, _=Depends(_check_key)):  # noqa: B008
     row = await db.pool.fetchrow("""
         INSERT INTO agent_activity (agent_name, event_type, severity, title, body, metadata)
         VALUES ($1, 'anomaly', $2, $3, $4, $5) RETURNING id
