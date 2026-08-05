@@ -159,9 +159,77 @@ async function init() {
   document.addEventListener("click", _onDocClick);
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
-      _hidePopup();
-      closePanel();
-      return;
+      // 1. Nested Request modals
+      const reqCreateForm = document.getElementById("req-create-form");
+      if (reqCreateForm) {
+        const closeBtn = document.getElementById("req-form-close");
+        if (closeBtn) closeBtn.click();
+        else reqCreateForm.remove();
+        return;
+      }
+      const reqDetailModal = document.getElementById("req-detail-modal");
+      if (reqDetailModal) {
+        const closeBtn = document.getElementById("detail-close");
+        if (closeBtn) closeBtn.click();
+        else reqDetailModal.remove();
+        return;
+      }
+
+      // 2. Calendar modals
+      const calEventForm = document.getElementById("cal-event-form-overlay");
+      if (calEventForm) {
+        const closeBtn = document.getElementById("cal-ef-close");
+        if (closeBtn) closeBtn.click();
+        else calEventForm.remove();
+        return;
+      }
+      const calTaskForm = document.getElementById("cal-task-form-overlay");
+      if (calTaskForm) {
+        const closeBtn = document.getElementById("cal-tf-close");
+        if (closeBtn) closeBtn.click();
+        else calTaskForm.remove();
+        return;
+      }
+      const calEventPopup = document.getElementById("cal-event-popup-overlay");
+      if (calEventPopup) {
+        const closeBtn = document.getElementById("cal-popup-close");
+        if (closeBtn) closeBtn.click();
+        else calEventPopup.remove();
+        return;
+      }
+
+      // Helper function to check if element is visible
+      const isVisible = (el) => {
+        if (!el) return false;
+        const style = window.getComputedStyle(el);
+        return style.display !== 'none' && style.visibility !== 'hidden' && el.offsetWidth > 0;
+      };
+
+      // 3. Main Views
+      const reqView = document.getElementById("requests-view");
+      if (isVisible(reqView)) {
+        if (typeof window.hideRequestsView === "function") window.hideRequestsView();
+        return;
+      }
+      const calView = document.getElementById("calendar-view");
+      if (isVisible(calView)) {
+        if (typeof window.hideCalendarView === "function") window.hideCalendarView();
+        return;
+      }
+
+      // 4. Map Popup
+      const mapPopup = document.getElementById("map-popup");
+      if (mapPopup && mapPopup.style.display !== "none") {
+        _hidePopup();
+        return;
+      }
+
+      // 5. Left Panel
+      const panel = document.getElementById("left-panel");
+      if (panel && panel.classList.contains("panel-open")) {
+        closePanel();
+        return;
+      }
     }
 
     // Ignore keyboard shortcuts if the user is currently typing in an input, textarea, or select element
