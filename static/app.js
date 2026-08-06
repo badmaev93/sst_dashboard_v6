@@ -668,13 +668,25 @@ async function _buildCompareGrid() {
     wrap.appendChild(img);
     wrap.appendChild(coast);
 
-    cell.onclick = () => {
+    cell.setAttribute("tabindex", "0");
+    cell.setAttribute("role", "button");
+    cell.setAttribute("aria-label", `Выбрать горизонт прогноза ${GFS_SHORT[i]} на ${validTime}`);
+
+    const selectCell = () => {
       S.periodIdx       = i;
       S._periodSelected = true;
       _saveStateToLocalStorage("periodIdx");
       S.viewMode        = "detail";
       closePanel();
       _applyViewMode();
+    };
+
+    cell.onclick = selectCell;
+    cell.onkeydown = (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        selectCell();
+      }
     };
 
     cell.appendChild(lbl_el);
