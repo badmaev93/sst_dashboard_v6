@@ -43,3 +43,7 @@ Super Productivity is an elite, open-source, local-first personal organizer desi
 ## 2026-07-28 - Elevating Shortcut Discovery for High-Throughput Web GIS Maps
 **Learning:** For application dashboards with rich keyboard-first layout control, hidden hotkeys remain completely unused unless discoverability is designed natively into the viewport. Placing a subtle hotkey legend at the footer of the initial multi-grid screen and providing a dedicated collapsible "Hotkeys" panel within the primary sidebar drastically accelerates layout onboarding and improves feature adoption without cluttering the visual interface.
 **Action:** When mapping global keyboard shortcuts in complex mapping/data interfaces, always accompany them with a subtle footer hint on comparison screens and a collapsible hotkey guide in the main sidebar.
+
+## 2026-08-08 - Robust Keyboard Interactivity for Custom Interactive Grid Elements
+**Learning:** Standard interactive grids (like comparison or dashboard cells) often behave like buttons but lack native semantics and focus styles. Simply handling click events leaves screen reader and keyboard-only users unable to interact or navigate visually. Binding `tabindex="0"`, `role="button"`, custom `onkeydown` mappings for Enter and Space keys, and matching highly visible `:focus-visible` styles ensures a perfectly seamless and accessible user experience.
+**Action:** When implementing custom grid cells or clickable divs, always explicitly set their interactive keyboard/accessibility roles and visual focus indicators.

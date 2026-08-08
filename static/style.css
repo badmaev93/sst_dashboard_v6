@@ -1258,7 +1258,7 @@ body.detail-mode #panel-toggle { top: 56px; }
   overflow: hidden;
   box-shadow: 0 1px 6px rgba(0,0,0,0.07);
   cursor: pointer;
-  transition: box-shadow 0.13s, border-color 0.13s;
+  transition: box-shadow 0.13s, border-color 0.13s, outline 0.13s;
 }
 .cmp-cell:hover {
   border-color: rgba(0,100,200,0.4);
@@ -1267,6 +1267,10 @@ body.detail-mode #panel-toggle { top: 56px; }
 .cmp-cell.active {
   border-color: #0055aa;
   box-shadow: 0 0 0 2px rgba(0,85,170,0.2);
+}
+.cmp-cell:focus-visible {
+  outline: 3px solid #0055aa;
+  outline-offset: 2px;
 }
 
 .cmp-label {
