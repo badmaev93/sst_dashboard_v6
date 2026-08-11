@@ -31,7 +31,7 @@ Super Productivity is an elite, open-source, local-first personal organizer desi
    - Every primary action is bound to keyboard shortcuts.
    - Navigation requires minimal mouse reliance, drastically accelerating repetitive work and maximizing deep-work time.
 
-4. **Bi-Directional Input Localization (Localization Robustness):**
+4. **Bi-Directional Input Localization (Localization Robustation):**
    - Systems accommodate international characters and layout equivalents (e.g., automatically mapping Latin keys to Cyrillic characters like `W -> Ц`, `S -> Ы`, `C -> С`, `P -> З`), preventing workflow breaks when users switch language environments.
 
 ### Applied Usability Implementations in GFS Dashboard v6:
@@ -43,3 +43,7 @@ Super Productivity is an elite, open-source, local-first personal organizer desi
 ## 2026-07-28 - Elevating Shortcut Discovery for High-Throughput Web GIS Maps
 **Learning:** For application dashboards with rich keyboard-first layout control, hidden hotkeys remain completely unused unless discoverability is designed natively into the viewport. Placing a subtle hotkey legend at the footer of the initial multi-grid screen and providing a dedicated collapsible "Hotkeys" panel within the primary sidebar drastically accelerates layout onboarding and improves feature adoption without cluttering the visual interface.
 **Action:** When mapping global keyboard shortcuts in complex mapping/data interfaces, always accompany them with a subtle footer hint on comparison screens and a collapsible hotkey guide in the main sidebar.
+
+## 2026-08-11 - Complete Keyboard & Screen Reader Accessibility for Custom Compare-View Cards
+**Learning:** Custom interactive dashboard grid cells (such as `.cmp-cell` GFS forecast cards) are completely invisible to keyboard focus and assistive technologies if they are generic `div` elements. Elevating them to fully-featured semantic elements requires adding `tabIndex = 0`, `role="button"`, descriptive `aria-label` tags, and dynamic state tracking (`aria-pressed`), matched with intuitive Enter/Space key listeners and distinct `:focus-visible` styling to make standard browser-level keyboard outlines visually clear.
+**Action:** When designing clickable layout grid-cards or custom non-button container controls, always inject semantic ARIA attributes, keydown handlers, and `:focus-visible` styles to guarantee complete keyboard accessibility.
