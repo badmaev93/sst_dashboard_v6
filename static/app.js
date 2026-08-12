@@ -644,6 +644,15 @@ async function _buildCompareGrid() {
 
     const cell = document.createElement("div");
     cell.className = "cmp-cell" + (S._periodSelected && i === S.periodIdx ? " active" : "");
+    cell.tabIndex = 0;
+    cell.setAttribute("role", "button");
+    cell.setAttribute("aria-label", "Прогноз GFS " + GFS_SHORT[i] + " (" + validTime + ")");
+    cell.onkeydown = (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        cell.click();
+      }
+    };
 
     const lbl_el = document.createElement("div");
     lbl_el.className = "cmp-label";
