@@ -43,3 +43,25 @@ Super Productivity is an elite, open-source, local-first personal organizer desi
 ## 2026-07-28 - Elevating Shortcut Discovery for High-Throughput Web GIS Maps
 **Learning:** For application dashboards with rich keyboard-first layout control, hidden hotkeys remain completely unused unless discoverability is designed natively into the viewport. Placing a subtle hotkey legend at the footer of the initial multi-grid screen and providing a dedicated collapsible "Hotkeys" panel within the primary sidebar drastically accelerates layout onboarding and improves feature adoption without cluttering the visual interface.
 **Action:** When mapping global keyboard shortcuts in complex mapping/data interfaces, always accompany them with a subtle footer hint on comparison screens and a collapsible hotkey guide in the main sidebar.
+
+## 2026-07-30 - Deeper Paradigm Infusion: Future Usability Ideas Inspired by Super Productivity
+
+Based on extensive review of the Super Productivity app patterns, the following usability ideas can be seamlessly incorporated into the SST Dashboard v6 workspace:
+
+1. **Structured Shift Handovers & Workflow Reviews (End-of-Day Ritual):**
+   - *The Idea:* Take Super Productivity's "End of Day" wizard and re-purpose it for hydro-meteorologists and station engineers as a "Shift Handover Review".
+   - *Design:* A simple modal wizard guided in three stages:
+     1. **Review Readings:** Summary of anomalous readings flagged in the last 12 hours.
+     2. **Identify Pending Requests:** Prompting the user to update pending station maintenance requests.
+     3. **Plan / Notes for Next Shift:** Setting up a "Next Shift" calendar block or focus block with handoff notes.
+   - *Impact:* Guarantees high data quality and reduces operational risk during shift rotation.
+
+2. **Global Command Palette / Quick Capture Box:**
+   - *The Idea:* Introduce a global spotlight-search overlay (triggered by `Ctrl+P` or `/`) that lets users jump between screens, lookup stations by name, or capture quick notes/calendar tasks instantly without leaving the current map view.
+   - *Design:* A simple, keyboard-focused modal with search autocompletion matching stations, pages, and key commands.
+   - *Impact:* Zero-friction navigation for experienced dashboard users.
+
+3. **Persistent Project Notes Drawer (Side Notes):**
+   - *The Idea:* Super Productivity provides a collapsible "Side Notes" drawer for context. In SST Dashboard, we can bind a side drawer to each station or map parameter containing maintenance instructions, station telemetry metadata, and historical outlier trends.
+   - *Design:* Side panel section loaded from a local-first store or cached API, accessible via global keyboard shortcut (`n`).
+   - *Impact:* Eliminates context switching during critical forecasting or data validation activities.
