@@ -642,8 +642,13 @@ async function _buildCompareGrid() {
     const url = _mapUrl(param, i, { _v: `${S._serverTs}_${buildId}` });
     const validTime = _formatValidTime(runLabel, fhour);
 
+    const isSelected = S._periodSelected && i === S.periodIdx;
     const cell = document.createElement("div");
-    cell.className = "cmp-cell" + (S._periodSelected && i === S.periodIdx ? " active" : "");
+    cell.className = "cmp-cell" + (isSelected ? " active" : "");
+    cell.tabIndex = 0;
+    cell.setAttribute("role", "button");
+    cell.setAttribute("aria-selected", isSelected ? "true" : "false");
+    cell.setAttribute("aria-label", `Карта прогноза ${GFS_SHORT[i]} (${validTime})`);
 
     const lbl_el = document.createElement("div");
     lbl_el.className = "cmp-label";
@@ -675,6 +680,12 @@ async function _buildCompareGrid() {
       S.viewMode        = "detail";
       closePanel();
       _applyViewMode();
+    };
+    cell.onkeydown = (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        cell.click();
+      }
     };
 
     cell.appendChild(lbl_el);
