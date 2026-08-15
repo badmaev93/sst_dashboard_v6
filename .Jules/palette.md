@@ -34,11 +34,17 @@ Super Productivity is an elite, open-source, local-first personal organizer desi
 4. **Bi-Directional Input Localization (Localization Robustness):**
    - Systems accommodate international characters and layout equivalents (e.g., automatically mapping Latin keys to Cyrillic characters like `W -> Ц`, `S -> Ы`, `C -> С`, `P -> З`), preventing workflow breaks when users switch language environments.
 
+5. **Contextual Attachments & Side Notes:**
+   - Tasks and projects allow attaching direct links, bookmarks, files, or contextual notes. In complex dashboards, attaching context (e.g., station notes, anomaly flags) directly to data points keeps critical info within the immediate workflow.
+
+6. **Workflow Reflection & Daily Wrap-Up Routines:**
+   - Automated end-of-day / yesterday summary reviews help users evaluate progress and maintain routine without administrative overhead.
+
 ### Applied Usability Implementations in GFS Dashboard v6:
 
 - **Local-First Sync (`localStorage`):** We integrated automatic persistence of active GFS forecast parameters, toggle states (blur, smooth, contours, wind, stations), map scale, and current period indices. Settings persist immediately upon change and restore automatically upon reload, guaranteeing a cohesive and fast starting state.
 - **High-Throughput Keyboard Control Panel:** We mapped global keyboard listeners so users can cycle forecast periods with `ArrowLeft`/`ArrowRight`, toggle map overlays instantly (`w` for wind, `s` for stations, `c` for coastline), and cycle GFS visualization parameters using `p`.
-- **Keyboard Context Safety:** Shortcuts are ignored when input tags, textareas, dropdowns, or contenteditable areas are active, preventing accidental triggers while maintaining a high-speed mouse-free workflow.
+- **Keyboard Context Safety & Localization:** Shortcuts are ignored when input tags, textareas, dropdowns, or contenteditable areas are active, and physical key positions are mapped across dual-language layouts (e.g. Cyrillic `Ц`/`Ы`/`С`/`З` mapped to `W`/`S`/`C`/`P`), preventing accidental triggers while maintaining a high-speed mouse-free workflow regardless of input language.
 
 ## 2026-07-28 - Elevating Shortcut Discovery for High-Throughput Web GIS Maps
 **Learning:** For application dashboards with rich keyboard-first layout control, hidden hotkeys remain completely unused unless discoverability is designed natively into the viewport. Placing a subtle hotkey legend at the footer of the initial multi-grid screen and providing a dedicated collapsible "Hotkeys" panel within the primary sidebar drastically accelerates layout onboarding and improves feature adoption without cluttering the visual interface.
