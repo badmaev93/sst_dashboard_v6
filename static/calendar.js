@@ -501,6 +501,10 @@
                 font-size: 10px;
                 font-weight: 700;
             }
+            .cal-task-checkbox:focus-visible {
+                outline: 2px solid #2563eb;
+                outline-offset: 2px;
+            }
 
             .cal-task-info { flex: 1; min-width: 0; }
 
@@ -1247,7 +1251,7 @@
             item.innerHTML = `
                 <div class="cal-task-top">
                     <span class="cal-task-drag">&#8942;&#8942;</span>
-                    <div class="cal-task-checkbox ${task.completed ? 'checked' : ''}" data-task-id="${task.id}"></div>
+                    <div class="cal-task-checkbox ${task.completed ? 'checked' : ''}" data-task-id="${task.id}" role="checkbox" tabindex="0" aria-checked="${task.completed ? 'true' : 'false'}" aria-label="${task.completed ? 'Отметить задачу как невыполненную' : 'Отметить задачу как выполненную'}"></div>
                     <div class="cal-task-info">
                         <div class="cal-task-title">${esc(task.title)}</div>
                         <div class="cal-task-meta">
@@ -1264,6 +1268,13 @@
             checkbox.addEventListener('click', function(e) {
                 e.stopPropagation();
                 toggleTask(task.id, !task.completed);
+            });
+            checkbox.addEventListener('keydown', function(e) {
+                if (e.key === ' ' || e.key === 'Enter') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    toggleTask(task.id, !task.completed);
+                }
             });
 
             // Drag handlers
