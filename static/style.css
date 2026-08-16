@@ -457,6 +457,42 @@ body.detail-mode #panel-toggle { top: 56px; }
   color: #0055aa;
 }
 
+/* Preset pills for quick parameter switching */
+.lp-preset-pills {
+  display: flex;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.lp-preset-pill {
+  flex: 1;
+  background: rgba(255,255,255,0.85);
+  border: 1px solid rgba(0,0,0,0.12);
+  border-radius: 4px;
+  color: rgba(40,50,70,0.75);
+  padding: 3px 4px;
+  font-size: 10px;
+  font-family: inherit;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.12s;
+  white-space: nowrap;
+}
+
+.lp-preset-pill:hover {
+  background: rgba(0,80,160,0.08);
+  border-color: rgba(0,100,200,0.35);
+  color: #1a5f8f;
+}
+
+.lp-preset-pill.active {
+  background: rgba(0,100,200,0.14);
+  border-color: #0055aa;
+  color: #0055aa;
+  font-weight: 700;
+}
+
 .clim-btn.active {
   background: rgba(192,144,32,0.13);
   border-color: #c09020;
@@ -1267,6 +1303,12 @@ body.detail-mode #panel-toggle { top: 56px; }
 .cmp-cell.active {
   border-color: #0055aa;
   box-shadow: 0 0 0 2px rgba(0,85,170,0.2);
+}
+.cmp-cell:focus-visible {
+  outline: 2.5px solid #0055aa;
+  outline-offset: 2px;
+  border-color: #0055aa;
+  box-shadow: 0 0 0 3px rgba(0,85,170,0.3);
 }
 
 .cmp-label {

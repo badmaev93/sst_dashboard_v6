@@ -1,55 +1,55 @@
-2026-07-26 19:39:58,219 INFO app — Router auth_router included
-2026-07-26 19:39:58,224 INFO app — Router stations_router included
-2026-07-26 19:39:58,261 INFO app — Router forecast_router included
-2026-07-26 19:39:58,267 INFO app — Router monitoring_router included
-2026-07-26 19:39:58,273 INFO app — Router requests_router included
-2026-07-26 19:39:58,285 INFO app — Router calendar_router included
-2026-07-26 19:39:58,288 INFO app — Router equipment_router included
-2026-07-26 19:39:58,290 INFO app — Router users_router included
-2026-07-26 19:39:58,292 INFO app — Router regions_router included
-2026-07-26 19:39:58,300 INFO app — Router schedule_router included
-2026-07-26 19:39:58,305 INFO app — Router webhooks_router included
-INFO:     Started server process [105039]
+2026-08-16 20:06:56,801 INFO app — Router auth_router included
+2026-08-16 20:06:56,806 INFO app — Router stations_router included
+2026-08-16 20:06:56,844 INFO app — Router forecast_router included
+2026-08-16 20:06:56,851 INFO app — Router monitoring_router included
+2026-08-16 20:06:56,857 INFO app — Router requests_router included
+2026-08-16 20:06:56,869 INFO app — Router calendar_router included
+2026-08-16 20:06:56,872 INFO app — Router equipment_router included
+2026-08-16 20:06:56,874 INFO app — Router users_router included
+2026-08-16 20:06:56,876 INFO app — Router regions_router included
+2026-08-16 20:06:56,884 INFO app — Router schedule_router included
+2026-08-16 20:06:56,888 INFO app — Router webhooks_router included
+INFO:     Started server process [65607]
 INFO:     Waiting for application startup.
-2026-07-26 19:39:58,395 WARNING app — DB not available: [Errno 2] No such file or directory
-2026-07-26 19:39:58,400 INFO services.scheduler — Scheduler started: hourly readings + requests + agent events + daily monitoring
-2026-07-26 19:39:58,400 INFO app — Scheduler started
-2026-07-26 19:39:58,400 INFO services.scheduler — Daily monitoring: first run in 44402 seconds (at 08:00 UTC)
-2026-07-26 19:39:58,400 INFO services.scheduler — Telegram polling skipped: no token
+2026-08-16 20:06:56,983 WARNING app — DB not available: [Errno 2] No such file or directory
+2026-08-16 20:06:56,988 INFO services.scheduler — Scheduler started: hourly readings + requests + agent events + daily monitoring
+2026-08-16 20:06:56,988 INFO app — Scheduler started
+2026-08-16 20:06:56,989 INFO services.scheduler — Daily monitoring: first run in 42783 seconds (at 08:00 UTC)
+2026-08-16 20:06:56,989 INFO services.scheduler — Telegram polling skipped: no token
 INFO:     Application startup complete.
 INFO:     Uvicorn running on http://127.0.0.1:8080 (Press CTRL+C to quit)
-INFO:     127.0.0.1:44046 - "GET / HTTP/1.1" 200 OK
-INFO:     127.0.0.1:44046 - "GET /static/vendor/ol.css HTTP/1.1" 200 OK
-INFO:     127.0.0.1:44062 - "GET /static/style.css HTTP/1.1" 200 OK
-INFO:     127.0.0.1:44072 - "GET /static/monitoring.css HTTP/1.1" 200 OK
-INFO:     127.0.0.1:44078 - "GET /static/vendor/ol.js HTTP/1.1" 200 OK
-INFO:     127.0.0.1:44092 - "GET /static/vendor/chart.js HTTP/1.1" 200 OK
-INFO:     127.0.0.1:44096 - "GET /static/app.js HTTP/1.1" 200 OK
-INFO:     127.0.0.1:44046 - "GET /static/stations.js HTTP/1.1" 200 OK
-INFO:     127.0.0.1:44096 - "GET /static/monitoring.js HTTP/1.1" 200 OK
-INFO:     127.0.0.1:44046 - "GET /static/forecast.js HTTP/1.1" 200 OK
-INFO:     127.0.0.1:44072 - "GET /static/requests_ui.js HTTP/1.1" 200 OK
-INFO:     127.0.0.1:44062 - "GET /static/calendar.js HTTP/1.1" 200 OK
-INFO:     127.0.0.1:44078 - "GET /api/gfs/meta HTTP/1.1" 200 OK
-2026-07-26 19:42:40,640 INFO app — GFS map gfs_t +0h scale=2 blur=True contours=True labels=True
-2026-07-26 19:42:40,659 INFO app — GFS map gfs_t +48h scale=2 blur=True contours=True labels=True
-2026-07-26 19:42:40,663 INFO app — GFS map gfs_t +72h scale=2 blur=True contours=True labels=True
-2026-07-26 19:42:40,670 INFO app — GFS map gfs_t +24h scale=2 blur=True contours=True labels=True
-INFO:     127.0.0.1:44096 - "GET /api/gfs/map/gfs_t/2.png?percentile=99&scale=2&contour_labels=1&_v=1785094960545_1 HTTP/1.1" 503 Service Unavailable
-INFO:     127.0.0.1:44092 - "GET /api/gfs/map/gfs_t/3.png?percentile=99&scale=2&contour_labels=1&_v=1785094960545_1 HTTP/1.1" 503 Service Unavailable
-INFO:     127.0.0.1:44046 - "GET /api/gfs/map/gfs_t/1.png?percentile=99&scale=2&contour_labels=1&_v=1785094960545_1 HTTP/1.1" 503 Service Unavailable
-2026-07-26 19:42:43,562 INFO app — GFS map gfs_t +120h scale=2 blur=True contours=True labels=True
-2026-07-26 19:42:43,563 INFO app — GFS map gfs_t +96h scale=2 blur=True contours=True labels=True
-INFO:     127.0.0.1:44046 - "GET /api/gfs/map/gfs_t/5.png?percentile=99&scale=2&contour_labels=1&_v=1785094960545_1 HTTP/1.1" 503 Service Unavailable
-INFO:     127.0.0.1:44092 - "GET /api/gfs/map/gfs_t/4.png?percentile=99&scale=2&contour_labels=1&_v=1785094960545_1 HTTP/1.1" 503 Service Unavailable
-INFO:     127.0.0.1:44096 - "GET /api/gfs/colorscale/gfs_t?fhour_idx=0&percentile=99 HTTP/1.1" 503 Service Unavailable
-INFO:     127.0.0.1:44062 - "GET /api/gfs/map/gfs_t/0.png?percentile=99&scale=2&contour_labels=1&_v=1785094960545_1 HTTP/1.1" 503 Service Unavailable
-INFO:     127.0.0.1:44078 - "GET /api/coastline.geojson HTTP/1.1" 200 OK
-INFO:     127.0.0.1:44072 - "GET /api/coastline.svg HTTP/1.1" 200 OK
-INFO:     127.0.0.1:44072 - "GET /api/gfs/colorscale/gfs_t?fhour_idx=1&percentile=99 HTTP/1.1" 503 Service Unavailable
-2026-07-26 19:42:47,737 INFO app — GFS map gfs_t +24h scale=2 blur=True contours=True labels=True
-INFO:     127.0.0.1:44072 - "GET /api/gfs/map/gfs_t/1.png?percentile=99&scale=2&contour_labels=1 HTTP/1.1" 503 Service Unavailable
-INFO:     127.0.0.1:44072 - "GET /api/monitoring/stations HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:48350 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48350 - "GET /static/vendor/ol.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48364 - "GET /static/style.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48366 - "GET /static/monitoring.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48382 - "GET /static/vendor/ol.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48384 - "GET /static/vendor/chart.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48390 - "GET /static/app.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48350 - "GET /static/stations.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48366 - "GET /static/monitoring.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48350 - "GET /static/forecast.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48364 - "GET /static/requests_ui.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48390 - "GET /static/calendar.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48382 - "GET /api/gfs/meta HTTP/1.1" 200 OK
+2026-08-16 20:07:59,530 INFO app — GFS map gfs_t +0h scale=2 blur=True contours=True labels=True
+INFO:     127.0.0.1:48364 - "GET /api/gfs/map/gfs_t/0.png?percentile=99&scale=2&contour_labels=1&_v=1786910879448_1 HTTP/1.1" 500 Internal Server Error
+2026-08-16 20:07:59,531 INFO app — GFS map gfs_t +24h scale=2 blur=True contours=True labels=True
+2026-08-16 20:07:59,535 INFO app — GFS map gfs_t +48h scale=2 blur=True contours=True labels=True
+2026-08-16 20:07:59,536 INFO app — GFS map gfs_t +72h scale=2 blur=True contours=True labels=True
+INFO:     127.0.0.1:48364 - "GET /api/gfs/colorscale/gfs_t?fhour_idx=0&percentile=99 HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:48350 - "GET /api/gfs/map/gfs_t/1.png?percentile=99&scale=2&contour_labels=1&_v=1786910879448_1 HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:48384 - "GET /api/gfs/map/gfs_t/2.png?percentile=99&scale=2&contour_labels=1&_v=1786910879448_1 HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:48366 - "GET /api/gfs/map/gfs_t/3.png?percentile=99&scale=2&contour_labels=1&_v=1786910879448_1 HTTP/1.1" 500 Internal Server Error
+2026-08-16 20:07:59,555 INFO app — GFS map gfs_t +96h scale=2 blur=True contours=True labels=True
+2026-08-16 20:07:59,555 INFO app — GFS map gfs_t +120h scale=2 blur=True contours=True labels=True
+INFO:     127.0.0.1:48384 - "GET /api/gfs/map/gfs_t/4.png?percentile=99&scale=2&contour_labels=1&_v=1786910879448_1 HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:48366 - "GET /api/gfs/map/gfs_t/5.png?percentile=99&scale=2&contour_labels=1&_v=1786910879448_1 HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:48390 - "GET /api/coastline.svg HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48382 - "GET /api/coastline.geojson HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48382 - "GET /api/gfs/colorscale/gfs_t?fhour_idx=0&percentile=99 HTTP/1.1" 500 Internal Server Error
+2026-08-16 20:08:06,142 INFO app — GFS map gfs_t +0h scale=2 blur=True contours=True labels=True
+INFO:     127.0.0.1:48382 - "GET /api/gfs/map/gfs_t/0.png?percentile=99&scale=2&contour_labels=1 HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:48382 - "GET /api/monitoring/stations HTTP/1.1" 500 Internal Server Error
 ERROR:    Exception in ASGI application
 Traceback (most recent call last):
   File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/site-packages/uvicorn/protocols/http/httptools_impl.py", line 422, in run_asgi
@@ -60,7 +60,7 @@ Traceback (most recent call last):
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/site-packages/fastapi/applications.py", line 1163, in __call__
     await super().__call__(scope, receive, send)
-  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/site-packages/starlette/applications.py", line 90, in __call__
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/site-packages/starlette/applications.py", line 96, in __call__
     await self.middleware_stack(scope, receive, send)
   File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/site-packages/starlette/middleware/errors.py", line 186, in __call__
     raise exc
@@ -74,61 +74,121 @@ Traceback (most recent call last):
     await app(scope, receive, sender)
   File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
     await self.app(scope, receive, send)
-  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/site-packages/starlette/routing.py", line 660, in __call__
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/site-packages/starlette/routing.py", line 670, in __call__
     await self.middleware_stack(scope, receive, send)
-  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/site-packages/fastapi/routing.py", line 2692, in app
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/site-packages/fastapi/routing.py", line 2734, in app
     await route.handle(scope, receive, send)
-  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/site-packages/fastapi/routing.py", line 1773, in handle
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/site-packages/fastapi/routing.py", line 1780, in handle
     await self.original_router.handle(scope, receive, send)
-  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/site-packages/fastapi/routing.py", line 2747, in handle
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/site-packages/fastapi/routing.py", line 2789, in handle
     await included_router._handle_selected(scope, receive, send)
-  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/site-packages/fastapi/routing.py", line 1793, in _handle_selected
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/site-packages/fastapi/routing.py", line 1800, in _handle_selected
     await original_route.handle(scope, receive, send)
-  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/site-packages/fastapi/routing.py", line 1272, in handle
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/site-packages/fastapi/routing.py", line 1279, in handle
     await app(scope, receive, send)
-  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/site-packages/fastapi/routing.py", line 156, in app
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/site-packages/fastapi/routing.py", line 158, in app
     await wrap_app_handling_exceptions(app, request)(scope, receive, send)
   File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
     raise exc
   File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
     await app(scope, receive, sender)
-  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/site-packages/fastapi/routing.py", line 142, in app
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/site-packages/fastapi/routing.py", line 144, in app
     response = await f(request)
                ^^^^^^^^^^^^^^^^
-  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/site-packages/fastapi/routing.py", line 698, in app
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/site-packages/fastapi/routing.py", line 706, in app
     raw_response = await run_endpoint_function(
                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/site-packages/fastapi/routing.py", line 350, in run_endpoint_function
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/site-packages/fastapi/routing.py", line 352, in run_endpoint_function
     return await dependant.call(**values)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   File "/app/routers/stations.py", line 9, in list_stations
     rows = await db.pool.fetch("""
                  ^^^^^^^^^^^^^
 AttributeError: 'NoneType' object has no attribute 'fetch'
-INFO:     127.0.0.1:44078 - "GET /api/gfs/colorscale/gfs_2t?fhour_idx=1&percentile=99 HTTP/1.1" 503 Service Unavailable
-2026-07-26 19:42:48,366 INFO app — GFS map gfs_2t +24h scale=2 blur=True contours=True labels=True
-INFO:     127.0.0.1:44078 - "GET /api/gfs/map/gfs_2t/1.png?percentile=99&scale=2&contour_labels=1 HTTP/1.1" 503 Service Unavailable
-INFO:     127.0.0.1:44078 - "GET /api/gfs/colorscale/gfs_prmsl?fhour_idx=1&percentile=99 HTTP/1.1" 503 Service Unavailable
-2026-07-26 19:42:49,401 INFO app — GFS map gfs_prmsl +24h scale=2 blur=True contours=True labels=True
-INFO:     127.0.0.1:44078 - "GET /api/gfs/map/gfs_prmsl/1.png?percentile=99&scale=2&contour_labels=1 HTTP/1.1" 503 Service Unavailable
-INFO:     127.0.0.1:44078 - "GET /api/gfs/colorscale/gfs_prmsl?fhour_idx=2&percentile=99 HTTP/1.1" 503 Service Unavailable
-2026-07-26 19:42:50,435 INFO app — GFS map gfs_prmsl +48h scale=2 blur=True contours=True labels=True
-INFO:     127.0.0.1:44078 - "GET /api/gfs/map/gfs_prmsl/2.png?percentile=99&scale=2&contour_labels=1 HTTP/1.1" 503 Service Unavailable
-INFO:     127.0.0.1:44078 - "GET /api/gfs/colorscale/gfs_prmsl?fhour_idx=3&percentile=99 HTTP/1.1" 503 Service Unavailable
-2026-07-26 19:42:51,470 INFO app — GFS map gfs_prmsl +72h scale=2 blur=True contours=True labels=True
-INFO:     127.0.0.1:44078 - "GET /api/gfs/map/gfs_prmsl/3.png?percentile=99&scale=2&contour_labels=1 HTTP/1.1" 503 Service Unavailable
-INFO:     127.0.0.1:44078 - "GET / HTTP/1.1" 200 OK
-INFO:     127.0.0.1:44078 - "GET /api/gfs/meta HTTP/1.1" 200 OK
-2026-07-26 19:42:53,738 INFO app — GFS map gfs_prmsl +24h scale=2 blur=True contours=True labels=True
-2026-07-26 19:42:53,739 INFO app — GFS map gfs_prmsl +48h scale=2 blur=True contours=True labels=True
-2026-07-26 19:42:53,740 INFO app — GFS map gfs_prmsl +72h scale=2 blur=True contours=True labels=True
-INFO:     127.0.0.1:53430 - "GET /api/gfs/map/gfs_prmsl/1.png?percentile=99&scale=2&contour_labels=1&_v=1785094973709_1 HTTP/1.1" 503 Service Unavailable
-INFO:     127.0.0.1:53432 - "GET /api/gfs/map/gfs_prmsl/2.png?percentile=99&scale=2&contour_labels=1&_v=1785094973709_1 HTTP/1.1" 503 Service Unavailable
-INFO:     127.0.0.1:53440 - "GET /api/gfs/map/gfs_prmsl/3.png?percentile=99&scale=2&contour_labels=1&_v=1785094973709_1 HTTP/1.1" 503 Service Unavailable
-2026-07-26 19:42:53,741 INFO app — GFS map gfs_prmsl +96h scale=2 blur=True contours=True labels=True
-2026-07-26 19:42:53,742 INFO app — GFS map gfs_prmsl +0h scale=2 blur=True contours=True labels=True
-INFO:     127.0.0.1:53442 - "GET /api/gfs/map/gfs_prmsl/4.png?percentile=99&scale=2&contour_labels=1&_v=1785094973709_1 HTTP/1.1" 503 Service Unavailable
-INFO:     127.0.0.1:44078 - "GET /api/gfs/map/gfs_prmsl/0.png?percentile=99&scale=2&contour_labels=1&_v=1785094973709_1 HTTP/1.1" 503 Service Unavailable
-INFO:     127.0.0.1:53450 - "GET /api/gfs/colorscale/gfs_prmsl?fhour_idx=3&percentile=99 HTTP/1.1" 503 Service Unavailable
-2026-07-26 19:42:53,747 INFO app — GFS map gfs_prmsl +120h scale=2 blur=True contours=True labels=True
-INFO:     127.0.0.1:53432 - "GET /api/gfs/map/gfs_prmsl/5.png?percentile=99&scale=2&contour_labels=1&_v=1785094973709_1 HTTP/1.1" 503 Service Unavailable
+INFO:     127.0.0.1:35414 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35414 - "GET /static/vendor/ol.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35424 - "GET /static/monitoring.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35418 - "GET /static/style.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35414 - "GET /static/stations.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35448 - "GET /static/vendor/chart.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35440 - "GET /static/vendor/ol.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35450 - "GET /static/app.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35418 - "GET /static/forecast.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35424 - "GET /static/monitoring.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35414 - "GET /static/requests_ui.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35450 - "GET /static/calendar.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35440 - "GET /api/gfs/meta HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35440 - "GET /api/coastline.geojson HTTP/1.1" 200 OK
+2026-08-16 20:08:57,039 INFO app — GFS map gfs_t +72h scale=2 blur=True contours=True labels=True
+2026-08-16 20:08:57,041 INFO app — GFS map gfs_t +48h scale=2 blur=True contours=True labels=True
+INFO:     127.0.0.1:35448 - "GET /api/coastline.svg HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35440 - "GET /api/gfs/colorscale/gfs_t?fhour_idx=0&percentile=99 HTTP/1.1" 500 Internal Server Error
+2026-08-16 20:08:57,044 INFO app — GFS map gfs_t +0h scale=2 blur=True contours=True labels=True
+2026-08-16 20:08:57,045 INFO app — GFS map gfs_t +24h scale=2 blur=True contours=True labels=True
+INFO:     127.0.0.1:35418 - "GET /api/gfs/map/gfs_t/3.png?percentile=99&scale=2&contour_labels=1&_v=1786910936988_1 HTTP/1.1" 500 Internal Server Error
+2026-08-16 20:08:57,050 INFO app — GFS map gfs_t +96h scale=2 blur=True contours=True labels=True
+2026-08-16 20:08:57,050 INFO app — GFS map gfs_t +120h scale=2 blur=True contours=True labels=True
+INFO:     127.0.0.1:35450 - "GET /api/gfs/map/gfs_t/0.png?percentile=99&scale=2&contour_labels=1&_v=1786910936988_1 HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:35424 - "GET /api/gfs/map/gfs_t/2.png?percentile=99&scale=2&contour_labels=1&_v=1786910936988_1 HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:35440 - "GET /api/gfs/map/gfs_t/5.png?percentile=99&scale=2&contour_labels=1&_v=1786910936988_1 HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:35414 - "GET /api/gfs/map/gfs_t/1.png?percentile=99&scale=2&contour_labels=1&_v=1786910936988_1 HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:35448 - "GET /api/gfs/map/gfs_t/4.png?percentile=99&scale=2&contour_labels=1&_v=1786910936988_1 HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:35448 - "GET /api/gfs/colorscale/gfs_t?fhour_idx=0&percentile=99 HTTP/1.1" 500 Internal Server Error
+2026-08-16 20:08:57,900 INFO app — GFS map gfs_t +0h scale=2 blur=True contours=True labels=True
+INFO:     127.0.0.1:35448 - "GET /api/gfs/map/gfs_t/0.png?percentile=99&scale=2&contour_labels=1 HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:35448 - "GET /api/monitoring/stations HTTP/1.1" 500 Internal Server Error
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/site-packages/uvicorn/protocols/http/httptools_impl.py", line 422, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/site-packages/uvicorn/middleware/proxy_headers.py", line 63, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/site-packages/fastapi/applications.py", line 1163, in __call__
+    await super().__call__(scope, receive, send)
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/site-packages/starlette/applications.py", line 96, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/site-packages/starlette/routing.py", line 670, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/site-packages/fastapi/routing.py", line 2734, in app
+    await route.handle(scope, receive, send)
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/site-packages/fastapi/routing.py", line 1780, in handle
+    await self.original_router.handle(scope, receive, send)
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/site-packages/fastapi/routing.py", line 2789, in handle
+    await included_router._handle_selected(scope, receive, send)
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/site-packages/fastapi/routing.py", line 1800, in _handle_selected
+    await original_route.handle(scope, receive, send)
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/site-packages/fastapi/routing.py", line 1279, in handle
+    await app(scope, receive, send)
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/site-packages/fastapi/routing.py", line 158, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/site-packages/fastapi/routing.py", line 144, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/site-packages/fastapi/routing.py", line 706, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/site-packages/fastapi/routing.py", line 352, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/routers/stations.py", line 9, in list_stations
+    rows = await db.pool.fetch("""
+                 ^^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'fetch'

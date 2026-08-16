@@ -644,6 +644,16 @@ async function _buildCompareGrid() {
 
     const cell = document.createElement("div");
     cell.className = "cmp-cell" + (S._periodSelected && i === S.periodIdx ? " active" : "");
+    cell.tabIndex = 0;
+    cell.role = "button";
+    cell.setAttribute("aria-label", `Открыть карту прогноза на ${GFS_SHORT[i]} (${validTime})`);
+
+    cell.onkeydown = (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        cell.click();
+      }
+    };
 
     const lbl_el = document.createElement("div");
     lbl_el.className = "cmp-label";
@@ -689,10 +699,13 @@ async function _buildCompareGrid() {
 function syncUI() {
   const { periodIdx, percentile, scale, smooth, blur } = S;
 
-  // Sync param selects
+  // Sync param selects and quick preset pills
   ["cmp-param-select", "lp-param-select"].forEach(id => {
     const sel = document.getElementById(id);
     if (sel && sel.value !== S.gfsParam) sel.value = S.gfsParam;
+  });
+  document.querySelectorAll(".lp-preset-pill").forEach(pill => {
+    pill.classList.toggle("active", pill.dataset.param === S.gfsParam);
   });
 
   // Update detail period label

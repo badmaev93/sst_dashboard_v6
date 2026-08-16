@@ -56,7 +56,7 @@
 
   <!-- Hint text at bottom of compare view -->
   <div id="cmp-hint">
-    Подсказка: используйте клавиши <kbd>←</kbd> / <kbd>→</kbd> для выбора горизонта, <kbd>P</kbd> для смены параметра, <kbd>W</kbd>, <kbd>S</kbd>, <kbd>C</kbd> для слоёв.
+    Подсказка: используйте <kbd>Tab</kbd> / <kbd>Enter</kbd> для выбора ячейки, клавиши <kbd>←</kbd> / <kbd>→</kbd> для горизонта, <kbd>P</kbd> для параметра, <kbd>W</kbd>, <kbd>S</kbd>, <kbd>C</kbd> для слоёв.
   </div>
 
 </div>
@@ -98,7 +98,7 @@
     <div id="run-info" style="font-size:11px;color:var(--accent);padding:4px 0">—</div>
   </div>
 
-  <!-- GFS Parameter selector -->
+  <!-- GFS Parameter selector & Quick Presets -->
   <div class="lp-group">
     <label class="lp-lbl" for="lp-param-select">Параметр</label>
     <select class="lp-select" onchange="setParam(this.value)" id="lp-param-select">
@@ -109,6 +109,11 @@
       <option value="gfs_tcc">Облачность</option>
       <option value="gfs_pwat">Запас воды (PWAT)</option>
     </select>
+    <div class="lp-preset-pills" aria-label="Быстрый выбор параметра">
+      <button class="lp-preset-pill" data-param="gfs_t" onclick="setParam('gfs_t')">Темп ТПО</button>
+      <button class="lp-preset-pill" data-param="gfs_wind" onclick="setParam('gfs_wind')">Ветер</button>
+      <button class="lp-preset-pill" data-param="gfs_prmsl" onclick="setParam('gfs_prmsl')">Давление</button>
+    </div>
   </div>
 
   <!-- Forecast hour buttons -->
@@ -225,6 +230,10 @@
       <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed rgba(0,0,0,0.08); padding-bottom: 4px;">
         <span>Берег</span>
         <kbd style="background: rgba(0,0,0,0.05); padding: 1px 4px; border-radius: 4px; border: 1px solid rgba(0,0,0,0.12); font-family: monospace; font-weight: bold; font-size: 10px;">C</kbd>
+      </div>
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed rgba(0,0,0,0.08); padding-bottom: 4px;">
+        <span>Выбор ячейки</span>
+        <kbd style="background: rgba(0,0,0,0.05); padding: 1px 4px; border-radius: 4px; border: 1px solid rgba(0,0,0,0.12); font-family: monospace; font-weight: bold; font-size: 10px;">Enter</kbd>
       </div>
       <div style="display: flex; justify-content: space-between; align-items: center;">
         <span>Закрыть всё</span>
