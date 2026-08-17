@@ -43,3 +43,23 @@ Super Productivity is an elite, open-source, local-first personal organizer desi
 ## 2026-07-28 - Elevating Shortcut Discovery for High-Throughput Web GIS Maps
 **Learning:** For application dashboards with rich keyboard-first layout control, hidden hotkeys remain completely unused unless discoverability is designed natively into the viewport. Placing a subtle hotkey legend at the footer of the initial multi-grid screen and providing a dedicated collapsible "Hotkeys" panel within the primary sidebar drastically accelerates layout onboarding and improves feature adoption without cluttering the visual interface.
 **Action:** When mapping global keyboard shortcuts in complex mapping/data interfaces, always accompany them with a subtle footer hint on comparison screens and a collapsible hotkey guide in the main sidebar.
+
+## Key Usability Practices & Architectural Paradigms from Super Productivity
+
+### Core Usability Pillars:
+1. **Frictionless Action / Quick Capture:**
+   - Universal hotkey quick-capture modal allowing immediate task or issue creation from any view without losing current workflow context.
+2. **Local-First Data Architecture:**
+   - Storing draft states, workspace filters, UI layouts, and user preferences directly in `localStorage` or `IndexedDB` before syncing asynchronously.
+3. **Keyboard-First Design & Ergonomics:**
+   - Comprehensive hotkey navigation covering primary tabs, sub-views, actions, and overlay toggles.
+   - Layout-aware keybindings matching non-English keyboard layouts (e.g., mapping Cyrillic characters to standard hotkey handlers).
+4. **Context Attachment & Side-Notes:**
+   - Attaching links, notes, bookmarks, and parameters directly to tasks/stations for seamless context preservation.
+5. **Timeboxing & Duty Flow Control:**
+   - Integrated break reminders, focus blocks (Pomodoro/Flowtime), and end-of-day workflow review summaries to reduce operator fatigue.
+
+### Actionable Feature Ideas for SST Dashboard v6:
+- **Quick Maintenance Log Capture:** A global hotkey (e.g., `Shift + N` or `Ctrl + K`) to immediately submit equipment observations or log requests without switching away from the active GFS map view.
+- **Local Draft Recovery for Incidents & Tasks:** Auto-saving unfinished maintenance requests and calendar tasks in `localStorage` so unsaved work is never lost on refresh or connection loss.
+- **Operator Focus & Duty Shift Timers:** A lightweight duty-timer in the header to manage focus intervals for marine analysts monitoring GFS forecast model runs and station telemetry.
