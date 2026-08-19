@@ -16,29 +16,38 @@ This journal contains critical learnings on UX and accessibility enhancements fo
 
 ## Best Usability Practices and Paradigm Analysis: Super Productivity
 
-Super Productivity is an elite, open-source, local-first personal organizer designed for developers and power users. Analyzing its interface reveals several cornerstone usability best practices:
+Super Productivity is an open-source, local-first personal organizer designed for developers and power users. Analyzing its interface and workflow architecture reveals several cornerstone usability best practices:
 
-1. **Frictionless Action / Low Cognitive Load:**
-   - *Quick Task Capture:* Users can capture tasks in seconds from any view using a simple shortcut, avoiding complex forms or multiple clicks.
-   - *Minimalist, Non-Intrusive UI:* Features are contextual; complex configurations are tucked away while core actions are always within reach.
+1. **Frictionless Quick Capture & Low Cognitive Load:**
+   - *Global Command Palette & Quick Capture:* Users can capture tasks or jump to any view in seconds using a single shortcut (`Ctrl+P` / `Ctrl+Shift+P`), bypassing multi-level navigation menus and complex forms.
+   - *Minimalist Contextual UI:* Essential controls are always within reach while deep configurations remain non-intrusively tucked away in contextual panels.
 
 2. **The "Local-First" Paradigm (True Speed & Reliability):**
-   - No mandatory cloud sync or accounts.
-   - Core configurations, states, active filters, and workspace options are stored instantly and locally in `localStorage` or `IndexedDB`.
-   - Result: Sub-millisecond startup times, zero network overhead during layout changes, and complete resilience against network disruptions.
+   - No mandatory cloud login or initial network sync blocks user interaction.
+   - Core configurations, states, active filters, and workspace options persist instantly in `localStorage` or `IndexedDB`.
+   - Result: Sub-millisecond startup times, zero network latency during layout switching, and offline resilience.
 
-3. **Keyboard-First Design (High-Throughput Power Tools):**
-   - Every primary action is bound to keyboard shortcuts.
-   - Navigation requires minimal mouse reliance, drastically accelerating repetitive work and maximizing deep-work time.
+3. **Keyboard-First Design & High-Throughput Workflows:**
+   - Every primary navigation and task manipulation action is mapped to accessible hotkeys.
+   - Minimizes mouse context-switching, enabling power users to maintain flow and deep concentration.
 
 4. **Bi-Directional Input Localization (Localization Robustness):**
-   - Systems accommodate international characters and layout equivalents (e.g., automatically mapping Latin keys to Cyrillic characters like `W -> Ц`, `S -> Ы`, `C -> С`, `P -> З`), preventing workflow breaks when users switch language environments.
+   - Mappings accommodate international keyboard layouts and character equivalents (e.g., mapping `W -> Ц`, `S -> Ы`, `C -> С`, `P -> З`), preventing broken shortcuts when users switch language inputs.
+
+5. **End-of-Day / Shift Review & Structured Routines:**
+   - Provides structured review workflows at the end of a shift or work session, prompting users to process completed tasks, log observations/notes, and plan upcoming shifts.
+
+6. **Context Attachment & Side-Notes:**
+   - Allows users to attach markdown notes, external links, and context snippets directly to tasks/stations without modal switching or leaving the active workspace.
+
+7. **Time Awareness & Non-Intrusive Reminders:**
+   - Gentle, non-blocking notifications and break indicators keep users informed of time spent without hijacking screen focus or interrupting active workflows.
 
 ### Applied Usability Implementations in GFS Dashboard v6:
 
-- **Local-First Sync (`localStorage`):** We integrated automatic persistence of active GFS forecast parameters, toggle states (blur, smooth, contours, wind, stations), map scale, and current period indices. Settings persist immediately upon change and restore automatically upon reload, guaranteeing a cohesive and fast starting state.
-- **High-Throughput Keyboard Control Panel:** We mapped global keyboard listeners so users can cycle forecast periods with `ArrowLeft`/`ArrowRight`, toggle map overlays instantly (`w` for wind, `s` for stations, `c` for coastline), and cycle GFS visualization parameters using `p`.
-- **Keyboard Context Safety:** Shortcuts are ignored when input tags, textareas, dropdowns, or contenteditable areas are active, preventing accidental triggers while maintaining a high-speed mouse-free workflow.
+- **Local-First Sync (`localStorage`):** Automatic persistence of active GFS forecast parameters, toggle states (blur, smooth, contours, wind, stations), map scale, and period indices.
+- **High-Throughput Keyboard Control Panel:** Global key bindings to cycle forecast periods (`ArrowLeft`/`ArrowRight`), toggle map overlays (`w` for wind, `s` for stations, `c` for coastline), and switch parameters (`p`).
+- **Keyboard Context Safety:** Global keydown listeners gracefully bypass shortcuts when input elements, dropdowns, or contenteditable targets are focused.
 
 ## 2026-07-28 - Elevating Shortcut Discovery for High-Throughput Web GIS Maps
 **Learning:** For application dashboards with rich keyboard-first layout control, hidden hotkeys remain completely unused unless discoverability is designed natively into the viewport. Placing a subtle hotkey legend at the footer of the initial multi-grid screen and providing a dedicated collapsible "Hotkeys" panel within the primary sidebar drastically accelerates layout onboarding and improves feature adoption without cluttering the visual interface.
