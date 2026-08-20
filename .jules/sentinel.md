@@ -12,3 +12,8 @@
 **Vulnerability:** The PUT endpoint for request updating (`/api/monitoring/requests/{req_id}`) was accessible to any logged-in user without checking if the user was the request creator or a supervisor. This allowed BOLA / IDOR manipulation. Furthermore, a non-supervisor could modify the request status directly to administrative states like 'signed' or 'rejected', entirely bypassing the supervisor approval signature flow.
 **Learning:** Endpoints allowing mutations (PUT/PATCH/DELETE) require checking ownership/creatorship of resources or role-based access control (RBAC). Simply verifying that a user is authenticated (`get_current_user`) is not sufficient for update or delete requests.
 **Prevention:** Always implement rigorous object-level ownership checks and restrict status transitions to allowed roles on any mutation endpoint. Never trust input payloads (like `status`) without checking the current user's role permissions.
+
+## 2026-07-22 - [Missing Authentication on Forecast and Prediction Endpoints]
+**Vulnerability:** Forecast endpoints (`GET /api/monitoring/forecast/stations/{station_id}/forecast` and `forecast/history`) were accessible without authentication, allowing unauthenticated attackers to query station predictions and ML forecast histories.
+**Learning:** New routers added to the monitoring domain (`/api/monitoring/forecast`) did not inherit global authentication and were missed during security dependency audits.
+**Prevention:** Enforce `Depends(get_current_user)` or router-level security dependencies on all monitoring endpoints handling predictive and operational station data.
