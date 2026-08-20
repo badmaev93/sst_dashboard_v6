@@ -1264,6 +1264,12 @@ body.detail-mode #panel-toggle { top: 56px; }
   border-color: rgba(0,100,200,0.4);
   box-shadow: 0 3px 14px rgba(0,100,200,0.15);
 }
+.cmp-cell:focus-visible {
+  outline: 2px solid #0055aa;
+  outline-offset: 2px;
+  border-color: #0055aa;
+  box-shadow: 0 0 0 3px rgba(0,85,170,0.25);
+}
 .cmp-cell.active {
   border-color: #0055aa;
   box-shadow: 0 0 0 2px rgba(0,85,170,0.2);
