@@ -604,8 +604,11 @@ function buildPeriodButtons() {
 
   GFS_SHORT.forEach((lbl, i) => {
     const btn = document.createElement("button");
-    btn.className = "period-btn" + (S._periodSelected && i === S.periodIdx ? " active" : "");
+    const isActive = S._periodSelected && i === S.periodIdx;
+    btn.className = "period-btn" + (isActive ? " active" : "");
     btn.textContent = lbl;
+    btn.setAttribute("aria-label", `Горизонт прогноза ${GFS_LABELS[i]}`);
+    btn.setAttribute("aria-pressed", isActive ? "true" : "false");
     btn.onclick = () => {
       S.periodIdx = i;
       S._periodSelected = true;
@@ -643,7 +646,19 @@ async function _buildCompareGrid() {
     const validTime = _formatValidTime(runLabel, fhour);
 
     const cell = document.createElement("div");
-    cell.className = "cmp-cell" + (S._periodSelected && i === S.periodIdx ? " active" : "");
+    const isActive = S._periodSelected && i === S.periodIdx;
+    cell.className = "cmp-cell" + (isActive ? " active" : "");
+    cell.tabIndex = 0;
+    cell.setAttribute("role", "button");
+    cell.setAttribute("aria-label", `Прогноз ${GFS_LABELS[i]} (${validTime})`);
+    cell.setAttribute("aria-pressed", isActive ? "true" : "false");
+
+    cell.onkeydown = (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        cell.click();
+      }
+    };
 
     const lbl_el = document.createElement("div");
     lbl_el.className = "cmp-label";
@@ -722,7 +737,9 @@ function syncUI() {
 
   // Period buttons
   document.querySelectorAll(".period-btn").forEach((btn, i) => {
-    btn.classList.toggle("active", S._periodSelected && i === periodIdx);
+    const isActive = S._periodSelected && i === periodIdx;
+    btn.classList.toggle("active", isActive);
+    btn.setAttribute("aria-pressed", isActive ? "true" : "false");
   });
 
   // Sync station and wind anim toggle buttons aria-pressed
