@@ -43,3 +43,13 @@ Super Productivity is an elite, open-source, local-first personal organizer desi
 ## 2026-07-28 - Elevating Shortcut Discovery for High-Throughput Web GIS Maps
 **Learning:** For application dashboards with rich keyboard-first layout control, hidden hotkeys remain completely unused unless discoverability is designed natively into the viewport. Placing a subtle hotkey legend at the footer of the initial multi-grid screen and providing a dedicated collapsible "Hotkeys" panel within the primary sidebar drastically accelerates layout onboarding and improves feature adoption without cluttering the visual interface.
 **Action:** When mapping global keyboard shortcuts in complex mapping/data interfaces, always accompany them with a subtle footer hint on comparison screens and a collapsible hotkey guide in the main sidebar.
+
+## 2026-08-21 - Deep Usability Synthesis: Super Productivity UX & Architecture Patterns
+**Learning:** Super Productivity exemplifies how developer tools and complex dashboards achieve peak user velocity and zero cognitive friction through six core pillars:
+1. **Local-First Speed & Privacy:** Instant UI reactivity and zero cloud latency via `localStorage`/`IndexedDB`.
+2. **Keyboard-Centric Workflow & Hotkey Discoverability:** Every action has a shortcut, coupled with on-screen hints.
+3. **Frictionless Quick Capture:** Modal or global quick-add overlays to log items without losing active context.
+4. **Contextual Side Notes & Attachments:** Attaching links, files, and commands directly to tasks.
+5. **Daily End-of-Day Review & Timeboxing:** Daily summaries, pomodoro/flowtime integration, and work logging.
+6. **Multi-Layout Character Tolerance:** Mapping keybindings across both Latin and international (e.g. Cyrillic) layouts.
+**Action:** Apply local-first state saving, quick task capture shortcuts, and layout-tolerant keyboard navigation across web application dashboards.
