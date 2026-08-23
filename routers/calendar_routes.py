@@ -42,6 +42,12 @@ async def create_event(data: CalendarEventCreate, user=Depends(require_role("eng
 
 @calendar_router.put("/events/{event_id}")
 async def update_event(event_id: int, data: CalendarEventCreate, user=Depends(get_current_user)):
+    existing = await db.pool.fetchrow("SELECT * FROM calendar_events WHERE id = $1", event_id)
+    if not existing:
+        raise HTTPException(404, "Event not found")
+    if user["role"] != "supervisor" and existing["created_by"] != user["id"]:
+        raise HTTPException(403, "Not authorized to update this event")
+
     await db.pool.execute("""
         UPDATE calendar_events SET title=$1, description=$2, event_type=$3, station_id=$4,
             starts_at=$5, ends_at=$6, all_day=$7, color=$8 WHERE id=$9
