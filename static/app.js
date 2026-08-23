@@ -644,6 +644,26 @@ async function _buildCompareGrid() {
 
     const cell = document.createElement("div");
     cell.className = "cmp-cell" + (S._periodSelected && i === S.periodIdx ? " active" : "");
+    cell.setAttribute("role", "button");
+    cell.setAttribute("tabindex", "0");
+    cell.setAttribute("aria-label", `${lbl}: ${validTime}. Нажмите для подробного просмотра`);
+
+    const selectCell = () => {
+      S.periodIdx       = i;
+      S._periodSelected = true;
+      _saveStateToLocalStorage("periodIdx");
+      S.viewMode        = "detail";
+      closePanel();
+      _applyViewMode();
+    };
+
+    cell.onclick = selectCell;
+    cell.onkeydown = (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        selectCell();
+      }
+    };
 
     const lbl_el = document.createElement("div");
     lbl_el.className = "cmp-label";
@@ -667,15 +687,6 @@ async function _buildCompareGrid() {
 
     wrap.appendChild(img);
     wrap.appendChild(coast);
-
-    cell.onclick = () => {
-      S.periodIdx       = i;
-      S._periodSelected = true;
-      _saveStateToLocalStorage("periodIdx");
-      S.viewMode        = "detail";
-      closePanel();
-      _applyViewMode();
-    };
 
     cell.appendChild(lbl_el);
     cell.appendChild(wrap);
