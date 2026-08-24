@@ -1247,7 +1247,7 @@
             item.innerHTML = `
                 <div class="cal-task-top">
                     <span class="cal-task-drag">&#8942;&#8942;</span>
-                    <div class="cal-task-checkbox ${task.completed ? 'checked' : ''}" data-task-id="${task.id}"></div>
+                    <div class="cal-task-checkbox ${task.completed ? 'checked' : ''}" data-task-id="${task.id}" role="checkbox" tabindex="0" aria-checked="${task.completed ? 'true' : 'false'}" aria-label="${esc(task.title)}"></div>
                     <div class="cal-task-info">
                         <div class="cal-task-title">${esc(task.title)}</div>
                         <div class="cal-task-meta">
@@ -1264,6 +1264,13 @@
             checkbox.addEventListener('click', function(e) {
                 e.stopPropagation();
                 toggleTask(task.id, !task.completed);
+            });
+            checkbox.addEventListener('keydown', function(e) {
+                if (e.key === ' ' || e.key === 'Enter') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    toggleTask(task.id, !task.completed);
+                }
             });
 
             // Drag handlers
