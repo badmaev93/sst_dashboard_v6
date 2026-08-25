@@ -604,7 +604,10 @@ function buildPeriodButtons() {
 
   GFS_SHORT.forEach((lbl, i) => {
     const btn = document.createElement("button");
-    btn.className = "period-btn" + (S._periodSelected && i === S.periodIdx ? " active" : "");
+    const isActive = S._periodSelected && i === S.periodIdx;
+    btn.className = "period-btn" + (isActive ? " active" : "");
+    btn.setAttribute("aria-label", `Горизонт прогноза ${GFS_LABELS[i]}`);
+    btn.setAttribute("aria-pressed", isActive ? "true" : "false");
     btn.textContent = lbl;
     btn.onclick = () => {
       S.periodIdx = i;
@@ -709,32 +712,22 @@ function syncUI() {
   // Update detail period label
   if (S.viewMode === "detail") _updateDetailPeriodLabel();
 
-  document.querySelectorAll(".pct-btn").forEach(b => {
-    b.classList.toggle("active", b.dataset.pct === String(percentile));
-  });
-  document.querySelectorAll(".scale-btn").forEach(b => {
-    b.classList.toggle("active", Number(b.dataset.scale) === scale);
-  });
-  document.querySelectorAll(".smooth-btn").forEach(b => {
-    b.classList.toggle("active", (b.dataset.smooth === "1") === smooth);
-  });
-  document.querySelectorAll(".blur-btn").forEach(b => {
-    b.classList.toggle("active", (b.dataset.blur === "1") === blur);
-  });
-  document.querySelectorAll(".coast-btn").forEach(b => {
-    b.classList.toggle("active", (b.dataset.coast === "1") === S.coastline);
-  });
-  document.querySelectorAll(".contour-btn").forEach(b => {
-    b.classList.toggle("active", (b.dataset.contour === "1") === S.contours);
-  });
-  document.querySelectorAll(".contlbl-btn").forEach(b => {
-    b.classList.toggle("active", (b.dataset.contlbl === "1") === S.contourLabels);
-  });
+  const syncGroup = (selector, isActFn) => {
+    document.querySelectorAll(selector).forEach((b, i) => {
+      const active = isActFn(b, i);
+      b.classList.toggle("active", active);
+      b.setAttribute("aria-pressed", active ? "true" : "false");
+    });
+  };
 
-  // Period buttons
-  document.querySelectorAll(".period-btn").forEach((btn, i) => {
-    btn.classList.toggle("active", S._periodSelected && i === periodIdx);
-  });
+  syncGroup(".pct-btn", b => b.dataset.pct === String(percentile));
+  syncGroup(".scale-btn", b => Number(b.dataset.scale) === scale);
+  syncGroup(".smooth-btn", b => (b.dataset.smooth === "1") === smooth);
+  syncGroup(".blur-btn", b => (b.dataset.blur === "1") === blur);
+  syncGroup(".coast-btn", b => (b.dataset.coast === "1") === S.coastline);
+  syncGroup(".contour-btn", b => (b.dataset.contour === "1") === S.contours);
+  syncGroup(".contlbl-btn", b => (b.dataset.contlbl === "1") === S.contourLabels);
+  syncGroup(".period-btn", (_, i) => S._periodSelected && i === periodIdx);
 
   // Sync station and wind anim toggle buttons aria-pressed
   document.querySelectorAll(".station-toggle-btn").forEach(b => {
