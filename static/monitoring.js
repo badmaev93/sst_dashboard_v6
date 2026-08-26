@@ -164,6 +164,7 @@
         transition: border-color .2s, box-shadow .2s, transform .15s;
       }
       .mon-card:hover { border-color: ${CLR.textDim}; transform: translateY(-1px); }
+      .mon-card:focus-visible { outline: 2px solid ${CLR.info}; outline-offset: 2px; }
       .mon-card.sev-critical {
         border-left: 3px solid ${CLR.critical};
         box-shadow: 0 0 12px rgba(248,81,73,.15);
@@ -774,6 +775,10 @@
     items.forEach(item => {
       const card = el("div", "mon-card sev-" + (item.severity || "info"));
       const sev = item.severity || "info";
+      card.setAttribute("role", "button");
+      card.setAttribute("tabindex", "0");
+      card.setAttribute("aria-expanded", "false");
+      card.setAttribute("aria-label", `${item.agent_name || "system"} - ${item.title || ""}`);
       card.innerHTML = `
         <div class="mon-card-top">
           ${sevIcon(sev)}
@@ -787,7 +792,17 @@
         </div>
         <div class="mon-card-body">${mdToHtml(item.body || "")}</div>
       `;
-      card.addEventListener("click", () => card.classList.toggle("expanded"));
+      const toggleExpand = () => {
+        const isExpanded = card.classList.toggle("expanded");
+        card.setAttribute("aria-expanded", isExpanded ? "true" : "false");
+      };
+      card.addEventListener("click", toggleExpand);
+      card.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          toggleExpand();
+        }
+      });
       _feedContainer.appendChild(card);
     });
   }
