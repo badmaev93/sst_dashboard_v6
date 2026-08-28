@@ -53,3 +53,12 @@ Super Productivity is an elite, open-source, local-first personal organizer desi
 ## 2026-07-28 - Elevating Shortcut Discovery for High-Throughput Web GIS Maps
 **Learning:** For application dashboards with rich keyboard-first layout control, hidden hotkeys remain completely unused unless discoverability is designed natively into the viewport. Placing a subtle hotkey legend at the footer of the initial multi-grid screen and providing a dedicated collapsible "Hotkeys" panel within the primary sidebar drastically accelerates layout onboarding and improves feature adoption without cluttering the visual interface.
 **Action:** When mapping global keyboard shortcuts in complex mapping/data interfaces, always accompany them with a subtle footer hint on comparison screens and a collapsible hotkey guide in the main sidebar.
+
+## 2026-08-28 - Core Usability Paradigms & Integration Patterns from Super Productivity
+**Learning:** Super Productivity excels at enabling ultra-high productivity by treating developer & operator user experience as a low-friction, local-first workflow. Incorporating key productivity patterns:
+1. **Quick Task/Item Capture (Low Cognitive Friction):** Global overlay modal or single keypress to instantly create tasks, requests, or log notes without context switching.
+2. **Pomodoro / Focus Timeboxing & Break Reminders:** Built-in focus timers (`focus_blocks`) and anti-procrastination prompts directly inside operational dashboards to sustain deep work.
+3. **Bi-Directional Keyboard Layout Resilience:** Mapping non-Latin keyboard physical keys (e.g. Cyrillic `W -> Ц`, `S -> Ы`, `C -> С`, `P -> З`) so power users never lose keybinding access when switching layouts.
+4. **Context Attachments & Deep-Linking:** Allowing tasks and station alerts to store contextual markdown side-notes, bookmarks, URLs, or command logs attached directly to the item.
+5. **Shift / Day-End Work Summaries:** Structured daily review screens for logging work done, reviewing completed alerts, and handing off shift tasks smoothly.
+**Action:** Prioritize low-latency input handlers, persistent offline storage, and keybindings with layout normalization across complex web tools.
