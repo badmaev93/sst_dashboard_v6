@@ -25,6 +25,12 @@ def test_update_event_unauthorized():
     })
     assert response.status_code == 401
 
+def test_update_task_unauthorized():
+    response = client.put("/api/monitoring/calendar/tasks/1", json={
+        "title": "Updated Task Title"
+    })
+    assert response.status_code == 401
+
 
 @pytest.fixture
 def mock_db_and_auth_engineer():
@@ -101,6 +107,56 @@ def test_update_event_creator_engineer_allowed(mock_db_and_auth_engineer):
     mock_db.execute.return_value = "UPDATE 1"
 
     response = client.put("/api/monitoring/calendar/events/1", json=EVENT_PAYLOAD)
+    assert response.status_code == 200
+    assert response.json() == {"ok": True}
+
+
+def test_update_task_not_found(mock_db_and_auth_engineer):
+    mock_db = mock_db_and_auth_engineer
+    mock_db.fetchrow.return_value = None
+
+    response = client.put("/api/monitoring/calendar/tasks/999", json={"title": "Test"})
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Task not found"
+
+
+def test_update_task_not_assignee_engineer(mock_db_and_auth_engineer):
+    mock_db = mock_db_and_auth_engineer
+    mock_db.fetchrow.return_value = {
+        "id": 1,
+        "assigned_to": 99,  # Assigned to user 99, logged in as engineer 10
+        "title": "Old Task Title",
+    }
+
+    response = client.put("/api/monitoring/calendar/tasks/1", json={"title": "New Task Title"})
+    assert response.status_code == 403
+    assert "Not authorized" in response.json()["detail"]
+
+
+def test_update_task_assignee_engineer_allowed(mock_db_and_auth_engineer):
+    mock_db = mock_db_and_auth_engineer
+    mock_db.fetchrow.return_value = {
+        "id": 1,
+        "assigned_to": 10,  # Matches logged-in engineer ID 10
+        "title": "Old Task Title",
+    }
+    mock_db.execute.return_value = "UPDATE 1"
+
+    response = client.put("/api/monitoring/calendar/tasks/1", json={"title": "New Task Title"})
+    assert response.status_code == 200
+    assert response.json() == {"ok": True}
+
+
+def test_update_task_supervisor_allowed(mock_db_and_auth_supervisor):
+    mock_db = mock_db_and_auth_supervisor
+    mock_db.fetchrow.return_value = {
+        "id": 1,
+        "assigned_to": 99,  # Assigned to user 99, logged in as supervisor 20
+        "title": "Old Task Title",
+    }
+    mock_db.execute.return_value = "UPDATE 1"
+
+    response = client.put("/api/monitoring/calendar/tasks/1", json={"title": "New Task Title"})
     assert response.status_code == 200
     assert response.json() == {"ok": True}
 
