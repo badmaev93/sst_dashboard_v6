@@ -1245,14 +1245,20 @@ function togglePanel() {
   const toggle = document.getElementById("panel-toggle");
   if (panel) {
     const isOpen = panel.classList.toggle("panel-open");
-    if (toggle) toggle.setAttribute("aria-expanded", isOpen ? "true" : "false");
+    if (toggle) {
+      toggle.setAttribute("aria-expanded", isOpen ? "true" : "false");
+      toggle.setAttribute("aria-label", isOpen ? "Закрыть панель управления" : "Открыть панель управления");
+    }
   }
 }
 function closePanel() {
   const panel = document.getElementById("left-panel");
   const toggle = document.getElementById("panel-toggle");
   if (panel) panel.classList.remove("panel-open");
-  if (toggle) toggle.setAttribute("aria-expanded", "false");
+  if (toggle) {
+    toggle.setAttribute("aria-expanded", "false");
+    toggle.setAttribute("aria-label", "Открыть панель управления");
+  }
 }
 function toggleLpSection(id) {
   const section = document.getElementById(id);
