@@ -824,9 +824,9 @@
         const nav = document.createElement('div');
         nav.className = 'cal-mini-nav';
         nav.innerHTML = `
-            <button class="cal-mini-btn" data-action="mini-prev">&#8249;</button>
+            <button class="cal-mini-btn" data-action="mini-prev" aria-label="Предыдущий месяц">&#8249;</button>
             <span class="cal-mini-nav-title">${MONTHS_RU[_miniMonth]} ${_miniYear}</span>
-            <button class="cal-mini-btn" data-action="mini-next">&#8250;</button>
+            <button class="cal-mini-btn" data-action="mini-next" aria-label="Следующий месяц">&#8250;</button>
         `;
 
         nav.querySelector('[data-action="mini-prev"]').addEventListener('click', function() {
@@ -978,11 +978,13 @@
 
         const prevBtn = document.createElement('button');
         prevBtn.className = 'cal-nav-btn';
+        prevBtn.setAttribute('aria-label', 'Предыдущий день');
         prevBtn.innerHTML = '&#8249;';
         prevBtn.addEventListener('click', function() { navigateDay(-1); });
 
         const nextBtn = document.createElement('button');
         nextBtn.className = 'cal-nav-btn';
+        nextBtn.setAttribute('aria-label', 'Следующий день');
         nextBtn.innerHTML = '&#8250;';
         nextBtn.addEventListener('click', function() { navigateDay(1); });
 
@@ -1021,6 +1023,7 @@
 
         const closeBtn = document.createElement('button');
         closeBtn.className = 'cal-close-btn';
+        closeBtn.setAttribute('aria-label', 'Закрыть календарь');
         closeBtn.innerHTML = '&times;';
         closeBtn.addEventListener('click', hideCalendarView);
 
@@ -1355,7 +1358,7 @@
                         </div>
                         <h3 style="margin:0;font-size:16px;font-weight:700;color:#0f172a;">${esc(ev.title)}</h3>
                     </div>
-                    <button class="cal-close-btn" id="cal-popup-close">&times;</button>
+                    <button class="cal-close-btn" id="cal-popup-close" aria-label="Закрыть">&times;</button>
                 </div>
                 <div style="display:flex;flex-direction:column;gap:10px;">
                     <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:#475569;">
@@ -1390,7 +1393,7 @@
             <div class="cal-modal">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
                     <h3 style="margin:0;">Новое событие</h3>
-                    <button class="cal-close-btn" id="cal-ef-close">&times;</button>
+                    <button class="cal-close-btn" id="cal-ef-close" aria-label="Закрыть">&times;</button>
                 </div>
                 <div class="cal-field">
                     <label>Название</label>
@@ -1475,7 +1478,7 @@
             <div class="cal-modal">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
                     <h3 style="margin:0;">Новая задача</h3>
-                    <button class="cal-close-btn" id="cal-tf-close">&times;</button>
+                    <button class="cal-close-btn" id="cal-tf-close" aria-label="Закрыть">&times;</button>
                 </div>
                 <div class="cal-field">
                     <label>Название</label>
