@@ -604,7 +604,10 @@ function buildPeriodButtons() {
 
   GFS_SHORT.forEach((lbl, i) => {
     const btn = document.createElement("button");
-    btn.className = "period-btn" + (S._periodSelected && i === S.periodIdx ? " active" : "");
+    const isSelected = S._periodSelected && i === S.periodIdx;
+    btn.className = "period-btn" + (isSelected ? " active" : "");
+    btn.setAttribute("aria-label", `Горизонт прогноза: ${GFS_LABELS[i] || lbl}`);
+    btn.setAttribute("aria-pressed", isSelected ? "true" : "false");
     btn.textContent = lbl;
     btn.onclick = () => {
       S.periodIdx = i;
@@ -733,7 +736,9 @@ function syncUI() {
 
   // Period buttons
   document.querySelectorAll(".period-btn").forEach((btn, i) => {
-    btn.classList.toggle("active", S._periodSelected && i === periodIdx);
+    const active = S._periodSelected && i === periodIdx;
+    btn.classList.toggle("active", active);
+    btn.setAttribute("aria-pressed", active ? "true" : "false");
   });
 
   // Sync station and wind anim toggle buttons aria-pressed
