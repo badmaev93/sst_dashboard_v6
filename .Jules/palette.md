@@ -19,17 +19,17 @@ This journal contains critical learnings on UX and accessibility enhancements fo
 Super Productivity is an elite, open-source, local-first personal organizer designed for developers and power users. Analyzing its interface and workflow paradigms reveals several cornerstone usability best practices:
 
 1. **Frictionless Quick Capture & Low Cognitive Load:**
-   - *Quick Task Capture:* Users can capture tasks in seconds from any view using global shortcuts, avoiding complex forms or multi-step wizard dialogs.
+   - *Quick Task / Context Capture:* Users can capture tasks or logs in seconds from any view using global shortcuts (e.g. `Shift+A`), avoiding complex forms or multi-step wizard dialogs.
    - *Minimalist, Non-Intrusive UI:* Complex configurations are tucked away using progressive disclosure; core actions remain visible and accessible within a single click or keypress.
 
 2. **The "Local-First" Paradigm (Sub-Millisecond Speed & Zero Downtime):**
-   - No mandatory cloud sync or registration barriers.
-   - All state, active filters, user options, and workspace preferences are persisted instantly in local storage (`localStorage` / `IndexedDB`).
+   - No mandatory cloud sync or registration barriers for basic core workflows.
+   - All state, active filters, user options, map layers, and workspace preferences are persisted instantly in local storage (`localStorage` / `IndexedDB`).
    - Result: Instant startup, zero latency during layout transitions, and seamless offline operation.
 
 3. **Keyboard-Centric Design & Shortcut Discovery:**
    - Every primary action is mapped to global keyboard shortcuts.
-   - High discoverability via hotkey legends and dedicated shortcut panels ensures users transition smoothly from mouse navigation to power-user keyboard speed.
+   - High discoverability via hotkey legends, key hints on buttons, and dedicated shortcut panels ensures users transition smoothly from mouse navigation to power-user keyboard speed.
    - Safety checks prevent hotkey collisions when typing inside text inputs, contenteditables, or dropdowns.
 
 4. **Bi-Directional Input & Layout Localization:**
@@ -41,6 +41,9 @@ Super Productivity is an elite, open-source, local-first personal organizer desi
 
 6. **Structured Daily/Shift Work Reviews & Hand-offs:**
    - Features dedicated end-of-day or shift summary workflows to review completed tasks, track time spent, log anomalies, and prepare hand-off reports for team members or incoming duty shifts.
+
+7. **Focus Mode & Uninterrupted Execution:**
+   - Dedicated focus/timer modes isolate the primary active task or view, muting non-essential indicators to maximize concentration during critical operational shifts.
 
 ### Applied Usability Implementations in GFS Dashboard v6:
 
