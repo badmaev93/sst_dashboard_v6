@@ -2,8 +2,9 @@
 import logging
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 import db
+from auth import get_current_user
 from services.serendipity import correct_gfs_sst, correct_gfs_wind, call_nixtla_forecast, call_nixtla_anomaly
 from services.data_generator import fetch_station_reading
 
@@ -15,7 +16,7 @@ FORECAST_HOURS = [0, 6, 12, 24, 48, 72]
 
 
 @forecast_router.get("/stations/{station_id}/forecast")
-async def get_station_forecast(station_id: int):
+async def get_station_forecast(station_id: int, user=Depends(get_current_user)):
     """Прогноз AI Serendipity для станции: GFS + ML-коррекция Nixtla."""
     if not db.pool:
         raise HTTPException(503, "DB not ready")
@@ -48,14 +49,12 @@ async def get_station_forecast(station_id: int):
 
     # ── Шаг 1: Ближайший узел GFS (без рендеринга тайлов — только точечные значения) ──
     gfs_sst_now = base_sst
-    gfs_wind_now = 0.0
     try:
         from services.gee_gfs import get_fetcher
         fetcher = get_fetcher()
         raw_vals = fetcher.extract_station_values([station], 0)
         if raw_vals:
             gfs_sst_now = raw_vals[0].get("sst", base_sst)
-            gfs_wind_now = raw_vals[0].get("wind_speed", 0.0)
     except Exception as e:
         logger.debug("GFS node extraction: %s", e)
 
@@ -171,7 +170,7 @@ async def get_station_forecast(station_id: int):
 
 
 @forecast_router.get("/stations/{station_id}/forecast/history")
-async def forecast_history(station_id: int, days: int = 7):
+async def forecast_history(station_id: int, days: int = 7, user=Depends(get_current_user)):
     if not db.pool:
         return []
     rows = await db.pool.fetch(
