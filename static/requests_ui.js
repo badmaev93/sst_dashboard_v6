@@ -117,7 +117,7 @@
                             border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">
                         Создать заявку
                     </button>
-                    <button id="req-close" style="padding:8px 12px;background:#f1f5f9;color:#64748b;border:none;
+                    <button id="req-close" aria-label="Закрыть панель заявок" style="padding:8px 12px;background:#f1f5f9;color:#64748b;border:none;
                             border-radius:8px;font-size:16px;cursor:pointer;line-height:1">&times;</button>
                 </div>
             </div>
@@ -137,8 +137,8 @@
 
         html += `
             <div style="display:flex;gap:10px;margin-bottom:16px">
-                <select id="req-filter-status" style="${selectStyle()}">${statusOpts}</select>
-                <select id="req-filter-type" style="${selectStyle()}">${typeOpts}</select>
+                <select id="req-filter-status" aria-label="Фильтр по статусу заявки" style="${selectStyle()}">${statusOpts}</select>
+                <select id="req-filter-type" aria-label="Фильтр по типу заявки" style="${selectStyle()}">${typeOpts}</select>
             </div>
         `;
 
@@ -166,10 +166,12 @@
             const st = STATUS_MAP[r.status] || { label: r.status, color: '#6b7280', bg: '#f3f4f6' };
             const tp = TYPE_MAP[r.req_type || r.type] || { label: r.req_type || r.type || '-' };
             const pr = PRIORITY_MAP[r.priority] || { label: r.priority || '-', color: '#6b7280' };
+            const titleStr = esc(r.title || '-');
+            const rowLabel = `Заявка: ${titleStr}, тип: ${tp.label}, статус: ${st.label}. Нажмите для просмотра деталей`;
 
-            html += `<tr style="border-bottom:1px solid #f1f5f9;cursor:pointer" data-id="${r.id}" data-row="true">
+            html += `<tr style="border-bottom:1px solid #f1f5f9;cursor:pointer" data-id="${r.id}" data-row="true" tabindex="0" role="button" aria-label="${rowLabel}">
                 <td style="${tdStyle()};font-weight:600;color:#1a2030;max-width:200px;overflow:hidden;
-                    text-overflow:ellipsis;white-space:nowrap">${esc(r.title || '-')}</td>
+                    text-overflow:ellipsis;white-space:nowrap">${titleStr}</td>
                 <td style="${tdStyle()}">${badge(tp.label, '#475569', '#f1f5f9')}</td>
                 <td style="${tdStyle()}">${badge(pr.label, pr.color, '#fff')}</td>
                 <td style="${tdStyle()}">${badge(st.label, st.color, st.bg)}</td>
@@ -232,13 +234,20 @@
             });
         });
 
-        // Row click → detail view
+        // Row click & keydown → detail view
         panel.querySelectorAll('tr[data-row]').forEach(function(row) {
-            row.addEventListener('click', function(e) {
+            const openDetail = function(e) {
                 if (e.target.closest('[data-action]')) return;
                 const id = parseInt(row.dataset.id);
                 var r = _requests.find(function(x) { return x.id === id; });
                 if (r) showDetailView(r);
+            };
+            row.addEventListener('click', openDetail);
+            row.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    openDetail(e);
+                }
             });
         });
 
