@@ -159,6 +159,11 @@ async function init() {
   document.addEventListener("click", _onDocClick);
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
+      const stDetail = document.getElementById("station-detail");
+      if (stDetail) {
+        stDetail.remove();
+        return;
+      }
       _hidePopup();
       closePanel();
       return;
