@@ -392,6 +392,11 @@ body.detail-mode #panel-toggle { top: 56px; }
   color: #0055aa;
 }
 
+.lp-section-hdr:focus-visible {
+  outline: 2px solid #0055aa;
+  outline-offset: 1px;
+}
+
 .lp-chevron {
   transition: transform 0.2s;
   flex-shrink: 0;
