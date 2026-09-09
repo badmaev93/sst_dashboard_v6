@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends, Query
+from fastapi import APIRouter, HTTPException, Depends
 from datetime import date as _date, datetime as _dt
 import db
 from auth import get_current_user, require_role
@@ -99,6 +99,12 @@ async def create_task(data: dict, user=Depends(get_current_user)):
 
 @calendar_router.put("/tasks/{task_id}")
 async def update_task(task_id: int, data: dict, user=Depends(get_current_user)):
+    existing = await db.pool.fetchrow("SELECT * FROM tasks WHERE id = $1", task_id)
+    if not existing:
+        raise HTTPException(404, "Task not found")
+    if user["role"] != "supervisor" and existing["assigned_to"] != user["id"]:
+        raise HTTPException(403, "Not authorized to update this task")
+
     sets, params = [], []
     idx = 1
     for field in ("title", "description", "priority", "estimated_minutes", "completed"):
