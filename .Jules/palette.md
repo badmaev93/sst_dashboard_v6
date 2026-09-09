@@ -53,3 +53,7 @@ Super Productivity is an elite, open-source, local-first personal organizer desi
 ## 2026-07-28 - Elevating Shortcut Discovery for High-Throughput Web GIS Maps
 **Learning:** For application dashboards with rich keyboard-first layout control, hidden hotkeys remain completely unused unless discoverability is designed natively into the viewport. Placing a subtle hotkey legend at the footer of the initial multi-grid screen and providing a dedicated collapsible "Hotkeys" panel within the primary sidebar drastically accelerates layout onboarding and improves feature adoption without cluttering the visual interface.
 **Action:** When mapping global keyboard shortcuts in complex mapping/data interfaces, always accompany them with a subtle footer hint on comparison screens and a collapsible hotkey guide in the main sidebar.
+
+## 2026-09-09 - Accessible ARIA Tabsets and Focus Indicators for AI Forecast Parameters
+**Learning:** Dynamically rendered tab controls (such as forecast parameter switches) must explicitly define container `role="tablist"` and button `role="tab"` attributes. Updating `aria-selected` in real-time alongside visual active states ensures screen readers correctly convey selected tab context. Furthermore, explicit `:focus-visible` outline styles provide essential visual feedback for keyboard-only navigation.
+**Action:** Always wrap dynamic tab controls in a `role="tablist"` container with a descriptive `aria-label`, assign `role="tab"` and dynamic `aria-selected` to each tab button, and include high-contrast `:focus-visible` CSS rules.

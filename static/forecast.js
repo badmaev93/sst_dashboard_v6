@@ -155,6 +155,10 @@ const AI_ICON_SVG    = `✨`;
 .fv-param-tab.active {
   color: #fff;
 }
+.fv-param-tab:focus-visible {
+  outline: 2px solid #8b5cf6;
+  outline-offset: 2px;
+}
 
 .fv-chart-card {
   background: #fff;
@@ -461,12 +465,17 @@ function _renderForecast(container, data, stInfo) {
 
   // Param tabs
   var tabsWrap = _el("div", "fv-param-tabs");
+  tabsWrap.setAttribute("role", "tablist");
+  tabsWrap.setAttribute("aria-label", "Параметры прогноза");
   PARAM_SHORT.forEach(function(lbl, i) {
     var btn = _el("button", "fv-param-tab" + (i === 0 ? " active" : ""), lbl);
+    btn.setAttribute("role", "tab");
+    btn.setAttribute("aria-selected", i === 0 ? "true" : "false");
     if (i === 0) btn.style.background = PARAM_COLORS[i];
     btn.addEventListener("click", function() {
       tabsWrap.querySelectorAll('.fv-param-tab').forEach(function(b, j) {
         b.classList.toggle('active', j === i);
+        b.setAttribute('aria-selected', j === i ? 'true' : 'false');
         b.style.background = j === i ? PARAM_COLORS[j] : '#fff';
         b.style.color = j === i ? '#fff' : '#64748b';
       });
