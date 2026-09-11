@@ -25,6 +25,14 @@ def test_update_event_unauthorized():
     })
     assert response.status_code == 401
 
+def test_update_focus_block_unauthorized():
+    response = client.put("/api/monitoring/calendar/focus-blocks/1", json={"title": "Updated Focus Block"})
+    assert response.status_code == 401
+
+def test_delete_focus_block_unauthorized():
+    response = client.delete("/api/monitoring/calendar/focus-blocks/1")
+    assert response.status_code == 401
+
 
 @pytest.fixture
 def mock_db_and_auth_engineer():
@@ -101,6 +109,71 @@ def test_update_event_creator_engineer_allowed(mock_db_and_auth_engineer):
     mock_db.execute.return_value = "UPDATE 1"
 
     response = client.put("/api/monitoring/calendar/events/1", json=EVENT_PAYLOAD)
+    assert response.status_code == 200
+    assert response.json() == {"ok": True}
+
+
+# Focus Block Security Tests
+
+def test_update_focus_block_not_found(mock_db_and_auth_engineer):
+    mock_db = mock_db_and_auth_engineer
+    mock_db.fetchrow.return_value = None
+
+    response = client.put("/api/monitoring/calendar/focus-blocks/999", json={"title": "New Title"})
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Focus block not found"
+
+
+def test_update_focus_block_not_owner_forbidden(mock_db_and_auth_engineer):
+    mock_db = mock_db_and_auth_engineer
+    mock_db.fetchrow.return_value = {
+        "id": 1,
+        "user_id": 99,  # Belongs to user 99, but engineer user is ID 10
+        "title": "Old Focus Block",
+    }
+
+    response = client.put("/api/monitoring/calendar/focus-blocks/1", json={"title": "New Title"})
+    assert response.status_code == 403
+    assert "Not authorized" in response.json()["detail"]
+
+
+def test_update_focus_block_owner_allowed(mock_db_and_auth_engineer):
+    mock_db = mock_db_and_auth_engineer
+    mock_db.fetchrow.return_value = {
+        "id": 1,
+        "user_id": 10,  # Matches logged-in engineer ID 10
+        "title": "Old Focus Block",
+    }
+    mock_db.execute.return_value = "UPDATE 1"
+
+    response = client.put("/api/monitoring/calendar/focus-blocks/1", json={"title": "New Title"})
+    assert response.status_code == 200
+    assert response.json() == {"ok": True}
+
+
+def test_delete_focus_block_not_owner_forbidden(mock_db_and_auth_engineer):
+    mock_db = mock_db_and_auth_engineer
+    mock_db.fetchrow.return_value = {
+        "id": 1,
+        "user_id": 99,  # Belongs to user 99, engineer is ID 10
+        "title": "Old Focus Block",
+    }
+
+    response = client.delete("/api/monitoring/calendar/focus-blocks/1")
+    assert response.status_code == 403
+    assert "Not authorized" in response.json()["detail"]
+
+
+def test_delete_focus_block_owner_allowed(mock_db_and_auth_engineer):
+    mock_db = mock_db_and_auth_engineer
+    mock_db.fetchrow.return_value = {
+        "id": 1,
+        "user_id": 10,  # Matches logged-in engineer ID 10
+        "title": "Old Focus Block",
+    }
+    mock_db.execute.return_value = "DELETE 1"
+
+    response = client.delete("/api/monitoring/calendar/focus-blocks/1")
     assert response.status_code == 200
     assert response.json() == {"ok": True}
 
