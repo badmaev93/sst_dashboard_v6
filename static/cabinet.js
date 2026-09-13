@@ -34,6 +34,10 @@
             display: 'none', alignItems: 'flex-start', justifyContent: 'center',
             paddingTop: '40px'
         });
+        el.setAttribute('role', 'dialog');
+        el.setAttribute('aria-modal', 'true');
+        el.setAttribute('aria-label', 'Личный кабинет');
+        el.setAttribute('tabindex', '-1');
     }
 
     // ── Load & Render ───────────────────────────
@@ -102,7 +106,7 @@
                         </div>
                     </div>
                 </div>
-                <button id="cab-close" style="padding:8px 12px;background:#f1f5f9;color:#64748b;border:none;
+                <button id="cab-close" aria-label="Закрыть" style="padding:8px 12px;background:#f1f5f9;color:#64748b;border:none;
                         border-radius:8px;font-size:16px;cursor:pointer;line-height:1">&times;</button>
             </div>
         `;
@@ -124,7 +128,11 @@
         _container.innerHTML = '';
         _container.appendChild(panel);
 
-        document.getElementById('cab-close').addEventListener('click', hideCabinetView);
+        const closeBtn = document.getElementById('cab-close');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', hideCabinetView);
+            closeBtn.focus();
+        }
 
         // Bind navigation buttons
         panel.querySelectorAll('[data-nav]').forEach(function(btn) {

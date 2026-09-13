@@ -159,6 +159,7 @@ async function init() {
   document.addEventListener("click", _onDocClick);
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
+      if (window.hideCabinetView) window.hideCabinetView();
       _hidePopup();
       closePanel();
       return;
