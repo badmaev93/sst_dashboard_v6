@@ -457,6 +457,11 @@ body.detail-mode #panel-toggle { top: 56px; }
   color: #0055aa;
 }
 
+.lp-btn:focus-visible, .period-btn:focus-visible {
+  outline: 2px solid #0055aa;
+  outline-offset: 1px;
+}
+
 .clim-btn.active {
   background: rgba(192,144,32,0.13);
   border-color: #c09020;
