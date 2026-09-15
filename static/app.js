@@ -159,6 +159,11 @@ async function init() {
   document.addEventListener("click", _onDocClick);
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
+      const schedModal = document.getElementById("sched-modal");
+      if (schedModal && schedModal.style.display !== "none" && schedModal.style.display !== "") {
+        if (typeof window._schedCloseModal === "function") window._schedCloseModal();
+        return;
+      }
       _hidePopup();
       closePanel();
       return;
