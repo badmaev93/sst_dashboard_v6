@@ -161,6 +161,8 @@ async function init() {
     if (e.key === "Escape") {
       _hidePopup();
       closePanel();
+      const stDetail = document.getElementById("station-detail");
+      if (stDetail) stDetail.remove();
       return;
     }
 

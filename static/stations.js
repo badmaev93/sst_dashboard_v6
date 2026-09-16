@@ -220,6 +220,9 @@
 
         panel = document.createElement('div');
         panel.id = 'station-detail';
+        panel.setAttribute('role', 'dialog');
+        panel.setAttribute('aria-label', 'Детальная информация о станции');
+        panel.setAttribute('tabindex', '-1');
         Object.assign(panel.style, {
             position: 'fixed', top: '0', right: '0',
             width: '420px', maxWidth: '96vw', height: '100vh',
@@ -286,6 +289,7 @@
                         ${statusLabel}
                     </span>
                     <button onclick="document.getElementById('station-detail').remove()"
+                            aria-label="Закрыть панель"
                             style="width:32px;height:32px;border:none;background:#f3f4f6;border-radius:8px;
                             font-size:18px;color:#6b7280;cursor:pointer;display:flex;align-items:center;
                             justify-content:center">&times;</button>
@@ -353,10 +357,10 @@
         }
 
         // Chart tabs
-        html += '<div style="display:flex;gap:6px;margin-bottom:8px" id="sd-chart-tabs">';
+        html += '<div style="display:flex;gap:6px;margin-bottom:8px" id="sd-chart-tabs" role="tablist" aria-label="Параметры графика">';
         ['sst','temp_air','wind_speed','wave_height'].forEach(function(k,i) {
             var labels = ['ТПО','Воздух','Ветер','Волны'];
-            html += '<button data-key="'+k+'" onclick="window._sdSwitchChart(\''+k+'\')" style="'+
+            html += '<button role="tab" aria-selected="'+(i===0?'true':'false')+'" data-key="'+k+'" onclick="window._sdSwitchChart(\''+k+'\')" style="'+
                 'padding:4px 10px;border-radius:6px;border:1px solid '+(i===0?'#2563eb':'#e2e8f0')+';'+
                 'background:'+(i===0?'#2563eb':'transparent')+';color:'+(i===0?'#fff':'#64748b')+';'+
                 'font-size:11px;font-weight:600;cursor:pointer;font-family:inherit" class="sd-tab-btn">'+labels[i]+'</button>';
@@ -376,6 +380,7 @@
         `;
 
         panel.innerHTML = html;
+        panel.focus();
 
         // Draw chart
         var _sdChart = null;
@@ -393,6 +398,7 @@
                 b.style.background = active ? '#2563eb' : 'transparent';
                 b.style.color = active ? '#fff' : '#64748b';
                 b.style.borderColor = active ? '#2563eb' : '#e2e8f0';
+                b.setAttribute('aria-selected', active ? 'true' : 'false');
             });
             if (_sdChart) { _sdChart.destroy(); _sdChart = null; }
             var cfg = CHART_KEYS[key] || CHART_KEYS.sst;
