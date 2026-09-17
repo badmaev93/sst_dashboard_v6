@@ -710,25 +710,39 @@ function syncUI() {
   if (S.viewMode === "detail") _updateDetailPeriodLabel();
 
   document.querySelectorAll(".pct-btn").forEach(b => {
-    b.classList.toggle("active", b.dataset.pct === String(percentile));
+    const active = b.dataset.pct === String(percentile);
+    b.classList.toggle("active", active);
+    b.setAttribute("aria-pressed", active ? "true" : "false");
   });
   document.querySelectorAll(".scale-btn").forEach(b => {
-    b.classList.toggle("active", Number(b.dataset.scale) === scale);
+    const active = Number(b.dataset.scale) === scale;
+    b.classList.toggle("active", active);
+    b.setAttribute("aria-pressed", active ? "true" : "false");
   });
   document.querySelectorAll(".smooth-btn").forEach(b => {
-    b.classList.toggle("active", (b.dataset.smooth === "1") === smooth);
+    const active = (b.dataset.smooth === "1") === smooth;
+    b.classList.toggle("active", active);
+    b.setAttribute("aria-pressed", active ? "true" : "false");
   });
   document.querySelectorAll(".blur-btn").forEach(b => {
-    b.classList.toggle("active", (b.dataset.blur === "1") === blur);
+    const active = (b.dataset.blur === "1") === blur;
+    b.classList.toggle("active", active);
+    b.setAttribute("aria-pressed", active ? "true" : "false");
   });
   document.querySelectorAll(".coast-btn").forEach(b => {
-    b.classList.toggle("active", (b.dataset.coast === "1") === S.coastline);
+    const active = (b.dataset.coast === "1") === S.coastline;
+    b.classList.toggle("active", active);
+    b.setAttribute("aria-pressed", active ? "true" : "false");
   });
   document.querySelectorAll(".contour-btn").forEach(b => {
-    b.classList.toggle("active", (b.dataset.contour === "1") === S.contours);
+    const active = (b.dataset.contour === "1") === S.contours;
+    b.classList.toggle("active", active);
+    b.setAttribute("aria-pressed", active ? "true" : "false");
   });
   document.querySelectorAll(".contlbl-btn").forEach(b => {
-    b.classList.toggle("active", (b.dataset.contlbl === "1") === S.contourLabels);
+    const active = (b.dataset.contlbl === "1") === S.contourLabels;
+    b.classList.toggle("active", active);
+    b.setAttribute("aria-pressed", active ? "true" : "false");
   });
 
   // Period buttons

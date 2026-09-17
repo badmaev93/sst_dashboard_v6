@@ -53,3 +53,7 @@ Super Productivity is an elite, open-source, local-first personal organizer desi
 ## 2026-07-28 - Elevating Shortcut Discovery for High-Throughput Web GIS Maps
 **Learning:** For application dashboards with rich keyboard-first layout control, hidden hotkeys remain completely unused unless discoverability is designed natively into the viewport. Placing a subtle hotkey legend at the footer of the initial multi-grid screen and providing a dedicated collapsible "Hotkeys" panel within the primary sidebar drastically accelerates layout onboarding and improves feature adoption without cluttering the visual interface.
 **Action:** When mapping global keyboard shortcuts in complex mapping/data interfaces, always accompany them with a subtle footer hint on comparison screens and a collapsible hotkey guide in the main sidebar.
+
+## 2026-09-17 - Contextualizing Multi-Option Settings Toggles for Screen Readers
+**Learning:** Option toggle button groups (such as ON/OFF or percentage toggles for map layers, blur, scale, and contours) lack contextual meaning for screen readers when they only contain generic labels like "Вкл" or "Выкл". Providing explicit, localized `aria-label` attributes on each toggle button and dynamically updating `aria-pressed` in `syncUI()` ensures screen readers announce the exact setting purpose and state.
+**Action:** Always add descriptive, feature-specific `aria-label`s to toggle buttons and synchronize their `aria-pressed` state attributes inside centralized UI renderers.
