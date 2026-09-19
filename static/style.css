@@ -172,6 +172,15 @@ body.detail-mode #panel-toggle { top: 56px; }
   min-width: 220px;
 }
 .cmp-param-select:focus { border-color: #0055aa; }
+.detail-tab:focus-visible,
+.detail-nav-back:focus-visible,
+#panel-toggle:focus-visible,
+.period-btn:focus-visible,
+.lp-btn:focus-visible,
+.cmp-param-select:focus-visible {
+  outline: 2px solid #0055aa;
+  outline-offset: 1px;
+}
 
 /* Image smoothing controlled dynamically via JS setSmooth() */
 
