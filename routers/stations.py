@@ -1,11 +1,12 @@
-from fastapi import APIRouter, HTTPException, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
+
 import db
 from auth import get_current_user, require_role
 
 stations_router = APIRouter(prefix="/api/monitoring", tags=["stations"])
 
 @stations_router.get("/stations")
-async def list_stations():
+async def list_stations(user=Depends(get_current_user)):
     rows = await db.pool.fetch("""
         SELECT s.*, r.sst, r.temp_air, r.wind_speed, r.wave_height, r.pressure,
                r.visibility, r.humidity, r.observed_at as last_reading_at, r.status as reading_status
@@ -18,7 +19,7 @@ async def list_stations():
     return [dict(r) for r in rows]
 
 @stations_router.get("/stations/{station_id}")
-async def get_station(station_id: int):
+async def get_station(station_id: int, user=Depends(get_current_user)):
     station = await db.pool.fetchrow("SELECT * FROM stations WHERE id = $1", station_id)
     if not station:
         raise HTTPException(404, "Station not found")
@@ -28,14 +29,14 @@ async def get_station(station_id: int):
     return {"station": dict(station), "readings": [dict(r) for r in readings]}
 
 @stations_router.get("/stations/{station_id}/readings")
-async def get_readings(station_id: int, hours: int = Query(24, ge=1, le=720)):
+async def get_readings(station_id: int, hours: int = Query(24, ge=1, le=720), user=Depends(get_current_user)):
     rows = await db.pool.fetch(
         "SELECT * FROM readings WHERE station_id = $1 AND observed_at > now() - make_interval(hours => $2) ORDER BY observed_at",
         station_id, hours)
     return [dict(r) for r in rows]
 
 @stations_router.get("/readings/latest")
-async def latest_readings():
+async def latest_readings(user=Depends(get_current_user)):
     rows = await db.pool.fetch("""
         SELECT DISTINCT ON (s.id) s.id, s.code, s.name, s.lat, s.lon, s.region, s.status,
                r.sst, r.temp_air, r.wind_speed, r.wind_dir, r.wave_height, r.pressure,
