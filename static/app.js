@@ -161,6 +161,7 @@ async function init() {
     if (e.key === "Escape") {
       _hidePopup();
       closePanel();
+      if (typeof window.closeRegionCard === "function") window.closeRegionCard();
       return;
     }
 
@@ -1323,6 +1324,7 @@ function initStationsLayer() {
   // stations.js uses window.olMap — expose it
   if (S.map && !window.olMap) window.olMap = S.map;
   if (typeof window.initStationLayer === "function") window.initStationLayer();
+  if (typeof window.initRegionLayer === "function") window.initRegionLayer();
 }
 
 function updateStationsVisibility(on) {
