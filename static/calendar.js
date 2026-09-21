@@ -502,6 +502,12 @@
                 font-weight: 700;
             }
 
+            .cal-task-checkbox:focus-visible,
+            .cal-right [role="tab"]:focus-visible {
+                outline: 2px solid #2563eb;
+                outline-offset: 2px;
+            }
+
             .cal-task-info { flex: 1; min-width: 0; }
 
             .cal-task-title {
@@ -1179,9 +1185,15 @@
 
         // Priority filter tabs
         const tabs = document.createElement('div');
+        tabs.setAttribute('role', 'tablist');
+        tabs.setAttribute('aria-label', 'Фильтр задач по приоритету');
         tabs.style.cssText = 'display:flex;gap:4px;padding:10px 16px;border-bottom:1px solid #f1f5f9;';
+        const LABELS = { 'Все': 'Все приоритеты', 'P1': 'Приоритет P1', 'P2': 'Приоритет P2', 'P3': 'Приоритет P3' };
         ['Все', 'P1', 'P2', 'P3'].forEach(function(tab) {
             const btn = document.createElement('button');
+            btn.setAttribute('role', 'tab');
+            btn.setAttribute('aria-selected', tab === 'Все' ? 'true' : 'false');
+            btn.setAttribute('aria-label', LABELS[tab]);
             btn.style.cssText = 'padding:4px 10px;border:1px solid #e2e8f0;background:#fff;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;color:#64748b;transition:all 0.15s;';
             btn.textContent = tab;
             if (tab === 'Все') {
@@ -1190,15 +1202,16 @@
                 btn.style.borderColor = '#0f172a';
             }
             btn.addEventListener('click', function() {
-                // Update active tab styles
                 tabs.querySelectorAll('button').forEach(function(b) {
                     b.style.background = '#fff';
                     b.style.color = '#64748b';
                     b.style.borderColor = '#e2e8f0';
+                    b.setAttribute('aria-selected', 'false');
                 });
                 btn.style.background = '#0f172a';
                 btn.style.color = '#fff';
                 btn.style.borderColor = '#0f172a';
+                btn.setAttribute('aria-selected', 'true');
                 filterTasks(right, tab === 'Все' ? null : tab);
             });
             tabs.appendChild(btn);
@@ -1247,7 +1260,7 @@
             item.innerHTML = `
                 <div class="cal-task-top">
                     <span class="cal-task-drag">&#8942;&#8942;</span>
-                    <div class="cal-task-checkbox ${task.completed ? 'checked' : ''}" data-task-id="${task.id}"></div>
+                    <div class="cal-task-checkbox ${task.completed ? 'checked' : ''}" data-task-id="${task.id}" role="checkbox" tabindex="0" aria-checked="${task.completed ? 'true' : 'false'}" aria-label="Отметить задачу ${esc(task.title)}"></div>
                     <div class="cal-task-info">
                         <div class="cal-task-title">${esc(task.title)}</div>
                         <div class="cal-task-meta">
@@ -1264,6 +1277,13 @@
             checkbox.addEventListener('click', function(e) {
                 e.stopPropagation();
                 toggleTask(task.id, !task.completed);
+            });
+            checkbox.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' || e.key === ' ' || e.keyCode === 13 || e.keyCode === 32) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    toggleTask(task.id, !task.completed);
+                }
             });
 
             // Drag handlers
