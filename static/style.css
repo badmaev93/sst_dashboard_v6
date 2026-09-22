@@ -1268,7 +1268,11 @@ body.detail-mode #panel-toggle { top: 56px; }
   border-color: #0055aa;
   box-shadow: 0 0 0 2px rgba(0,85,170,0.2);
 }
-.cmp-cell:focus-visible {
+.period-btn:focus-visible,
+.lp-btn:focus-visible,
+.cmp-param-select:focus-visible,
+.detail-nav-back:focus-visible,
+.detail-tab:focus-visible {
   outline: 2px solid #0055aa;
   outline-offset: 2px;
 }

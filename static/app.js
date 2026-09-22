@@ -604,7 +604,10 @@ function buildPeriodButtons() {
 
   GFS_SHORT.forEach((lbl, i) => {
     const btn = document.createElement("button");
-    btn.className = "period-btn" + (S._periodSelected && i === S.periodIdx ? " active" : "");
+    const isActive = S._periodSelected && i === S.periodIdx;
+    btn.className = "period-btn" + (isActive ? " active" : "");
+    btn.setAttribute("aria-label", GFS_LABELS[i]);
+    btn.setAttribute("aria-pressed", isActive ? "true" : "false");
     btn.textContent = lbl;
     btn.onclick = () => {
       S.periodIdx = i;
@@ -710,30 +713,46 @@ function syncUI() {
   if (S.viewMode === "detail") _updateDetailPeriodLabel();
 
   document.querySelectorAll(".pct-btn").forEach(b => {
-    b.classList.toggle("active", b.dataset.pct === String(percentile));
+    const act = b.dataset.pct === String(percentile);
+    b.classList.toggle("active", act);
+    b.setAttribute("aria-pressed", act ? "true" : "false");
   });
   document.querySelectorAll(".scale-btn").forEach(b => {
-    b.classList.toggle("active", Number(b.dataset.scale) === scale);
+    const act = Number(b.dataset.scale) === scale;
+    b.classList.toggle("active", act);
+    b.setAttribute("aria-pressed", act ? "true" : "false");
   });
   document.querySelectorAll(".smooth-btn").forEach(b => {
-    b.classList.toggle("active", (b.dataset.smooth === "1") === smooth);
+    const act = (b.dataset.smooth === "1") === smooth;
+    b.classList.toggle("active", act);
+    b.setAttribute("aria-pressed", act ? "true" : "false");
   });
   document.querySelectorAll(".blur-btn").forEach(b => {
-    b.classList.toggle("active", (b.dataset.blur === "1") === blur);
+    const act = (b.dataset.blur === "1") === blur;
+    b.classList.toggle("active", act);
+    b.setAttribute("aria-pressed", act ? "true" : "false");
   });
   document.querySelectorAll(".coast-btn").forEach(b => {
-    b.classList.toggle("active", (b.dataset.coast === "1") === S.coastline);
+    const act = (b.dataset.coast === "1") === S.coastline;
+    b.classList.toggle("active", act);
+    b.setAttribute("aria-pressed", act ? "true" : "false");
   });
   document.querySelectorAll(".contour-btn").forEach(b => {
-    b.classList.toggle("active", (b.dataset.contour === "1") === S.contours);
+    const act = (b.dataset.contour === "1") === S.contours;
+    b.classList.toggle("active", act);
+    b.setAttribute("aria-pressed", act ? "true" : "false");
   });
   document.querySelectorAll(".contlbl-btn").forEach(b => {
-    b.classList.toggle("active", (b.dataset.contlbl === "1") === S.contourLabels);
+    const act = (b.dataset.contlbl === "1") === S.contourLabels;
+    b.classList.toggle("active", act);
+    b.setAttribute("aria-pressed", act ? "true" : "false");
   });
 
   // Period buttons
   document.querySelectorAll(".period-btn").forEach((btn, i) => {
-    btn.classList.toggle("active", S._periodSelected && i === periodIdx);
+    const isActive = S._periodSelected && i === periodIdx;
+    btn.classList.toggle("active", isActive);
+    btn.setAttribute("aria-pressed", isActive ? "true" : "false");
   });
 
   // Sync station and wind anim toggle buttons aria-pressed
