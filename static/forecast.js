@@ -79,6 +79,10 @@ const AI_ICON_SVG    = `✨`;
 }
 .fv-station-item:hover { background: #f9fafb; border-color: #e5e7eb; }
 .fv-station-item.active { background: #faf5ff; border-color: #8b5cf6; }
+.fv-station-item:focus-visible {
+  outline: 2px solid #8b5cf6;
+  outline-offset: -2px;
+}
 .fv-station-dot {
   width: 10px; height: 10px;
   border-radius: 50%;
@@ -315,7 +319,7 @@ window.showForecastView = async function showForecastView() {
       <div class="fv-sidebar-header">
         <div class="fv-sidebar-title">${AI_ICON_SVG} ИИ Прогноз</div>
         <div class="fv-sidebar-sub">ML-коррекция прогнозов GFS для станций ДВ</div>
-        <input class="fv-search" id="fv-search" placeholder="Поиск станции..." />
+        <input class="fv-search" id="fv-search" placeholder="Поиск станции..." aria-label="Поиск станции" />
       </div>
       <div class="fv-station-list" id="fv-station-list">
         <div class="fv-loading"><div class="fv-spinner"></div>Загрузка станций...</div>
@@ -366,25 +370,39 @@ function _renderStationList(filter) {
   listEl.innerHTML = filtered.map(function(st) {
     const sc = STATUS_C[st.status] || '#6b7280';
     const sst = st.sst != null ? st.sst.toFixed(1).replace('.', ',') + '°C' : '—';
-    const active = _fvActiveStation && _fvActiveStation.id === st.id ? ' active' : '';
-    return `<div class="fv-station-item${active}" data-id="${st.id}">
+    const isSel = _fvActiveStation && _fvActiveStation.id === st.id;
+    const active = isSel ? ' active' : '';
+    const name = st.name || st.code;
+    const region = st.region || '';
+    return `<div class="fv-station-item${active}" data-id="${st.id}" role="button" tabindex="0" aria-selected="${isSel ? 'true' : 'false'}" aria-label="Станция ${name}, ${region}, ТПО: ${sst}">
       <span class="fv-station-dot" style="background:${sc}"></span>
       <div class="fv-station-info">
-        <div class="fv-station-name">${st.name || st.code}</div>
-        <div class="fv-station-meta">${st.code || ''} · ${st.region || ''}</div>
+        <div class="fv-station-name">${name}</div>
+        <div class="fv-station-meta">${st.code || ''} · ${region}</div>
       </div>
       <span class="fv-station-sst">${sst}</span>
     </div>`;
   }).join('');
 
   listEl.querySelectorAll('.fv-station-item').forEach(function(el) {
-    el.addEventListener('click', function() {
+    const selectStation = function() {
       const id = parseInt(el.dataset.id);
       const st = _fvStations.find(s => s.id === id);
       _fvActiveStation = st;
-      listEl.querySelectorAll('.fv-station-item').forEach(e => e.classList.remove('active'));
-      el.classList.add('active');
+      listEl.querySelectorAll('.fv-station-item').forEach(e => {
+        const isAct = e === el;
+        e.classList.toggle('active', isAct);
+        e.setAttribute('aria-selected', isAct ? 'true' : 'false');
+      });
       _loadForecast(id, st);
+    };
+
+    el.addEventListener('click', selectStation);
+    el.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        selectStation();
+      }
     });
   });
 }
@@ -863,7 +881,9 @@ window.showForecastPanel = function(stationId) {
     var listEl = document.getElementById('fv-station-list');
     if (listEl) {
       listEl.querySelectorAll('.fv-station-item').forEach(function(el) {
-        el.classList.toggle('active', parseInt(el.dataset.id) === stationId);
+        const isAct = parseInt(el.dataset.id) === stationId;
+        el.classList.toggle('active', isAct);
+        el.setAttribute('aria-selected', isAct ? 'true' : 'false');
       });
     }
     _loadForecast(stationId, st);
