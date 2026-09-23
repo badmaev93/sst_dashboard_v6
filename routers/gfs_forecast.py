@@ -1,10 +1,11 @@
 """API прогнозов GFS — тайлы, значения по станциям, метаданные."""
 import logging
 from datetime import datetime, timezone
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Depends, Query
 from fastapi.responses import Response
 
 import db
+from auth import get_current_user
 from services.smb_gfs import get_smb_fetcher, FORECAST_HOURS, LON_MIN, LON_MAX, LAT_MIN, LAT_MAX
 from services.gee_gfs import _build_lut  # повторное использование таблицы поиска цветовой палитры
 from services.serendipity import correct_gfs_sst, correct_gfs_wind
@@ -17,7 +18,7 @@ gfs_router = APIRouter(prefix="/api/gfs", tags=["gfs"])
 
 
 @gfs_router.get("/latest")
-async def gfs_latest():
+async def gfs_latest(user=Depends(get_current_user)):
     f = get_smb_fetcher()
     f.fetch_latest()
     info = f.cycle_info
@@ -30,13 +31,14 @@ async def gfs_latest():
 
 
 @gfs_router.get("/timeline")
-async def gfs_timeline():
+async def gfs_timeline(user=Depends(get_current_user)):
     return {"hours": FORECAST_HOURS, "labels": [f"+{h}ч" for h in FORECAST_HOURS]}
 
 
 @gfs_router.get("/tile/{variable}/{hour}")
 async def gfs_tile(variable: str, hour: int,
-                   colormap: str = Query("RdYlBu_r")):
+                   colormap: str = Query("RdYlBu_r"),
+                   user=Depends(get_current_user)):
     if hour not in FORECAST_HOURS:
         hour = min(FORECAST_HOURS, key=lambda h: abs(h - hour))
 
@@ -47,7 +49,7 @@ async def gfs_tile(variable: str, hour: int,
 
 
 @gfs_router.get("/stations/{hour}")
-async def gfs_station_forecast(hour: int):
+async def gfs_station_forecast(hour: int, user=Depends(get_current_user)):
     if hour not in FORECAST_HOURS:
         hour = min(FORECAST_HOURS, key=lambda h: abs(h - hour))
 
@@ -80,7 +82,7 @@ async def gfs_station_forecast(hour: int):
 
 
 @gfs_router.get("/station/{station_id}/{hour}")
-async def gfs_single_station(station_id: int, hour: int):
+async def gfs_single_station(station_id: int, hour: int, user=Depends(get_current_user)):
     if hour not in FORECAST_HOURS:
         hour = min(FORECAST_HOURS, key=lambda h: abs(h - hour))
 
