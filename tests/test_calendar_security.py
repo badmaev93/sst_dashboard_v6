@@ -105,6 +105,58 @@ def test_update_event_creator_engineer_allowed(mock_db_and_auth_engineer):
     assert response.json() == {"ok": True}
 
 
+TASK_PAYLOAD = {"title": "Updated Task", "completed": True}
+
+def test_update_task_not_found(mock_db_and_auth_engineer):
+    mock_db = mock_db_and_auth_engineer
+    mock_db.fetchrow.return_value = None
+
+    response = client.put("/api/monitoring/calendar/tasks/999", json=TASK_PAYLOAD)
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Task not found"
+
+
+def test_update_task_unauthorized_user(mock_db_and_auth_engineer):
+    mock_db = mock_db_and_auth_engineer
+    mock_db.fetchrow.return_value = {
+        "id": 1,
+        "assigned_to": 99,  # Assigned to user 99, engineer is user 10
+        "title": "Original Task",
+    }
+
+    response = client.put("/api/monitoring/calendar/tasks/1", json=TASK_PAYLOAD)
+    assert response.status_code == 403
+    assert "Not authorized" in response.json()["detail"]
+
+
+def test_update_task_assigned_user_allowed(mock_db_and_auth_engineer):
+    mock_db = mock_db_and_auth_engineer
+    mock_db.fetchrow.return_value = {
+        "id": 1,
+        "assigned_to": 10,  # Matches engineer user 10
+        "title": "Original Task",
+    }
+    mock_db.execute.return_value = "UPDATE 1"
+
+    response = client.put("/api/monitoring/calendar/tasks/1", json=TASK_PAYLOAD)
+    assert response.status_code == 200
+    assert response.json() == {"ok": True}
+
+
+def test_update_task_supervisor_allowed(mock_db_and_auth_supervisor):
+    mock_db = mock_db_and_auth_supervisor
+    mock_db.fetchrow.return_value = {
+        "id": 1,
+        "assigned_to": 99,  # Assigned to user 99, supervisor is user 20
+        "title": "Original Task",
+    }
+    mock_db.execute.return_value = "UPDATE 1"
+
+    response = client.put("/api/monitoring/calendar/tasks/1", json=TASK_PAYLOAD)
+    assert response.status_code == 200
+    assert response.json() == {"ok": True}
+
+
 def test_update_event_supervisor_allowed(mock_db_and_auth_supervisor):
     mock_db = mock_db_and_auth_supervisor
     mock_db.fetchrow.return_value = {
