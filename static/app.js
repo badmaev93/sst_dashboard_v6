@@ -604,8 +604,11 @@ function buildPeriodButtons() {
 
   GFS_SHORT.forEach((lbl, i) => {
     const btn = document.createElement("button");
-    btn.className = "period-btn" + (S._periodSelected && i === S.periodIdx ? " active" : "");
+    const active = S._periodSelected && i === S.periodIdx;
+    btn.className = "period-btn" + (active ? " active" : "");
     btn.textContent = lbl;
+    btn.setAttribute("aria-label", `Горизонт прогноза: ${GFS_LABELS[i]}`);
+    btn.setAttribute("aria-pressed", active ? "true" : "false");
     btn.onclick = () => {
       S.periodIdx = i;
       S._periodSelected = true;
@@ -733,7 +736,9 @@ function syncUI() {
 
   // Period buttons
   document.querySelectorAll(".period-btn").forEach((btn, i) => {
-    btn.classList.toggle("active", S._periodSelected && i === periodIdx);
+    const active = S._periodSelected && i === periodIdx;
+    btn.classList.toggle("active", active);
+    btn.setAttribute("aria-pressed", active ? "true" : "false");
   });
 
   // Sync station and wind anim toggle buttons aria-pressed
@@ -1245,14 +1250,20 @@ function togglePanel() {
   const toggle = document.getElementById("panel-toggle");
   if (panel) {
     const isOpen = panel.classList.toggle("panel-open");
-    if (toggle) toggle.setAttribute("aria-expanded", isOpen ? "true" : "false");
+    if (toggle) {
+      toggle.setAttribute("aria-expanded", isOpen ? "true" : "false");
+      toggle.setAttribute("aria-label", isOpen ? "Закрыть панель управления" : "Открыть панель управления");
+    }
   }
 }
 function closePanel() {
   const panel = document.getElementById("left-panel");
   const toggle = document.getElementById("panel-toggle");
   if (panel) panel.classList.remove("panel-open");
-  if (toggle) toggle.setAttribute("aria-expanded", "false");
+  if (toggle) {
+    toggle.setAttribute("aria-expanded", "false");
+    toggle.setAttribute("aria-label", "Открыть панель управления");
+  }
 }
 function toggleLpSection(id) {
   const section = document.getElementById(id);
