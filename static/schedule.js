@@ -92,9 +92,9 @@
           График дежурств
         </h2>
         <div style="display:flex;align-items:center;gap:8px">
-          <button onclick="window._schedPrev()" style="padding:6px 12px;border:1px solid #d1d5db;border-radius:6px;background:#fff;cursor:pointer;font-size:14px">&larr;</button>
+          <button onclick="window._schedPrev()" style="padding:6px 12px;border:1px solid #d1d5db;border-radius:6px;background:#fff;cursor:pointer;font-size:14px" aria-label="Предыдущая неделя">&larr;</button>
           <span style="font-size:14px;font-weight:500;min-width:180px;text-align:center">${weekRange} &middot; ${monthLabel}</span>
-          <button onclick="window._schedNext()" style="padding:6px 12px;border:1px solid #d1d5db;border-radius:6px;background:#fff;cursor:pointer;font-size:14px">&rarr;</button>
+          <button onclick="window._schedNext()" style="padding:6px 12px;border:1px solid #d1d5db;border-radius:6px;background:#fff;cursor:pointer;font-size:14px" aria-label="Следующая неделя">&rarr;</button>
           <button onclick="window._schedToday()" style="padding:6px 12px;border:1px solid #0066cc;border-radius:6px;background:#0066cc;color:#fff;cursor:pointer;font-size:14px">Сегодня</button>
         </div>
       </div>`;
@@ -192,7 +192,7 @@
     html += '</div>';
 
     // Add modal
-    html += `<div id="sched-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center">
+    html += `<div id="sched-modal" role="dialog" aria-modal="true" aria-label="Назначить дежурство" tabindex="-1" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center">
       <div style="background:#fff;border-radius:12px;padding:24px;max-width:440px;width:90%;margin:auto;position:relative;top:50%;transform:translateY(-50%)">
         <h3 style="margin:0 0 16px;font-size:16px;font-weight:600">Назначить дежурство</h3>
         <div style="display:flex;flex-direction:column;gap:12px">
@@ -222,7 +222,7 @@
           </label>
           <div style="display:flex;gap:8px;margin-top:8px">
             <button onclick="window._schedSave()" style="flex:1;padding:10px;border:none;border-radius:6px;background:#0066cc;color:#fff;cursor:pointer;font-weight:500;font-size:14px">Сохранить</button>
-            <button onclick="window._schedCloseModal()" style="flex:1;padding:10px;border:1px solid #d1d5db;border-radius:6px;background:#fff;cursor:pointer;font-size:14px">Отмена</button>
+            <button onclick="window._schedCloseModal()" aria-label="Закрыть" style="flex:1;padding:10px;border:1px solid #d1d5db;border-radius:6px;background:#fff;cursor:pointer;font-size:14px">Отмена</button>
           </div>
         </div>
       </div>
@@ -248,6 +248,10 @@
     const endEl = document.getElementById('sched-end');
     if (startEl) startEl.value = tomorrow.toISOString().slice(0, 16);
     if (endEl) endEl.value = end.toISOString().slice(0, 16);
+    setTimeout(() => {
+      const stEl = document.getElementById('sched-station');
+      if (stEl) stEl.focus();
+    }, 50);
   };
 
   window._schedCloseModal = function () {
