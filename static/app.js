@@ -606,6 +606,8 @@ function buildPeriodButtons() {
     const btn = document.createElement("button");
     btn.className = "period-btn" + (S._periodSelected && i === S.periodIdx ? " active" : "");
     btn.textContent = lbl;
+    btn.setAttribute("aria-label", GFS_LABELS[i] || lbl);
+    btn.setAttribute("aria-pressed", (S._periodSelected && i === S.periodIdx) ? "true" : "false");
     btn.onclick = () => {
       S.periodIdx = i;
       S._periodSelected = true;
@@ -710,30 +712,54 @@ function syncUI() {
   if (S.viewMode === "detail") _updateDetailPeriodLabel();
 
   document.querySelectorAll(".pct-btn").forEach(b => {
-    b.classList.toggle("active", b.dataset.pct === String(percentile));
+    const active = b.dataset.pct === String(percentile);
+    b.classList.toggle("active", active);
+    b.setAttribute("aria-pressed", active ? "true" : "false");
+    b.setAttribute("aria-label", `Перцентиль ${b.dataset.pct}`);
   });
   document.querySelectorAll(".scale-btn").forEach(b => {
-    b.classList.toggle("active", Number(b.dataset.scale) === scale);
+    const active = Number(b.dataset.scale) === scale;
+    b.classList.toggle("active", active);
+    b.setAttribute("aria-pressed", active ? "true" : "false");
+    b.setAttribute("aria-label", `Разрешение ${b.dataset.scale}x`);
   });
   document.querySelectorAll(".smooth-btn").forEach(b => {
-    b.classList.toggle("active", (b.dataset.smooth === "1") === smooth);
+    const active = (b.dataset.smooth === "1") === smooth;
+    b.classList.toggle("active", active);
+    b.setAttribute("aria-pressed", active ? "true" : "false");
+    b.setAttribute("aria-label", `Интерполяция ${b.dataset.smooth === "1" ? "вкл" : "выкл"}`);
   });
   document.querySelectorAll(".blur-btn").forEach(b => {
-    b.classList.toggle("active", (b.dataset.blur === "1") === blur);
+    const active = (b.dataset.blur === "1") === blur;
+    b.classList.toggle("active", active);
+    b.setAttribute("aria-pressed", active ? "true" : "false");
+    b.setAttribute("aria-label", `Размытие ${b.dataset.blur === "1" ? "вкл" : "выкл"}`);
   });
   document.querySelectorAll(".coast-btn").forEach(b => {
-    b.classList.toggle("active", (b.dataset.coast === "1") === S.coastline);
+    const active = (b.dataset.coast === "1") === S.coastline;
+    b.classList.toggle("active", active);
+    b.setAttribute("aria-pressed", active ? "true" : "false");
+    b.setAttribute("aria-label", `Береговая линия ${b.dataset.coast === "1" ? "вкл" : "выкл"}`);
   });
   document.querySelectorAll(".contour-btn").forEach(b => {
-    b.classList.toggle("active", (b.dataset.contour === "1") === S.contours);
+    const active = (b.dataset.contour === "1") === S.contours;
+    b.classList.toggle("active", active);
+    b.setAttribute("aria-pressed", active ? "true" : "false");
+    b.setAttribute("aria-label", `Изолинии ${b.dataset.contour === "1" ? "вкл" : "выкл"}`);
   });
   document.querySelectorAll(".contlbl-btn").forEach(b => {
-    b.classList.toggle("active", (b.dataset.contlbl === "1") === S.contourLabels);
+    const active = (b.dataset.contlbl === "1") === S.contourLabels;
+    b.classList.toggle("active", active);
+    b.setAttribute("aria-pressed", active ? "true" : "false");
+    b.setAttribute("aria-label", `Подписи изолиний ${b.dataset.contlbl === "1" ? "вкл" : "выкл"}`);
   });
 
   // Period buttons
   document.querySelectorAll(".period-btn").forEach((btn, i) => {
-    btn.classList.toggle("active", S._periodSelected && i === periodIdx);
+    const active = S._periodSelected && i === periodIdx;
+    btn.classList.toggle("active", active);
+    btn.setAttribute("aria-pressed", active ? "true" : "false");
+    btn.setAttribute("aria-label", GFS_LABELS[i] || GFS_SHORT[i]);
   });
 
   // Sync station and wind anim toggle buttons aria-pressed
