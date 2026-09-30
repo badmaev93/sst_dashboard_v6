@@ -12,3 +12,8 @@
 **Vulnerability:** The PUT endpoint for request updating (`/api/monitoring/requests/{req_id}`) was accessible to any logged-in user without checking if the user was the request creator or a supervisor. This allowed BOLA / IDOR manipulation. Furthermore, a non-supervisor could modify the request status directly to administrative states like 'signed' or 'rejected', entirely bypassing the supervisor approval signature flow.
 **Learning:** Endpoints allowing mutations (PUT/PATCH/DELETE) require checking ownership/creatorship of resources or role-based access control (RBAC). Simply verifying that a user is authenticated (`get_current_user`) is not sufficient for update or delete requests.
 **Prevention:** Always implement rigorous object-level ownership checks and restrict status transitions to allowed roles on any mutation endpoint. Never trust input payloads (like `status`) without checking the current user's role permissions.
+
+## 2026-07-22 - [BOLA and Missing Resource Validation in Task Modification]
+**Vulnerability:** The PUT endpoint for task updating (`/api/monitoring/calendar/tasks/{task_id}`) allowed any authenticated user to modify any task regardless of assignment, and silently returned success even if the task ID did not exist.
+**Learning:** Developers relied on simple authentication dependencies (`user=Depends(get_current_user)`) without validating that the target resource exists (`404`) and that the current user owns or is assigned to the resource (`403`).
+**Prevention:** On resource update endpoints, query the database for the resource first, return a 404 HTTP status if missing, and verify object-level authorization (`existing["assigned_to"] == user["id"]` or supervisor role) before performing updates.
