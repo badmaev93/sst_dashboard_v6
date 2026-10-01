@@ -93,9 +93,10 @@
         });
 
         overlay.innerHTML = `
-            <div style="background:#fff;border-radius:14px;padding:36px 32px 28px;width:370px;
+            <div role="dialog" aria-modal="true" aria-label="Вход в систему" tabindex="-1"
+                 style="background:#fff;border-radius:14px;padding:36px 32px 28px;width:370px;
                         box-shadow:0 20px 60px rgba(0,0,0,0.18);font-family:inherit;position:relative">
-                <button id="auth-close" style="position:absolute;top:12px;right:12px;width:32px;height:32px;
+                <button id="auth-close" aria-label="Закрыть" style="position:absolute;top:12px;right:12px;width:32px;height:32px;
                         border:none;background:#f3f4f6;border-radius:8px;font-size:18px;color:#6b7280;
                         cursor:pointer;display:flex;align-items:center;justify-content:center;
                         transition:background .15s"
@@ -188,6 +189,11 @@
             if (e.key === 'Enter') passwordInput.focus();
         });
 
+        // Close on Escape key
+        overlay.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') overlay.remove();
+        });
+
         // Close button
         var closeBtn = document.getElementById('auth-close');
         if (closeBtn) closeBtn.addEventListener('click', function() { overlay.remove(); });
@@ -214,7 +220,8 @@
 
         const initials = (user.full_name || user.username || '?').split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
         menu.innerHTML = `
-            <div id="user-menu-toggle" style="display:flex;align-items:center;gap:0;padding:0;
+            <div id="user-menu-toggle" role="button" tabindex="0" aria-label="Меню пользователя"
+                 aria-haspopup="true" aria-expanded="false" style="display:flex;align-items:center;gap:0;padding:0;
                  cursor:pointer;user-select:none;width:40px;height:40px;justify-content:center">
                 <div style="width:36px;height:36px;border-radius:50%;background:${r.bg};
                      display:flex;align-items:center;justify-content:center;
@@ -252,11 +259,27 @@
         const dropdown = document.getElementById('user-menu-dropdown');
         let open = false;
 
-        toggle.addEventListener('click', function() {
+        function toggleMenu() {
             open = !open;
             dropdown.style.display = open ? 'block' : 'none';
             menu.style.borderRadius = open ? '10px' : '50%';
             menu.style.minWidth = open ? '200px' : '';
+            toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+        }
+
+        toggle.addEventListener('click', toggleMenu);
+        toggle.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                toggleMenu();
+            } else if (e.key === 'Escape' && open) {
+                open = false;
+                dropdown.style.display = 'none';
+                menu.style.borderRadius = '50%';
+                menu.style.minWidth = '';
+                toggle.setAttribute('aria-expanded', 'false');
+                toggle.focus();
+            }
         });
 
         menu.querySelectorAll('.um-btn').forEach(function(btn) {
@@ -266,6 +289,7 @@
                 if (action === 'cabinet' && window.showCabinetView) window.showCabinetView();
                 dropdown.style.display = 'none';
                 open = false;
+                toggle.setAttribute('aria-expanded', 'false');
             });
         });
 
@@ -275,6 +299,7 @@
                 open = false;
                 menu.style.borderRadius = '50%';
                 menu.style.minWidth = '';
+                toggle.setAttribute('aria-expanded', 'false');
             }
         });
     }
