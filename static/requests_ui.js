@@ -117,7 +117,7 @@
                             border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">
                         Создать заявку
                     </button>
-                    <button id="req-close" style="padding:8px 12px;background:#f1f5f9;color:#64748b;border:none;
+                    <button id="req-close" aria-label="Закрыть" style="padding:8px 12px;background:#f1f5f9;color:#64748b;border:none;
                             border-radius:8px;font-size:16px;cursor:pointer;line-height:1">&times;</button>
                 </div>
             </div>
@@ -252,6 +252,10 @@
 
         var modal = document.createElement('div');
         modal.id = 'req-detail-modal';
+        modal.setAttribute('role', 'dialog');
+        modal.setAttribute('aria-modal', 'true');
+        modal.setAttribute('aria-label', 'Детальная информация о заявке');
+        modal.setAttribute('tabindex', '-1');
         Object.assign(modal.style, {
             position: 'fixed', top: '47px', left: '0', right: '0', bottom: '0',
             zIndex: '8800', background: '#fff', padding: '32px 40px',
@@ -297,7 +301,7 @@
                         ${badge(pr.label, pr.color, '#fff')}
                     </div>
                 </div>
-                <button id="detail-close" style="background:#f1f5f9;border:none;border-radius:8px;
+                <button id="detail-close" aria-label="Закрыть" style="background:#f1f5f9;border:none;border-radius:8px;
                     width:36px;height:36px;font-size:18px;cursor:pointer;color:#64748b;flex-shrink:0;z-index:10">&times;</button>
             </div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
@@ -324,6 +328,7 @@
         `;
 
         document.body.appendChild(modal);
+        setTimeout(function() { modal.focus(); }, 50);
         document.getElementById('detail-close').addEventListener('click', function() { modal.remove(); });
 
         if (r.status === 'pending' && isSupervisor) {
@@ -395,6 +400,10 @@
 
         form = document.createElement('div');
         form.id = 'req-create-form';
+        form.setAttribute('role', 'dialog');
+        form.setAttribute('aria-modal', 'true');
+        form.setAttribute('aria-label', 'Создать новую заявку');
+        form.setAttribute('tabindex', '-1');
         Object.assign(form.style, {
             position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)',
             zIndex: '8600', background: '#fff', borderRadius: '14px', padding: '28px',
@@ -414,7 +423,7 @@
         form.innerHTML = `
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
                 <h3 style="margin:0;font-size:16px;font-weight:700;color:#1a2030">Создать заявку</h3>
-                <button id="req-form-close" style="background:none;border:none;font-size:18px;
+                <button id="req-form-close" aria-label="Закрыть" style="background:none;border:none;font-size:18px;
                         cursor:pointer;color:#94a3b8">&times;</button>
             </div>
             ${field('Название', '<input id="req-f-title" type="text" style="' + inputStyle() + '" />')}
@@ -438,6 +447,10 @@
         `;
 
         document.body.appendChild(form);
+        setTimeout(function() {
+            var input = document.getElementById('req-f-title');
+            if (input) input.focus();
+        }, 50);
 
         document.getElementById('req-form-close').addEventListener('click', function() { form.remove(); });
         document.getElementById('req-form-submit').addEventListener('click', async function() {
@@ -505,4 +518,13 @@
                '<span style="display:block;font-size:12px;font-weight:600;color:#475569;margin-bottom:4px">' +
                label + '</span>' + input + '</label>';
     }
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            const form = document.getElementById('req-create-form');
+            if (form) { form.remove(); return; }
+            const detail = document.getElementById('req-detail-modal');
+            if (detail) { detail.remove(); return; }
+        }
+    });
 })();
