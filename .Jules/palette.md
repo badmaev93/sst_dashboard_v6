@@ -20,6 +20,7 @@ Super Productivity is an elite, open-source, local-first personal organizer desi
 
 1. **Frictionless Quick Capture & Low Cognitive Load:**
    - *Quick Task Capture:* Users can capture tasks in seconds from any view using global shortcuts, avoiding complex forms or multi-step wizard dialogs.
+   - *Short-Syntax Inline Parsing:* Quick-add inputs support inline syntax (e.g., `#tag`, `+project`, `1h30m` estimate) to configure items on the fly without breaking typing flow.
    - *Minimalist, Non-Intrusive UI:* Complex configurations are tucked away using progressive disclosure; core actions remain visible and accessible within a single click or keypress.
 
 2. **The "Local-First" Paradigm (Sub-Millisecond Speed & Zero Downtime):**
@@ -42,6 +43,10 @@ Super Productivity is an elite, open-source, local-first personal organizer desi
 6. **Structured Daily/Shift Work Reviews & Hand-offs:**
    - Features dedicated end-of-day or shift summary workflows to review completed tasks, track time spent, log anomalies, and prepare hand-off reports for team members or incoming duty shifts.
 
+7. **Timeboxing and Focus Modes (Pomodoro / Focus Blocks):**
+   - Built-in time tracking and focus timers (Pomodoro mode) prevent burnout and enforce deliberate single-task focus.
+   - Visual cues highlight the active task or focus block while minimizing distracting background telemetry.
+
 ### Applied Usability Implementations in GFS Dashboard v6:
 
 - **Local-First Sync (`localStorage`):** Automatic persistence of active GFS forecast parameters, view modes, map scale, contour/smooth toggles, and station overlay preferences. Restores automatically on reload.
@@ -49,6 +54,7 @@ Super Productivity is an elite, open-source, local-first personal organizer desi
 - **Viewport Shortcut Discoverability:** A subtle footer hotkey legend on comparison screens and a collapsible hotkey guide in the main sidebar.
 - **Contextual Side Notes for Duty Requests & Tasks:** Support for inline attachments and context notes on station monitoring tasks and maintenance requests.
 - **Shift Review Workflow:** End-of-shift daily review summaries in the duty schedule module to review station status logs and hand off active requests.
+- **Focus Blocks & Timeboxing in Calendar:** Personal focus block scheduling to reserve uninterrupted monitoring and data review slots.
 
 ## 2026-07-28 - Elevating Shortcut Discovery for High-Throughput Web GIS Maps
 **Learning:** For application dashboards with rich keyboard-first layout control, hidden hotkeys remain completely unused unless discoverability is designed natively into the viewport. Placing a subtle hotkey legend at the footer of the initial multi-grid screen and providing a dedicated collapsible "Hotkeys" panel within the primary sidebar drastically accelerates layout onboarding and improves feature adoption without cluttering the visual interface.
