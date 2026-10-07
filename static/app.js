@@ -604,8 +604,11 @@ function buildPeriodButtons() {
 
   GFS_SHORT.forEach((lbl, i) => {
     const btn = document.createElement("button");
-    btn.className = "period-btn" + (S._periodSelected && i === S.periodIdx ? " active" : "");
+    const active = S._periodSelected && i === S.periodIdx;
+    btn.className = "period-btn" + (active ? " active" : "");
     btn.textContent = lbl;
+    btn.setAttribute("aria-label", GFS_LABELS[i] || lbl);
+    btn.setAttribute("aria-pressed", active ? "true" : "false");
     btn.onclick = () => {
       S.periodIdx = i;
       S._periodSelected = true;
@@ -733,7 +736,9 @@ function syncUI() {
 
   // Period buttons
   document.querySelectorAll(".period-btn").forEach((btn, i) => {
-    btn.classList.toggle("active", S._periodSelected && i === periodIdx);
+    const active = S._periodSelected && i === periodIdx;
+    btn.classList.toggle("active", active);
+    btn.setAttribute("aria-pressed", active ? "true" : "false");
   });
 
   // Sync station and wind anim toggle buttons aria-pressed
