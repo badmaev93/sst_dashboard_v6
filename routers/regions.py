@@ -1,8 +1,9 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from fastapi.responses import FileResponse
 import db
 import json
 import os
+from auth import get_current_user
 
 regions_router = APIRouter(prefix="/api/regions", tags=["regions"])
 
@@ -40,7 +41,7 @@ def _compute_bbox(geom):
 
 
 @regions_router.get("/")
-async def list_regions():
+async def list_regions(user=Depends(get_current_user)):
     geo = _load_geojson()
     regions = []
     for feat in geo["features"]:
@@ -102,14 +103,14 @@ async def list_regions():
 
 
 @regions_router.get("/geojson")
-async def get_geojson():
+async def get_geojson(user=Depends(get_current_user)):
     if not os.path.exists(GEOJSON_PATH):
         raise HTTPException(404, "GeoJSON file not found")
     return FileResponse(GEOJSON_PATH, media_type="application/geo+json")
 
 
 @regions_router.get("/{code}")
-async def get_region(code: str):
+async def get_region(code: str, user=Depends(get_current_user)):
     code = code.upper()
     geo = _load_geojson()
 
