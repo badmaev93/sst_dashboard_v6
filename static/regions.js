@@ -174,6 +174,9 @@
         if (_regionCard) return;
         var card = document.createElement('div');
         card.id = 'region-card';
+        card.setAttribute('role', 'dialog');
+        card.setAttribute('aria-label', 'Детальная информация о регионе');
+        card.setAttribute('tabindex', '-1');
         card.style.cssText = [
             'display:none',
             'position:fixed',
@@ -196,6 +199,7 @@
     async function showRegionCard(code, name, color) {
         if (!_regionCard) return;
         _regionCard.style.display = 'block';
+        _regionCard.focus();
         _regionCard.innerHTML = '<div style="padding:24px;text-align:center;color:#94a3b8">Загрузка...</div>';
 
         try {
@@ -221,7 +225,7 @@
         html += '<div style="width:14px;height:14px;border-radius:4px;background:' + esc(color) + '"></div>';
         html += '<div style="font-size:17px;font-weight:700;color:#1a2030">' + esc(data.name) + '</div>';
         html += '</div>';
-        html += '<button onclick="closeRegionCard()" style="width:30px;height:30px;border:none;background:#f3f4f6;border-radius:8px;font-size:16px;color:#6b7280;cursor:pointer;display:flex;align-items:center;justify-content:center">&times;</button>';
+        html += '<button onclick="closeRegionCard()" aria-label="Закрыть" style="width:30px;height:30px;border:none;background:#f3f4f6;border-radius:8px;font-size:16px;color:#6b7280;cursor:pointer;display:flex;align-items:center;justify-content:center">&times;</button>';
         html += '</div>';
 
         // Stats row
@@ -250,7 +254,9 @@
                 var time = st.observed_at ? new Date(st.observed_at).toLocaleTimeString('ru-RU', {hour:'2-digit',minute:'2-digit'}) : '\u2014';
 
                 html += '<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;margin-bottom:6px;background:#f8fafc;border-radius:10px;cursor:pointer" ';
-                html += 'onclick="if(window.showStationDetail)window.showStationDetail(' + st.id + ')">';
+                html += 'role="button" tabindex="0" aria-label="Станция ' + esc(st.name) + '" ';
+                html += 'onclick="if(window.showStationDetail)window.showStationDetail(' + st.id + ')" ';
+                html += 'onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();if(window.showStationDetail)window.showStationDetail(' + st.id + ');}">';
 
                 // Status dot
                 html += '<span style="width:10px;height:10px;border-radius:50%;background:' + statusColor + ';flex-shrink:0" title="' + esc(statusLabel) + '"></span>';
@@ -284,6 +290,10 @@
 
         _regionCard.innerHTML = html;
     }
+
+    window.createRegionCard = createRegionCard;
+    window.showRegionCard = showRegionCard;
+    window.renderRegionCard = renderRegionCard;
 
     window.closeRegionCard = function() {
         if (_regionCard) _regionCard.style.display = 'none';
