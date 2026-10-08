@@ -18,14 +18,14 @@ This journal contains critical learnings on UX and accessibility enhancements fo
 
 Super Productivity is an elite, open-source, local-first personal organizer designed for developers and power users. Analyzing its interface and workflow paradigms reveals several cornerstone usability best practices:
 
-1. **Frictionless Quick Capture & Low Cognitive Load:**
-   - *Quick Task Capture:* Users can capture tasks in seconds from any view using global shortcuts, avoiding complex forms or multi-step wizard dialogs.
-   - *Minimalist, Non-Intrusive UI:* Complex configurations are tucked away using progressive disclosure; core actions remain visible and accessible within a single click or keypress.
+1. **Frictionless Quick Capture & Short Syntax:**
+   - *Quick Task/Request Capture:* Users can capture tasks in seconds from any view using global hotkeys (e.g., `Shift+A`), avoiding multi-step form dialogs.
+   - *Short Syntax Input Parsing:* Inline commands (like `#tag`, `+project`, `1h30m`, `@assignee`) allow users to set attributes while typing without leaving the keyboard.
 
 2. **The "Local-First" Paradigm (Sub-Millisecond Speed & Zero Downtime):**
    - No mandatory cloud sync or registration barriers.
    - All state, active filters, user options, and workspace preferences are persisted instantly in local storage (`localStorage` / `IndexedDB`).
-   - Result: Instant startup, zero latency during layout transitions, and seamless offline operation.
+   - Optional End-to-End Encrypted sync (SuperSync / WebDAV / Dropbox) gives users total data ownership.
 
 3. **Keyboard-Centric Design & Shortcut Discovery:**
    - Every primary action is mapped to global keyboard shortcuts.
@@ -39,7 +39,10 @@ Super Productivity is an elite, open-source, local-first personal organizer desi
    - Tasks and items allow attaching contextual information directly (e.g., Markdown notes, URLs, commands, or logs).
    - Keeps secondary information accessible in collapsible side panels without cluttering the primary list or map view.
 
-6. **Structured Daily/Shift Work Reviews & Hand-offs:**
+6. **Focus & Health-Aware Workflow Controls:**
+   - Pomodoro timer integration, break reminders, and anti-procrastination prompts encourage sustained focus while preventing burnout during intense operational monitoring sessions.
+
+7. **Structured Daily/Shift Work Reviews & Hand-offs:**
    - Features dedicated end-of-day or shift summary workflows to review completed tasks, track time spent, log anomalies, and prepare hand-off reports for team members or incoming duty shifts.
 
 7. **Timeboxing, Focus Blocks & Break Reminders:**
