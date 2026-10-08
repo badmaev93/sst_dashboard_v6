@@ -56,6 +56,34 @@ Super Productivity is an elite, open-source, local-first personal organizer desi
 - **Contextual Side Notes for Duty Requests & Tasks:** Support for inline attachments and context notes on station monitoring tasks and maintenance requests.
 - **Shift Review Workflow:** End-of-shift daily review summaries in the duty schedule module to review station status logs and hand off active requests.
 
+## Super Productivity Usability Paradigms & Ideas for SST Dashboard
+
+Super Productivity sets a benchmark for developer-first productivity tools. Translating its core UX design patterns to the hydro-meteorological **SST Dashboard v6** application yields high-impact usability enhancements:
+
+1. **Frictionless Quick Capture & Global Command Palette (Omni-Bar):**
+   - *Paradigm:* Capture tasks and switch views without navigating hierarchical menus or multi-step modal dialogs.
+   - *SST Idea:* A global `Ctrl+K` / `Cmd+K` command overlay allowing hydro-meteorologists and duty engineers to instantly jump to specific stations (`/st Magadan`), trigger forecast calculations, or file urgent equipment maintenance requests from anywhere in the app.
+
+2. **Local-First Zero-Latency Architecture:**
+   - *Paradigm:* Persist workspace configurations, active filters, and interactive map settings in client-side storage (`localStorage` / `IndexedDB`) before syncing to backend servers.
+   - *SST Idea:* Store active GFS forecast layers, region filters, timeline zoom positions, and station overlay preferences locally so reloading or returning to the dashboard loads instant, layout-shift-free visual states.
+
+3. **Keyboard-First Ergonomics & Hotkey Discovery:**
+   - *Paradigm:* Map all routine actions to single-key hotkeys or global shortcuts, equipped with Cyrillic layout resilience (`W/Ц`, `S/Ы`, `C/С`) and accessible hotkey legends.
+   - *SST Idea:* Keyboard shortcuts to cycle forecast horizons (`Left`/`Right` arrow keys), toggle map parameter overlays (`p`), toggle wind particle animations (`w`), and show/hide station nodes (`s`), complemented by a collapsible Hotkeys guide in the main sidebar.
+
+4. **Dedicated Focus Sessions & Pomodoro Timeboxing:**
+   - *Paradigm:* In-app timeboxing tools (Pomodoro/Flowtime) that minimize context switching while working on complex analysis tasks.
+   - *SST Idea:* Integrating timeboxed "Focus Blocks" directly into the calendar and monitoring modules, giving data analysts undisturbed focus windows during critical forecast modeling runs or incident response shifts.
+
+5. **Contextual Notes & Deep-Link Attachments:**
+   - *Paradigm:* Attach rich Markdown notes, telemetry logs, external URLs, and raw data files directly to tasks or projects.
+   - *SST Idea:* Side-notes attached to station maintenance requests and anomaly alerts, allowing engineers to attach sensor calibration logs, photos, and live telemetry links directly within the request panel.
+
+6. **Structured Shift Work & Daily Hand-off Reviews:**
+   - *Paradigm:* End-of-day review routines that summarize completed work, track time spent, log anomalies, and prepare hand-off summaries.
+   - *SST Idea:* An "End of Shift" summary wizard in the Duty Schedule module where outgoing duty officers can auto-generate shift hand-off reports covering offline stations, high-wave/wind warnings, and pending service requests.
+
 ## 2026-07-28 - Elevating Shortcut Discovery for High-Throughput Web GIS Maps
 **Learning:** For application dashboards with rich keyboard-first layout control, hidden hotkeys remain completely unused unless discoverability is designed natively into the viewport. Placing a subtle hotkey legend at the footer of the initial multi-grid screen and providing a dedicated collapsible "Hotkeys" panel within the primary sidebar drastically accelerates layout onboarding and improves feature adoption without cluttering the visual interface.
 **Action:** When mapping global keyboard shortcuts in complex mapping/data interfaces, always accompany them with a subtle footer hint on comparison screens and a collapsible hotkey guide in the main sidebar.
