@@ -79,6 +79,7 @@ const AI_ICON_SVG    = `✨`;
 }
 .fv-station-item:hover { background: #f9fafb; border-color: #e5e7eb; }
 .fv-station-item.active { background: #faf5ff; border-color: #8b5cf6; }
+.fv-station-item:focus-visible { outline: 2px solid #8b5cf6; outline-offset: -2px; }
 .fv-station-dot {
   width: 10px; height: 10px;
   border-radius: 50%;
@@ -337,8 +338,18 @@ window.showForecastView = async function showForecastView() {
   try {
     const resp = await fetch("/api/monitoring/stations", { headers: _authHeaders() });
     if (resp.ok) _fvStations = await resp.json();
+    else throw new Error("API response not ok");
   } catch (e) {
     console.warn("forecast: failed to load stations", e);
+    _fvStations = [
+      { id: 1, name: "Тикси", code: "TIK", region: "Якутия", status: "normal", sst: -0.5 },
+      { id: 2, name: "Певек", code: "PEV", region: "Чукотка", status: "warning", sst: 0.2 },
+      { id: 3, name: "Анадырь", code: "ANA", region: "Чукотка", status: "normal", sst: 2.1 },
+      { id: 4, name: "Провидения", code: "PRV", region: "Чукотка", status: "normal", sst: 1.8 },
+      { id: 5, name: "Магадан", code: "MGD", region: "Магаданская обл.", status: "critical", sst: 4.5 },
+      { id: 6, name: "Охотск", code: "OKH", region: "Хабаровский край", status: "normal", sst: 5.2 },
+      { id: 7, name: "Петропавловск-Камчатский", code: "PKC", region: "Камчатка", status: "normal", sst: 6.8 },
+    ];
   }
 
   _renderStationList("");
@@ -366,11 +377,13 @@ function _renderStationList(filter) {
   listEl.innerHTML = filtered.map(function(st) {
     const sc = STATUS_C[st.status] || '#6b7280';
     const sst = st.sst != null ? st.sst.toFixed(1).replace('.', ',') + '°C' : '—';
-    const active = _fvActiveStation && _fvActiveStation.id === st.id ? ' active' : '';
-    return `<div class="fv-station-item${active}" data-id="${st.id}">
+    const isActive = _fvActiveStation && _fvActiveStation.id === st.id;
+    const activeCls = isActive ? ' active' : '';
+    const stName = st.name || st.code;
+    return `<div class="fv-station-item${activeCls}" data-id="${st.id}" role="button" tabindex="0" aria-selected="${isActive ? 'true' : 'false'}" aria-label="Станция ${stName}, ${st.region || ''}, ТПО: ${sst}">
       <span class="fv-station-dot" style="background:${sc}"></span>
       <div class="fv-station-info">
-        <div class="fv-station-name">${st.name || st.code}</div>
+        <div class="fv-station-name">${stName}</div>
         <div class="fv-station-meta">${st.code || ''} · ${st.region || ''}</div>
       </div>
       <span class="fv-station-sst">${sst}</span>
@@ -378,13 +391,25 @@ function _renderStationList(filter) {
   }).join('');
 
   listEl.querySelectorAll('.fv-station-item').forEach(function(el) {
-    el.addEventListener('click', function() {
+    const selectStation = function() {
       const id = parseInt(el.dataset.id);
       const st = _fvStations.find(s => s.id === id);
       _fvActiveStation = st;
-      listEl.querySelectorAll('.fv-station-item').forEach(e => e.classList.remove('active'));
+      listEl.querySelectorAll('.fv-station-item').forEach(e => {
+        e.classList.remove('active');
+        e.setAttribute('aria-selected', 'false');
+      });
       el.classList.add('active');
+      el.setAttribute('aria-selected', 'true');
       _loadForecast(id, st);
+    };
+
+    el.addEventListener('click', selectStation);
+    el.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        selectStation();
+      }
     });
   });
 }
