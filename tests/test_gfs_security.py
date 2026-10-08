@@ -11,6 +11,7 @@ client = TestClient(app)
 
 def test_gfs_forecast_unauthorized():
     # Verify unauthenticated requests to GFS endpoints return 401 Unauthorized
+    assert client.get("/api/gfs/meta").status_code == 401
     assert client.get("/api/gfs/latest").status_code == 401
     assert client.get("/api/gfs/timeline").status_code == 401
     assert client.get("/api/gfs/tile/sst/0").status_code == 401
@@ -37,6 +38,11 @@ def mock_db_and_auth():
 
 
 def test_gfs_forecast_authorized(mock_db_and_auth):
+    # Verify meta endpoint returns 200 for authenticated user
+    resp_meta = client.get("/api/gfs/meta")
+    assert resp_meta.status_code == 200
+    assert "fhours" in resp_meta.json()
+
     # Verify timeline endpoint returns 200 for authenticated user
     resp_timeline = client.get("/api/gfs/timeline")
     assert resp_timeline.status_code == 200

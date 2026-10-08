@@ -18,9 +18,10 @@ logging.basicConfig(level=logging.INFO,
 logger = logging.getLogger(__name__)
 
 import numpy as np
-from fastapi import FastAPI, HTTPException, Response
+from fastapi import FastAPI, HTTPException, Response, Depends
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
+from auth import get_current_user
 
 DATA_DIR   = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 STATIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
@@ -595,7 +596,7 @@ def _fmt_tick_prec(v: float, prec: int) -> str:
 # Маршруты API GFS
 # ──────────────────────────────────────────────
 @app.get("/api/gfs/meta")
-def api_gfs_meta():
+def api_gfs_meta(user=Depends(get_current_user)):
     """Возвращает информацию о последнем доступном прогоне GFS 00Z."""
     path, label = _find_latest_gfs_00z_file(0)
     available_fhours = []
