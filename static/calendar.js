@@ -1186,27 +1186,41 @@
 
         // Priority filter tabs
         const tabs = document.createElement('div');
+        tabs.setAttribute('role', 'tablist');
+        tabs.setAttribute('aria-label', 'Фильтр задач по приоритету');
         tabs.style.cssText = 'display:flex;gap:4px;padding:10px 16px;border-bottom:1px solid #f1f5f9;';
+        const tabLabels = {
+            'Все': 'Показать все задачи',
+            'P1': 'Задачи с приоритетом P1',
+            'P2': 'Задачи с приоритетом P2',
+            'P3': 'Задачи с приоритетом P3'
+        };
         ['Все', 'P1', 'P2', 'P3'].forEach(function(tab) {
             const btn = document.createElement('button');
+            btn.setAttribute('role', 'tab');
+            const isAll = tab === 'Все';
+            btn.setAttribute('aria-selected', isAll ? 'true' : 'false');
+            btn.setAttribute('aria-label', tabLabels[tab] || tab);
             btn.style.cssText = 'padding:4px 10px;border:1px solid #e2e8f0;background:#fff;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;color:#64748b;transition:all 0.15s;';
             btn.textContent = tab;
-            if (tab === 'Все') {
+            if (isAll) {
                 btn.style.background = '#0f172a';
                 btn.style.color = '#fff';
                 btn.style.borderColor = '#0f172a';
             }
             btn.addEventListener('click', function() {
-                // Update active tab styles
+                // Update active tab styles & ARIA attributes
                 tabs.querySelectorAll('button').forEach(function(b) {
                     b.style.background = '#fff';
                     b.style.color = '#64748b';
                     b.style.borderColor = '#e2e8f0';
+                    b.setAttribute('aria-selected', 'false');
                 });
                 btn.style.background = '#0f172a';
                 btn.style.color = '#fff';
                 btn.style.borderColor = '#0f172a';
-                filterTasks(right, tab === 'Все' ? null : tab);
+                btn.setAttribute('aria-selected', 'true');
+                filterTasks(right, isAll ? null : tab);
             });
             tabs.appendChild(btn);
         });
