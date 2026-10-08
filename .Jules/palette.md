@@ -42,6 +42,12 @@ Super Productivity is an elite, open-source, local-first personal organizer desi
 6. **Structured Daily/Shift Work Reviews & Hand-offs:**
    - Features dedicated end-of-day or shift summary workflows to review completed tasks, track time spent, log anomalies, and prepare hand-off reports for team members or incoming duty shifts.
 
+7. **Timeboxing, Focus Blocks & Break Reminders:**
+   - Supports focus timeboxing and pomodoro/break intervals to maintain high concentration during complex monitoring tasks and reduce operational fatigue.
+
+8. **Short-Syntax Quick Task Parsing:**
+   - Supports rapid inline syntax parsing (e.g., `#tag`, `@assignee`, `~timeEstimate`) directly from quick capture inputs to eliminate dropdown hunting.
+
 ### Applied Usability Implementations in GFS Dashboard v6:
 
 - **Local-First Sync (`localStorage`):** Automatic persistence of active GFS forecast parameters, view modes, map scale, contour/smooth toggles, and station overlay preferences. Restores automatically on reload.
