@@ -62,6 +62,10 @@ body.detail-mode #panel-toggle { top: 56px; }
   color: #fff;
   background: rgba(255,255,255,0.07);
 }
+.detail-nav-back:focus-visible {
+  outline: 2px solid #4a9eff;
+  outline-offset: -2px;
+}
 .detail-nav-tabs {
   display: flex;
   align-items: center;
@@ -89,6 +93,10 @@ body.detail-mode #panel-toggle { top: 56px; }
   transition: color 0.14s, background 0.14s;
 }
 .detail-tab:hover { color: rgba(255,255,255,0.85); background: rgba(255,255,255,0.05); }
+.detail-tab:focus-visible {
+  outline: 2px solid #4a9eff;
+  outline-offset: -2px;
+}
 .detail-tab.active {
   color: #fff;
   font-weight: 700;
@@ -172,6 +180,10 @@ body.detail-mode #panel-toggle { top: 56px; }
   min-width: 220px;
 }
 .cmp-param-select:focus { border-color: #0055aa; }
+.cmp-param-select:focus-visible {
+  outline: 2px solid #0055aa;
+  outline-offset: 1px;
+}
 
 /* Image smoothing controlled dynamically via JS setSmooth() */
 
@@ -292,6 +304,10 @@ body.detail-mode #panel-toggle { top: 56px; }
   background: rgba(230,240,255,0.98);
   color: #0055aa;
 }
+#panel-toggle:focus-visible {
+  outline: 2px solid #0055aa;
+  outline-offset: 2px;
+}
 
 /* ══════════════════════════════════════════════
    LEFT PANEL — slide-in from left
@@ -346,6 +362,10 @@ body.detail-mode #panel-toggle { top: 56px; }
   appearance: auto;
 }
 .lp-select:focus { border-color: #0055aa; }
+.lp-select:focus-visible {
+  outline: 2px solid #0055aa;
+  outline-offset: 1px;
+}
 .lp-select option { background: #fff; color: #1a2030; }
 
 /* param buttons group */
@@ -390,6 +410,10 @@ body.detail-mode #panel-toggle { top: 56px; }
 .lp-section-hdr:hover {
   background: rgba(230,240,255,0.95);
   color: #0055aa;
+}
+.lp-section-hdr:focus-visible {
+  outline: 2px solid #0055aa;
+  outline-offset: -1px;
 }
 
 .lp-chevron {
