@@ -1392,6 +1392,10 @@
         const overlay = document.createElement('div');
         overlay.className = 'cal-modal-overlay';
         overlay.id = 'cal-event-form-overlay';
+        overlay.setAttribute('role', 'dialog');
+        overlay.setAttribute('aria-modal', 'true');
+        overlay.setAttribute('aria-label', 'Новое событие');
+        overlay.setAttribute('tabindex', '-1');
 
         let typeOptions = '';
         Object.keys(EVENT_TYPES).forEach(function(k) {
@@ -1434,10 +1438,14 @@
         `;
 
         document.body.appendChild(overlay);
+        const titleInput = overlay.querySelector('#cal-ef-title');
+        if (titleInput) titleInput.focus();
+
         overlay.querySelector('#cal-ef-close').addEventListener('click', function() { overlay.remove(); });
         overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
 
-        overlay.querySelector('#cal-ef-submit').addEventListener('click', async function() {
+        const submitBtn = overlay.querySelector('#cal-ef-submit');
+        submitBtn.addEventListener('click', async function() {
             const errEl = overlay.querySelector('#cal-ef-error');
             errEl.style.display = 'none';
             const title = overlay.querySelector('#cal-ef-title').value.trim();
@@ -1453,6 +1461,8 @@
             }
 
             try {
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Сохранение...';
                 const resp = await window.authFetch('/api/monitoring/calendar/events', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -1470,6 +1480,8 @@
                 overlay.remove();
                 loadAndRender();
             } catch(e) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Сохранить';
                 errEl.textContent = e.message;
                 errEl.style.display = 'block';
             }
@@ -1482,6 +1494,10 @@
         const overlay = document.createElement('div');
         overlay.className = 'cal-modal-overlay';
         overlay.id = 'cal-task-form-overlay';
+        overlay.setAttribute('role', 'dialog');
+        overlay.setAttribute('aria-modal', 'true');
+        overlay.setAttribute('aria-label', 'Новая задача');
+        overlay.setAttribute('tabindex', '-1');
 
         const ds = formatDateISO(_selectedDate);
 
@@ -1523,10 +1539,14 @@
         `;
 
         document.body.appendChild(overlay);
+        const titleInput = overlay.querySelector('#cal-tf-title');
+        if (titleInput) titleInput.focus();
+
         overlay.querySelector('#cal-tf-close').addEventListener('click', function() { overlay.remove(); });
         overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
 
-        overlay.querySelector('#cal-tf-submit').addEventListener('click', async function() {
+        const submitBtn = overlay.querySelector('#cal-tf-submit');
+        submitBtn.addEventListener('click', async function() {
             const errEl = overlay.querySelector('#cal-tf-error');
             errEl.style.display = 'none';
             const title = overlay.querySelector('#cal-tf-title').value.trim();
@@ -1542,6 +1562,8 @@
             }
 
             try {
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Сохранение...';
                 const resp = await window.authFetch('/api/monitoring/calendar/tasks', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -1557,6 +1579,8 @@
                 overlay.remove();
                 loadAndRender();
             } catch(e) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Добавить задачу';
                 errEl.textContent = e.message;
                 errEl.style.display = 'block';
             }
