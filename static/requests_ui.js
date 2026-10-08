@@ -117,7 +117,7 @@
                             border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">
                         Создать заявку
                     </button>
-                    <button id="req-close" style="padding:8px 12px;background:#f1f5f9;color:#64748b;border:none;
+                    <button id="req-close" aria-label="Закрыть заявки" style="padding:8px 12px;background:#f1f5f9;color:#64748b;border:none;
                             border-radius:8px;font-size:16px;cursor:pointer;line-height:1">&times;</button>
                 </div>
             </div>
@@ -297,7 +297,7 @@
                         ${badge(pr.label, pr.color, '#fff')}
                     </div>
                 </div>
-                <button id="detail-close" style="background:#f1f5f9;border:none;border-radius:8px;
+                <button id="detail-close" aria-label="Закрыть детали заявки" style="background:#f1f5f9;border:none;border-radius:8px;
                     width:36px;height:36px;font-size:18px;cursor:pointer;color:#64748b;flex-shrink:0;z-index:10">&times;</button>
             </div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
@@ -414,7 +414,7 @@
         form.innerHTML = `
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
                 <h3 style="margin:0;font-size:16px;font-weight:700;color:#1a2030">Создать заявку</h3>
-                <button id="req-form-close" style="background:none;border:none;font-size:18px;
+                <button id="req-form-close" aria-label="Закрыть форму создания заявки" style="background:none;border:none;font-size:18px;
                         cursor:pointer;color:#94a3b8">&times;</button>
             </div>
             ${field('Название', '<input id="req-f-title" type="text" style="' + inputStyle() + '" />')}
@@ -441,6 +441,7 @@
 
         document.getElementById('req-form-close').addEventListener('click', function() { form.remove(); });
         document.getElementById('req-form-submit').addEventListener('click', async function() {
+            const submitBtn = this;
             const errEl = document.getElementById('req-form-error');
             errEl.style.display = 'none';
             const title = document.getElementById('req-f-title').value.trim();
@@ -454,6 +455,9 @@
                 errEl.style.display = 'block';
                 return;
             }
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Создание...';
 
             try {
                 const resp = await authFetch('/api/monitoring/requests/', {
@@ -471,6 +475,8 @@
                 form.remove();
                 loadAndRender();
             } catch (e) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Создать';
                 errEl.textContent = e.message;
                 errEl.style.display = 'block';
             }
