@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional, List, Any
+from typing import Optional
 from datetime import datetime
 
 
@@ -101,9 +101,9 @@ class CalendarEventResponse(BaseModel):
 class AgentInsight(BaseModel):
     agent_name: str
     title: str
-    body: Optional[str]
+    body: Optional[str] = None
     severity: str = "info"
-    metadata: Optional[dict]
+    metadata: Optional[dict] = None
 
 class EquipmentCheckCreate(BaseModel):
     station_id: int
