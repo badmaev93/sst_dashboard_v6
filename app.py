@@ -74,6 +74,7 @@ _try_include("routers.users", "users_router")
 _try_include("routers.regions", "regions_router")
 _try_include("routers.schedule", "schedule_router")
 _try_include("routers.webhooks", "webhooks_router")
+_try_include("routers.gfs_forecast", "gfs_router")
 
 # ──────────────────────────────────────────────
 # Конфигурация GFS
