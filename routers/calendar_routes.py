@@ -153,3 +153,40 @@ async def create_focus_block(data: dict, user=Depends(get_current_user)):
         data.get("recurring", False)
     )
     return {"id": row["id"]}
+
+@calendar_router.put("/focus-blocks/{block_id}")
+async def update_focus_block(block_id: int, data: dict, user=Depends(get_current_user)):
+    existing = await db.pool.fetchrow("SELECT * FROM focus_blocks WHERE id = $1", block_id)
+    if not existing:
+        raise HTTPException(404, "Focus block not found")
+    if user["role"] != "supervisor" and existing["user_id"] != user["id"]:
+        raise HTTPException(403, "Not authorized to update this focus block")
+
+    sets, params = [], []
+    idx = 1
+    for field in ("title", "color", "day_of_week", "recurring"):
+        if field in data:
+            sets.append(f"{field} = ${idx}")
+            params.append(data[field]); idx += 1
+    if "start_time" in data:
+        sets.append(f"start_time = ${idx}::time")
+        params.append(data["start_time"]); idx += 1
+    if "end_time" in data:
+        sets.append(f"end_time = ${idx}::time")
+        params.append(data["end_time"]); idx += 1
+    if not sets:
+        raise HTTPException(400, "No fields to update")
+    params.append(block_id)
+    await db.pool.execute(f"UPDATE focus_blocks SET {', '.join(sets)} WHERE id = ${idx}", *params)
+    return {"ok": True}
+
+@calendar_router.delete("/focus-blocks/{block_id}")
+async def delete_focus_block(block_id: int, user=Depends(get_current_user)):
+    existing = await db.pool.fetchrow("SELECT * FROM focus_blocks WHERE id = $1", block_id)
+    if not existing:
+        raise HTTPException(404, "Focus block not found")
+    if user["role"] != "supervisor" and existing["user_id"] != user["id"]:
+        raise HTTPException(403, "Not authorized to delete this focus block")
+
+    await db.pool.execute("DELETE FROM focus_blocks WHERE id = $1", block_id)
+    return {"ok": True}
