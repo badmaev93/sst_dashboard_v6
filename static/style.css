@@ -413,11 +413,6 @@ body.detail-mode #panel-toggle { top: 56px; }
 }
 .lp-section-hdr:focus-visible {
   outline: 2px solid #0055aa;
-  outline-offset: -1px;
-}
-
-.lp-section-hdr:focus-visible {
-  outline: 2px solid #0055aa;
   outline-offset: 1px;
 }
 
@@ -478,6 +473,11 @@ body.detail-mode #panel-toggle { top: 56px; }
   background: rgba(0,80,160,0.08);
   border-color: rgba(0,100,200,0.35);
   color: #1a5f8f;
+}
+
+.lp-btn:focus-visible {
+  outline: 2px solid #0055aa;
+  outline-offset: 1px;
 }
 
 .lp-btn.active {
