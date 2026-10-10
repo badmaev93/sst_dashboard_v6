@@ -11,6 +11,10 @@ client = TestClient(app)
 
 def test_gfs_forecast_unauthorized():
     # Verify unauthenticated requests to GFS endpoints return 401 Unauthorized
+    assert client.get("/api/gfs/meta").status_code == 401
+    assert client.get("/api/gfs/map/gfs_t/0.png").status_code == 401
+    assert client.get("/api/gfs/colorscale/gfs_t").status_code == 401
+    assert client.get("/api/gfs/wind/0").status_code == 401
     assert client.get("/api/gfs/latest").status_code == 401
     assert client.get("/api/gfs/timeline").status_code == 401
     assert client.get("/api/gfs/tile/sst/0").status_code == 401
