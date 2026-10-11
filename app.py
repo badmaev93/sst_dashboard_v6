@@ -18,9 +18,11 @@ logging.basicConfig(level=logging.INFO,
 logger = logging.getLogger(__name__)
 
 import numpy as np
-from fastapi import FastAPI, HTTPException, Response
+from fastapi import FastAPI, HTTPException, Response, Depends
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
+
+from auth import get_current_user
 
 DATA_DIR   = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 STATIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
@@ -595,7 +597,7 @@ def _fmt_tick_prec(v: float, prec: int) -> str:
 # Маршруты API GFS
 # ──────────────────────────────────────────────
 @app.get("/api/gfs/meta")
-def api_gfs_meta():
+def api_gfs_meta(user=Depends(get_current_user)):
     """Возвращает информацию о последнем доступном прогоне GFS 00Z."""
     path, label = _find_latest_gfs_00z_file(0)
     available_fhours = []
@@ -629,7 +631,8 @@ def api_gfs_map_png(param: str, fhour_idx: int,
                     scale: int = 1,
                     blur: bool = True,
                     contours: bool = True,
-                    contour_labels: bool = False):
+                    contour_labels: bool = False,
+                    user=Depends(get_current_user)):
     _param_cfg(param)
     scale = max(1, min(scale, 3))
     fhour = _fhour(fhour_idx)
@@ -649,7 +652,7 @@ def api_gfs_map_png(param: str, fhour_idx: int,
 
 
 @app.get("/api/gfs/colorscale/{param}")
-def api_gfs_colorscale(param: str, fhour_idx: int = 0, percentile: float = 99):
+def api_gfs_colorscale(param: str, fhour_idx: int = 0, percentile: float = 99, user=Depends(get_current_user)):
     cfg   = _param_cfg(param)
     fhour = _fhour(fhour_idx)
     try:
@@ -681,7 +684,7 @@ def api_gfs_colorscale(param: str, fhour_idx: int = 0, percentile: float = 99):
 
 
 @app.get("/api/gfs/wind/{fhour_idx}")
-def api_gfs_wind_vectors(fhour_idx: int):
+def api_gfs_wind_vectors(fhour_idx: int, user=Depends(get_current_user)):
     """Возвращает векторное поле ветра u/v в формате JSON для анимации частиц ветра."""
     fhour = _fhour(fhour_idx)
     try:
