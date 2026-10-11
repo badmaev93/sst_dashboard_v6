@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, HTTPException
 from datetime import datetime, timezone, timedelta
 import db
 from auth import require_role, get_current_user
@@ -96,6 +96,10 @@ async def create_assignment(data: dict, user=Depends(require_role("supervisor"))
 
 @schedule_router.put("/{assignment_id}")
 async def update_assignment(assignment_id: int, data: dict, user=Depends(require_role("supervisor"))):
+    existing = await db.pool.fetchrow("SELECT id FROM assignments WHERE id = $1", assignment_id)
+    if not existing:
+        raise HTTPException(404, "Assignment not found")
+
     await db.pool.execute("""
         UPDATE assignments SET
             personnel_id = COALESCE($2, personnel_id),
@@ -113,6 +117,10 @@ async def update_assignment(assignment_id: int, data: dict, user=Depends(require
 
 @schedule_router.delete("/{assignment_id}")
 async def delete_assignment(assignment_id: int, user=Depends(require_role("supervisor"))):
+    existing = await db.pool.fetchrow("SELECT id FROM assignments WHERE id = $1", assignment_id)
+    if not existing:
+        raise HTTPException(404, "Assignment not found")
+
     await db.pool.execute("DELETE FROM assignments WHERE id = $1", assignment_id)
     return {"ok": True}
 

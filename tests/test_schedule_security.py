@@ -62,6 +62,64 @@ def test_get_schedule_no_phone(mock_db_and_auth):
     assert len(data) == 1
     assert "phone" not in data[0]
 
+
+def test_update_schedule_assignment_authorization_and_not_found():
+    # Observer cannot update schedule assignments (403)
+    app.dependency_overrides[get_current_user] = lambda: {
+        "id": 1, "username": "observer1", "role": "observer", "is_active": True
+    }
+    old_pool = db.pool
+    db.pool = AsyncMock()
+
+    try:
+        response = client.put("/api/monitoring/schedule/9999", json={"role_on_duty": "Старший"})
+        assert response.status_code == 403
+
+        # Supervisor gets 404 when updating non-existent assignment
+        app.dependency_overrides[get_current_user] = lambda: {
+            "id": 2, "username": "supervisor1", "role": "supervisor", "is_active": True
+        }
+        db.pool.fetchrow.return_value = None
+        response = client.put("/api/monitoring/schedule/9999", json={"role_on_duty": "Старший"})
+        assert response.status_code == 404
+
+        # Supervisor succeeds when assignment exists
+        db.pool.fetchrow.return_value = {"id": 9999}
+        response = client.put("/api/monitoring/schedule/9999", json={"role_on_duty": "Старший"})
+        assert response.status_code == 200
+    finally:
+        app.dependency_overrides.clear()
+        db.pool = old_pool
+
+
+def test_delete_schedule_assignment_authorization_and_not_found():
+    # Observer cannot delete schedule assignments (403)
+    app.dependency_overrides[get_current_user] = lambda: {
+        "id": 1, "username": "observer1", "role": "observer", "is_active": True
+    }
+    old_pool = db.pool
+    db.pool = AsyncMock()
+
+    try:
+        response = client.delete("/api/monitoring/schedule/9999")
+        assert response.status_code == 403
+
+        # Supervisor gets 404 when deleting non-existent assignment
+        app.dependency_overrides[get_current_user] = lambda: {
+            "id": 2, "username": "supervisor1", "role": "supervisor", "is_active": True
+        }
+        db.pool.fetchrow.return_value = None
+        response = client.delete("/api/monitoring/schedule/9999")
+        assert response.status_code == 404
+
+        # Supervisor succeeds when assignment exists
+        db.pool.fetchrow.return_value = {"id": 9999}
+        response = client.delete("/api/monitoring/schedule/9999")
+        assert response.status_code == 200
+    finally:
+        app.dependency_overrides.clear()
+        db.pool = old_pool
+
 def test_get_personnel_no_phone(mock_db_and_auth):
     mock_db = mock_db_and_auth
     mock_db.fetch.return_value = [
