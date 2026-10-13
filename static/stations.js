@@ -220,6 +220,9 @@
 
         panel = document.createElement('div');
         panel.id = 'station-detail';
+        panel.setAttribute('role', 'dialog');
+        panel.setAttribute('aria-label', 'Детальная информация о станции');
+        panel.setAttribute('tabindex', '-1');
         Object.assign(panel.style, {
             position: 'fixed', top: '0', right: '0',
             width: '420px', maxWidth: '96vw', height: '100vh',
@@ -230,6 +233,7 @@
 
         panel.innerHTML = '<div style="color:#94a3b8;padding:40px;text-align:center">Загрузка...</div>';
         document.body.appendChild(panel);
+        panel.focus();
 
         try {
             const [stResp, rdResp] = await Promise.all([

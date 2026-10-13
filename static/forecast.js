@@ -876,7 +876,9 @@ window.showForecastPanel = function(stationId) {
   if (popup) popup.style.display = 'none';
 
   // Switch to forecast view
-  if (window.switchView) {
+  if (typeof window.showDetailTab === 'function') {
+    window.showDetailTab('forecast');
+  } else if (window.switchView) {
     switchView('forecast');
   } else {
     document.querySelectorAll('.view-container').forEach(function(v) { v.style.display = 'none'; });
