@@ -22,7 +22,11 @@ from fastapi import FastAPI, HTTPException, Response, Depends
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 
-from auth import get_current_user
+try:
+    from auth import get_current_user
+except Exception:
+    get_current_user = None
+    logger.warning("auth module not loaded — endpoints requiring auth will be unavailable")
 
 DATA_DIR   = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 STATIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
