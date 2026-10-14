@@ -39,14 +39,11 @@ Super Productivity is an elite, open-source, local-first personal organizer desi
    - Tasks and items allow attaching contextual information directly (e.g., Markdown notes, URLs, commands, or logs).
    - Keeps secondary information accessible in collapsible side panels without cluttering the primary list or map view.
 
-6. **Focus & Health-Aware Workflow Controls:**
-   - Pomodoro timer integration, break reminders, and anti-procrastination prompts encourage sustained focus while preventing burnout during intense operational monitoring sessions.
+6. **Focus & Health-Aware Workflow Controls (Timeboxing & Break Reminders):**
+   - Pomodoro/Flowtime timer integration, break reminders, and anti-procrastination prompts encourage sustained focus while preventing burnout during intense operational monitoring sessions.
 
 7. **Structured Daily/Shift Work Reviews & Hand-offs:**
    - Features dedicated end-of-day or shift summary workflows to review completed tasks, track time spent, log anomalies, and prepare hand-off reports for team members or incoming duty shifts.
-
-7. **Timeboxing, Focus Blocks & Break Reminders:**
-   - Supports focus timeboxing and pomodoro/break intervals to maintain high concentration during complex monitoring tasks and reduce operational fatigue.
 
 8. **Short-Syntax Quick Task Parsing:**
    - Supports rapid inline syntax parsing (e.g., `#tag`, `@assignee`, `~timeEstimate`) directly from quick capture inputs to eliminate dropdown hunting.
