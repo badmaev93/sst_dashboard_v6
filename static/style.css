@@ -62,6 +62,11 @@ body.detail-mode #panel-toggle { top: 56px; }
   color: #fff;
   background: rgba(255,255,255,0.07);
 }
+.detail-nav-back.active {
+  color: #4a9eff;
+  background: rgba(74,158,255,0.14);
+  font-weight: 700;
+}
 .detail-nav-back:focus-visible {
   outline: 2px solid #4a9eff;
   outline-offset: -2px;
@@ -1160,7 +1165,12 @@ body.detail-mode #panel-toggle { top: 56px; }
    COMPARE VIEW — primary default view
    ══════════════════════════════════════════════ */
 #compare-view {
-  position: fixed; inset: 0;
+  position: fixed;
+  top: 44px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: calc(100vh - 44px);
   z-index: 20;
   background: #f0f2f5;
   display: flex;

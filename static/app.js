@@ -55,8 +55,8 @@ const S = {
   showStations:    true,
   showWindAnim:    false,
   _cmpBuildId:     0,
-  viewMode:        "compare",   // "compare" | "detail"
-  _detailTab:      "map",       // active tab in detail mode
+  viewMode:        "detail",    // "compare" | "detail"
+  _detailTab:      "forecast",  // active tab in detail mode ("forecast" | "map" | "agents" | "monitoring" | "calendar" | "requests")
   _periodSelected: false,
   gfsMeta:         null,
   map:             null,
@@ -118,27 +118,31 @@ function _isVisible(el) {
 // ──────────────────────────────────────────────
 async function init() {
   _loadStateFromLocalStorage();
-  showLoading("Загрузка метаданных GFS…");
-  try {
-    const res = await fetch("/api/gfs/meta");
-    if (!res.ok) throw new Error(res.statusText);
-    S.gfsMeta = await res.json();
-  } catch (e) {
-    hideLoading();
-    alert("Не удалось загрузить метаданные GFS.\n" + e);
-    return;
+
+  // Support deep-linking via URL hash (e.g. #forecast, #map, #compare, #agents, #monitoring, #calendar, #requests)
+  const hash = (window.location.hash || "").replace("#", "").toLowerCase();
+  const validTabs = ["forecast", "map", "agents", "monitoring", "calendar", "requests"];
+  if (hash === "compare" || hash === "overview") {
+    S.viewMode = "compare";
+  } else if (validTabs.includes(hash)) {
+    S.viewMode = "detail";
+    S._detailTab = hash;
   }
 
-  // Update run label
-  const runLabel = S.gfsMeta.run_label || "—";
-  const ri = document.getElementById("run-info");
-  if (ri) ri.textContent = runLabel;
-  const cl = document.getElementById("cmp-run-label");
-  if (cl) cl.textContent = runLabel;
+  showLoading("Загрузка данных…");
+  try {
+    const fetchFn = window.authFetch || fetch;
+    const res = await fetchFn("/api/gfs/meta");
+    if (res.ok) {
+      S.gfsMeta = await res.json();
+    } else {
+      console.warn("GFS meta API returned status:", res.status);
+    }
+  } catch (e) {
+    console.warn("Не удалось загрузить метаданные GFS:", e);
+  }
 
-  // Mercator extent of the render domain — computed locally so the map can be
-  // built before any tile request completes (backend reports the same values
-  // in gfsMeta.mercator_extent).
+  // Mercator extent of the render domain
   const _tr = (lon, lat) => {
     const x = lon / 360 * _EARTH_CIRC;
     const latR = lat * Math.PI / 180;
@@ -149,7 +153,36 @@ async function init() {
   const xMax   = xMin + (246.0 - 117.0) / 360.0 * _EARTH_CIRC;
   const [, yMin] = _tr(0, 26.0);
   const [, yMax] = _tr(0, 72.0);
-  S._imageExtent = [xMin, yMin, xMax, yMax];
+
+  if (!S.gfsMeta) {
+    S.gfsMeta = {
+      available: false,
+      run_label: "GFS — Северная Пацифика",
+      fhours: GFS_FHOURS,
+      fhour_labels: GFS_LABELS,
+      available_fhours: [],
+      lat: { min: 26, max: 72 },
+      lon: { min: 117, max: 246 },
+      mercator_extent: [xMin, yMin, xMax, yMax],
+      params: [
+        { id: "gfs_t", label: "Темп. поверхности", unit: "°C" },
+        { id: "gfs_2t", label: "Темп. воздуха 2м", unit: "°C" },
+        { id: "gfs_prmsl", label: "Давление на ур. моря", unit: "гПа" },
+        { id: "gfs_wind", label: "Скорость ветра 10м", unit: "м/с" },
+        { id: "gfs_tcc", label: "Облачность", unit: "%" },
+        { id: "gfs_pwat", label: "Запас воды", unit: "кг/м²" }
+      ]
+    };
+  }
+
+  // Update run label
+  const runLabel = S.gfsMeta.run_label || "—";
+  const ri = document.getElementById("run-info");
+  if (ri) ri.textContent = runLabel;
+  const cl = document.getElementById("cmp-run-label");
+  if (cl) cl.textContent = runLabel;
+
+  S._imageExtent = S.gfsMeta.mercator_extent || [xMin, yMin, xMax, yMax];
   S._serverTs = String(Date.now());
 
   try {
@@ -160,10 +193,20 @@ async function init() {
     await _applyViewMode();
   } catch (e) {
     console.error("Init error:", e);
-    document.getElementById("loading-text").textContent = "Ошибка инициализации: " + e.message;
+    const lt = document.getElementById("loading-text");
+    if (lt) lt.textContent = "Ошибка инициализации: " + e.message;
     return;
   }
   hideLoading();
+
+  window.addEventListener("hashchange", () => {
+    const h = (window.location.hash || "").replace("#", "").toLowerCase();
+    if (h === "compare" || h === "overview") {
+      goCompare();
+    } else if (validTabs.includes(h)) {
+      showDetailTab(h);
+    }
+  });
   document.addEventListener("click", _onDocClick);
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
@@ -833,6 +876,26 @@ function syncUI() {
 // ──────────────────────────────────────────────
 function goCompare() {
   S.viewMode = "compare";
+  _saveStateToLocalStorage("viewMode");
+  try {
+    if (window.location.hash !== "#compare") history.replaceState(null, "", "#compare");
+  } catch (_) {}
+
+  // Dismiss other overlays cleanly
+  if (typeof window.hideMonitoringView === "function") window.hideMonitoringView();
+  if (typeof window.hideCalendarView === "function") window.hideCalendarView();
+  if (typeof window.hideRequestsView === "function") window.hideRequestsView();
+  if (typeof window.hideCabinetView === "function") window.hideCabinetView();
+  const fvEl = document.getElementById("forecast-view");
+  if (fvEl) fvEl.style.display = "none";
+  document.querySelectorAll(".detail-panel").forEach(p => p.classList.remove("active"));
+
+  document.querySelectorAll(".detail-tab").forEach(b => {
+    const isActive = b.dataset.tab === "compare";
+    b.classList.toggle("active", isActive);
+    b.setAttribute("aria-selected", isActive ? "true" : "false");
+  });
+
   _applyViewMode();
 }
 
@@ -846,10 +909,11 @@ async function _applyViewMode() {
   const detailNav  = document.getElementById("detail-nav");
   const panelToggle = document.getElementById("panel-toggle");
 
+  if (detailNav) detailNav.style.display = "flex";
+
   if (S.viewMode === "compare") {
     document.body.classList.remove("detail-mode");
-    compareEl.classList.remove("hidden");
-    if (detailNav)    detailNav.style.display  = "none";
+    if (compareEl)    compareEl.classList.remove("hidden");
     if (mapEl)        mapEl.style.display      = "none";
     if (legend)       legend.classList.add("hidden");
     if (cmpLegendH)   cmpLegendH.classList.remove("hidden");
@@ -860,25 +924,26 @@ async function _applyViewMode() {
     const _fvEl = document.getElementById("forecast-view");
     if (_fvEl) _fvEl.style.display = "none";
     closePanel();
+
+    document.querySelectorAll(".detail-tab").forEach(b => {
+      const isActive = b.dataset.tab === "compare";
+      b.classList.toggle("active", isActive);
+      b.setAttribute("aria-selected", isActive ? "true" : "false");
+    });
+
     await _buildCompareGrid();
     await _refreshLegend();
   } else {
     // Detail mode
     document.body.classList.add("detail-mode");
-    compareEl.classList.add("hidden");
-    if (detailNav)    detailNav.style.display  = "flex";
-    if (mapEl)        mapEl.style.display      = "";
-    if (legend)       legend.classList.remove("hidden");
+    if (compareEl)    compareEl.classList.add("hidden");
     if (cmpLegendH)   cmpLegendH.classList.add("hidden");
-    if (panelToggle)  panelToggle.style.display = "";
-    if (backBtn)      backBtn.style.display     = "none";  // replaced by detailNav back btn
+    if (backBtn)      backBtn.style.display     = "none";
     // Update period label in nav bar
     _updateDetailPeriodLabel();
     if (S.map) S.map.updateSize();
     syncUI();
-    // Default tab: map
-    showDetailTab(S._detailTab || "map");
-    await refreshMap();
+    showDetailTab(S._detailTab || "forecast");
     if (typeof initStationsLayer === "function") initStationsLayer();
   }
 }
@@ -896,6 +961,8 @@ function _saveStateToLocalStorage(key) {
 
 function _loadStateFromLocalStorage() {
   const keys = [
+    { key: "viewMode", type: "string" },
+    { key: "_detailTab", type: "string" },
     { key: "periodIdx", type: "int" },
     { key: "gfsParam", type: "string" },
     { key: "percentile", type: "string" },
@@ -1184,7 +1251,14 @@ function _updateDetailPeriodLabel() {
 }
 
 function showDetailTab(tab) {
+  S.viewMode = "detail";
   S._detailTab = tab;
+  _saveStateToLocalStorage("viewMode");
+  _saveStateToLocalStorage("_detailTab");
+  try {
+    if (window.location.hash !== "#" + tab) history.replaceState(null, "", "#" + tab);
+  } catch (_) {}
+
   // Update active tab button and aria-selected state
   document.querySelectorAll(".detail-tab").forEach(b => {
     const isActive = b.dataset.tab === tab;
@@ -1192,15 +1266,28 @@ function showDetailTab(tab) {
     b.setAttribute("aria-selected", isActive ? "true" : "false");
   });
 
-  const mapEl     = document.getElementById("map");
-  const leftPanel = document.getElementById("left-panel");
-  const legend    = document.getElementById("legend");
+  const mapEl       = document.getElementById("map");
+  const leftPanel   = document.getElementById("left-panel");
+  const legend      = document.getElementById("legend");
   const panelToggle = document.getElementById("panel-toggle");
+  const compareEl   = document.getElementById("compare-view");
+  const cmpLegendH  = document.getElementById("cmp-legend-h");
+
+  // Hide compare view
+  if (compareEl)  compareEl.classList.add("hidden");
+  if (cmpLegendH) cmpLegendH.classList.add("hidden");
+  document.body.classList.add("detail-mode");
+
+  // Cleanly hide any other active overlay modules
+  if (typeof window.hideMonitoringView === "function" && tab !== "agents") window.hideMonitoringView();
+  if (typeof window.hideCalendarView === "function" && tab !== "calendar") window.hideCalendarView();
+  if (typeof window.hideRequestsView === "function" && tab !== "requests") window.hideRequestsView();
+  if (typeof window.hideCabinetView === "function") window.hideCabinetView();
 
   // Hide all detail panels and overlay views first
   document.querySelectorAll(".detail-panel").forEach(p => p.classList.remove("active"));
   const fvEl = document.getElementById("forecast-view");
-  if (fvEl) fvEl.style.display = "none";
+  if (fvEl && tab !== "forecast") fvEl.style.display = "none";
 
   // Tabs that use external JS overlays vs inline panels
   const overlayTabs = ["forecast", "agents", "calendar", "requests"];
@@ -1209,6 +1296,11 @@ function showDetailTab(tab) {
     if (mapEl)       mapEl.style.display       = "";
     if (legend)      legend.classList.remove("hidden");
     if (panelToggle) panelToggle.style.display  = "";
+    _updateDetailPeriodLabel();
+    if (S.map) S.map.updateSize();
+    refreshMap();
+    _refreshLegend();
+    if (typeof initStationsLayer === "function") initStationsLayer();
   } else if (overlayTabs.includes(tab)) {
     // Show overlay on top of map — map stays visible behind
     if (mapEl)       mapEl.style.display       = "";

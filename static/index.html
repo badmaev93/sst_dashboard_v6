@@ -61,21 +61,21 @@
 
 </div>
 
-<!-- ══ DETAIL-MODE TOP NAV ══ -->
-<div id="detail-nav" style="display:none">
-  <button class="detail-nav-back" onclick="goCompare()" aria-label="Вернуться к обзору сетки прогнозов">
+<!-- ══ TOP NAV ══ -->
+<div id="detail-nav">
+  <button class="detail-nav-back detail-tab" data-tab="compare" onclick="goCompare()" aria-label="Вернуться к обзору сетки прогнозов">
     <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
       <path d="M9 2L4 7L9 12"/>
     </svg>
     Обзор
   </button>
   <div class="detail-nav-tabs" role="tablist" aria-label="Разделы мониторинга">
-    <button class="detail-tab active" role="tab" aria-selected="true" data-tab="map"        onclick="showDetailTab('map')">Карта и станции</button>
-    <button class="detail-tab"        role="tab" aria-selected="false" data-tab="forecast"   onclick="showDetailTab('forecast')">ИИ Прогноз</button>
-    <button class="detail-tab"        role="tab" aria-selected="false" data-tab="agents"     onclick="showDetailTab('agents')">ИИ Мониторинг</button>
-    <button class="detail-tab"        role="tab" aria-selected="false" data-tab="monitoring" onclick="showDetailTab('monitoring')">Мониторинг</button>
-    <button class="detail-tab"        role="tab" aria-selected="false" data-tab="calendar"   onclick="showDetailTab('calendar')">Календарь</button>
-    <button class="detail-tab"        role="tab" aria-selected="false" data-tab="requests"   onclick="showDetailTab('requests')">Заявки</button>
+    <button class="detail-tab" role="tab" aria-selected="false" data-tab="map"        onclick="showDetailTab('map')">Карта и станции</button>
+    <button class="detail-tab" role="tab" aria-selected="false" data-tab="forecast"   onclick="showDetailTab('forecast')">ИИ Прогноз</button>
+    <button class="detail-tab" role="tab" aria-selected="false" data-tab="agents"     onclick="showDetailTab('agents')">ИИ Мониторинг</button>
+    <button class="detail-tab" role="tab" aria-selected="false" data-tab="monitoring" onclick="showDetailTab('monitoring')">Мониторинг</button>
+    <button class="detail-tab" role="tab" aria-selected="false" data-tab="calendar"   onclick="showDetailTab('calendar')">Календарь</button>
+    <button class="detail-tab" role="tab" aria-selected="false" data-tab="requests"   onclick="showDetailTab('requests')">Заявки</button>
   </div>
   <div class="detail-nav-period" id="detail-period-label">—</div>
 </div>
