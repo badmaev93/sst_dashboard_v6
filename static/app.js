@@ -1482,6 +1482,8 @@ async function onMapClick(evt) {
     `<div class="popup-coord">${pinSvg}${coordStr}</div>`;
   document.getElementById("map-popup").style.display = "";
   S.popup.setPosition(evt.coordinate);
+  const closeBtn = document.getElementById("map-popup-close");
+  if (closeBtn) setTimeout(() => closeBtn.focus(), 50);
 }
 
 function _hidePopup() {
