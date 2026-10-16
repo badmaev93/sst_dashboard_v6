@@ -833,7 +833,7 @@ body.detail-mode #panel-toggle { top: 56px; }
   backdrop-filter: blur(12px);
   border: 1px solid rgba(0,0,0,0.12);
   border-radius: 8px;
-  padding: 7px 12px;
+  padding: 7px 28px 7px 12px;
   box-shadow: 0 6px 24px rgba(0,0,0,0.15);
   font-size: 12px;
   white-space: nowrap;
@@ -841,6 +841,29 @@ body.detail-mode #panel-toggle { top: 56px; }
   transform: translateX(-50%);
   margin-bottom: 10px;
   cursor: pointer;
+}
+
+.popup-close-btn {
+  position: absolute;
+  top: 4px; right: 6px;
+  background: none;
+  border: none;
+  color: rgba(30,40,60,0.5);
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  line-height: 1;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: color 0.14s, background 0.14s;
+}
+.popup-close-btn:hover {
+  color: #0055aa;
+  background: rgba(0,85,170,0.1);
+}
+.popup-close-btn:focus-visible {
+  outline: 2px solid #0055aa;
+  outline-offset: 1px;
 }
 
 .ol-popup:empty { display: none; }
