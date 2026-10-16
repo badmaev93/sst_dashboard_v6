@@ -56,7 +56,12 @@ async def update_event(event_id: int, data: CalendarEventCreate, user=Depends(ge
     return {"ok": True}
 
 @calendar_router.delete("/events/{event_id}")
-async def delete_event(event_id: int, user=Depends(require_role("supervisor"))):
+async def delete_event(event_id: int, user=Depends(get_current_user)):
+    existing = await db.pool.fetchrow("SELECT * FROM calendar_events WHERE id = $1", event_id)
+    if not existing:
+        raise HTTPException(404, "Event not found")
+    if user["role"] != "supervisor" and existing["created_by"] != user["id"]:
+        raise HTTPException(403, "Not authorized to delete this event")
     await db.pool.execute("DELETE FROM calendar_events WHERE id = $1", event_id)
     return {"ok": True}
 

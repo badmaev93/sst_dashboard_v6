@@ -107,6 +107,61 @@ def test_update_event_creator_engineer_allowed(mock_db_and_auth_engineer):
     assert response.json() == {"ok": True}
 
 
+def test_delete_event_unauthorized():
+    response = client.delete("/api/monitoring/calendar/events/1")
+    assert response.status_code == 401
+
+
+def test_delete_event_not_found(mock_db_and_auth_engineer):
+    mock_db = mock_db_and_auth_engineer
+    mock_db.fetchrow.return_value = None
+
+    response = client.delete("/api/monitoring/calendar/events/999")
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Event not found"
+
+
+def test_delete_event_not_creator_engineer(mock_db_and_auth_engineer):
+    mock_db = mock_db_and_auth_engineer
+    mock_db.fetchrow.return_value = {
+        "id": 1,
+        "created_by": 99,  # Created by user 99, but logged in as user 10
+        "title": "Old Title",
+    }
+
+    response = client.delete("/api/monitoring/calendar/events/1")
+    assert response.status_code == 403
+    assert "Not authorized" in response.json()["detail"]
+
+
+def test_delete_event_creator_engineer_allowed(mock_db_and_auth_engineer):
+    mock_db = mock_db_and_auth_engineer
+    mock_db.fetchrow.return_value = {
+        "id": 1,
+        "created_by": 10,  # Matches logged-in user ID 10
+        "title": "Old Title",
+    }
+    mock_db.execute.return_value = "DELETE 1"
+
+    response = client.delete("/api/monitoring/calendar/events/1")
+    assert response.status_code == 200
+    assert response.json() == {"ok": True}
+
+
+def test_delete_event_supervisor_allowed(mock_db_and_auth_supervisor):
+    mock_db = mock_db_and_auth_supervisor
+    mock_db.fetchrow.return_value = {
+        "id": 1,
+        "created_by": 99,  # Created by user 99, supervisor ID is 20
+        "title": "Old Title",
+    }
+    mock_db.execute.return_value = "DELETE 1"
+
+    response = client.delete("/api/monitoring/calendar/events/1")
+    assert response.status_code == 200
+    assert response.json() == {"ok": True}
+
+
 def test_update_focus_block_unauthorized():
     response = client.put("/api/monitoring/calendar/focus-blocks/1", json={"title": "New Title"})
     assert response.status_code == 401
