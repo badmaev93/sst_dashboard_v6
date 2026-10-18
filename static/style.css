@@ -854,6 +854,23 @@ body.detail-mode #panel-toggle { top: 56px; }
 .popup-coord b { color: #0055aa; }
 
 .ol-popup:hover { border-color: rgba(0,100,200,0.35); }
+.ol-popup:focus-visible { outline: 2px solid #0055aa; outline-offset: 2px; }
+
+#map-popup-close {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  background: none;
+  border: none;
+  font-size: 14px;
+  line-height: 1;
+  color: #64748b;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+#map-popup-close:hover { color: #0f172a; background: rgba(0,0,0,0.06); }
+#map-popup-close:focus-visible { outline: 2px solid #0055aa; outline-offset: 1px; }
 
 /* ════════════════════════════════════════════
    DASHBOARD — right slide-in panel
