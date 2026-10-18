@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 import db
 from auth import get_current_user, require_role
 from models import EquipmentCheckCreate
@@ -32,3 +32,13 @@ async def create_check(data: EquipmentCheckCreate, user=Depends(require_role("en
         VALUES ($1, $2, $3, $4, $5) RETURNING id
     """, data.station_id, user["id"], data.equipment, data.result, data.notes)
     return {"id": row["id"]}
+
+@equipment_router.delete("/checks/{check_id}")
+async def delete_check(check_id: int, user=Depends(get_current_user)):
+    check = await db.pool.fetchrow("SELECT * FROM equipment_checks WHERE id = $1", check_id)
+    if not check:
+        raise HTTPException(status_code=404, detail="Equipment check not found")
+    if user.get("role") != "supervisor" and check["checked_by"] != user["id"]:
+        raise HTTPException(status_code=403, detail="Not authorized to delete this equipment check")
+    await db.pool.execute("DELETE FROM equipment_checks WHERE id = $1", check_id)
+    return {"ok": True, "id": check_id}
