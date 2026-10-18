@@ -1479,9 +1479,11 @@ async function onMapClick(evt) {
   const coordStr = formatCoord(lat, lonNorm(lon360));
   const pinSvg = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#4a9eff" stroke-width="2" style="vertical-align:middle;margin-right:4px"><circle cx="12" cy="10" r="3"/><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg>`;
   document.getElementById("map-popup-content").innerHTML =
-    `<div class="popup-coord">${pinSvg}${coordStr}</div>`;
-  document.getElementById("map-popup").style.display = "";
+    `<div class="popup-coord" style="padding-right:16px">${pinSvg}${coordStr}</div>`;
+  const popupEl = document.getElementById("map-popup");
+  popupEl.style.display = "";
   S.popup.setPosition(evt.coordinate);
+  setTimeout(() => { if (typeof popupEl.focus === "function") popupEl.focus(); }, 50);
 }
 
 function _hidePopup() {
