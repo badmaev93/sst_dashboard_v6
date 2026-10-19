@@ -144,6 +144,7 @@
                 font-weight: 500;
             }
             .cal-mini-day:hover { background: #e2e8f0; }
+            .cal-mini-day:focus-visible { outline: 2px solid #2563eb; outline-offset: 1px; }
             .cal-mini-day.today { background: #2563eb; color: #fff; font-weight: 700; }
             .cal-mini-day.selected { background: #dbeafe; color: #2563eb; font-weight: 700; }
             .cal-mini-day.other-month { color: #cbd5e1; }
@@ -944,11 +945,25 @@
             if (isSel && !isToday) el.classList.add('selected');
 
             el.textContent = d;
+            el.tabIndex = 0;
+            el.setAttribute('role', 'button');
+            el.setAttribute('aria-label', `${d} ${MONTHS_RU_GEN[_miniMonth]} ${_miniYear}`);
+            el.setAttribute('aria-selected', (isSel || isToday) ? 'true' : 'false');
+
             const dayNum = d;
-            el.addEventListener('click', function() {
+            const selectDay = function() {
                 _selectedDate = new Date(_miniYear, _miniMonth, dayNum);
                 loadAndRender();
+            };
+
+            el.addEventListener('click', selectDay);
+            el.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    selectDay();
+                }
             });
+
             grid.appendChild(el);
         }
 
