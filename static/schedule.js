@@ -192,9 +192,12 @@
     html += '</div>';
 
     // Add modal
-    html += `<div id="sched-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center">
+    html += `<div id="sched-modal" role="dialog" aria-modal="true" aria-label="Назначить дежурство" tabindex="-1" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center">
       <div style="background:#fff;border-radius:12px;padding:24px;max-width:440px;width:90%;margin:auto;position:relative;top:50%;transform:translateY(-50%)">
-        <h3 style="margin:0 0 16px;font-size:16px;font-weight:600">Назначить дежурство</h3>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+          <h3 style="margin:0;font-size:16px;font-weight:600">Назначить дежурство</h3>
+          <button aria-label="Закрыть" onclick="window._schedCloseModal()" style="background:none;border:none;cursor:pointer;font-size:20px;color:#6b7280;line-height:1;padding:2px 6px;border-radius:4px">&times;</button>
+        </div>
         <div style="display:flex;flex-direction:column;gap:12px">
           <label style="font-size:13px;font-weight:500">Станция
             <select id="sched-station" style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;margin-top:4px;font-size:13px">
@@ -237,7 +240,10 @@
 
   window._schedAddModal = function () {
     const modal = document.getElementById('sched-modal');
-    if (modal) modal.style.display = 'flex';
+    if (modal) {
+      modal.style.display = 'flex';
+      modal.focus();
+    }
     // Default to tomorrow 08:00 — 20:00
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
