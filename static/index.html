@@ -248,7 +248,8 @@
 <div id="hover-tooltip" class="hidden"></div>
 
 <!-- Map popup -->
-<div id="map-popup" class="ol-popup" style="display:none">
+<div id="map-popup" class="ol-popup" role="dialog" aria-label="Информация о точке на карте" tabindex="-1" style="display:none">
+  <button id="map-popup-close" class="map-popup-close" onclick="_hidePopup()" aria-label="Закрыть">&times;</button>
   <div id="map-popup-content"></div>
 </div>
 
