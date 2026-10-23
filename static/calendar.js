@@ -144,6 +144,10 @@
                 font-weight: 500;
             }
             .cal-mini-day:hover { background: #e2e8f0; }
+            .cal-mini-day:focus-visible, .cal-priority-tab:focus-visible {
+                outline: 2px solid #2563eb;
+                outline-offset: 1px;
+            }
             .cal-mini-day.today { background: #2563eb; color: #fff; font-weight: 700; }
             .cal-mini-day.selected { background: #dbeafe; color: #2563eb; font-weight: 700; }
             .cal-mini-day.other-month { color: #cbd5e1; }
@@ -936,6 +940,8 @@
         for (let d = 1; d <= total; d++) {
             const el = document.createElement('div');
             el.className = 'cal-mini-day';
+            el.setAttribute('role', 'button');
+            el.setAttribute('tabindex', '0');
 
             const isToday = today.getFullYear() === _miniYear && today.getMonth() === _miniMonth && today.getDate() === d;
             const isSel = _selectedDate.getFullYear() === _miniYear && _selectedDate.getMonth() === _miniMonth && _selectedDate.getDate() === d;
@@ -943,11 +949,21 @@
             if (isToday) el.classList.add('today');
             if (isSel && !isToday) el.classList.add('selected');
 
+            el.setAttribute('aria-selected', isSel ? 'true' : 'false');
+            el.setAttribute('aria-label', `${d} ${MONTHS_RU_GEN[_miniMonth]} ${_miniYear}`);
+
             el.textContent = d;
             const dayNum = d;
-            el.addEventListener('click', function() {
+            const selectDay = function() {
                 _selectedDate = new Date(_miniYear, _miniMonth, dayNum);
                 loadAndRender();
+            };
+            el.addEventListener('click', selectDay);
+            el.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    selectDay();
+                }
             });
             grid.appendChild(el);
         }
@@ -1187,8 +1203,14 @@
         // Priority filter tabs
         const tabs = document.createElement('div');
         tabs.style.cssText = 'display:flex;gap:4px;padding:10px 16px;border-bottom:1px solid #f1f5f9;';
+        tabs.setAttribute('role', 'tablist');
+        tabs.setAttribute('aria-label', 'Фильтр задач по приоритету');
         ['Все', 'P1', 'P2', 'P3'].forEach(function(tab) {
             const btn = document.createElement('button');
+            btn.className = 'cal-priority-tab';
+            btn.setAttribute('role', 'tab');
+            btn.setAttribute('aria-selected', tab === 'Все' ? 'true' : 'false');
+            btn.setAttribute('aria-label', tab === 'Все' ? 'Все приоритеты' : 'Приоритет ' + tab);
             btn.style.cssText = 'padding:4px 10px;border:1px solid #e2e8f0;background:#fff;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;color:#64748b;transition:all 0.15s;';
             btn.textContent = tab;
             if (tab === 'Все') {
@@ -1197,15 +1219,17 @@
                 btn.style.borderColor = '#0f172a';
             }
             btn.addEventListener('click', function() {
-                // Update active tab styles
+                // Update active tab styles and aria-selected states
                 tabs.querySelectorAll('button').forEach(function(b) {
                     b.style.background = '#fff';
                     b.style.color = '#64748b';
                     b.style.borderColor = '#e2e8f0';
+                    b.setAttribute('aria-selected', 'false');
                 });
                 btn.style.background = '#0f172a';
                 btn.style.color = '#fff';
                 btn.style.borderColor = '#0f172a';
+                btn.setAttribute('aria-selected', 'true');
                 filterTasks(right, tab === 'Все' ? null : tab);
             });
             tabs.appendChild(btn);
