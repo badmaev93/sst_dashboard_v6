@@ -223,18 +223,32 @@ def start_scheduler():
                 stations = await db.pool.fetch(
                     "SELECT id, code, name FROM stations ORDER BY id")
 
+                station_ids = [st["id"] for st in stations]
+                from collections import defaultdict
+                readings_by_station = defaultdict(list)
+
+                if station_ids:
+                    all_readings = await db.pool.fetch("""
+                        SELECT station_id, observed_at, sst
+                        FROM (
+                            SELECT station_id, observed_at, sst,
+                                   ROW_NUMBER() OVER(PARTITION BY station_id ORDER BY observed_at DESC) as rn
+                            FROM readings
+                            WHERE station_id = ANY($1) AND sst IS NOT NULL
+                        ) t
+                        WHERE rn <= 48
+                        ORDER BY station_id, observed_at DESC
+                    """, station_ids)
+
+                    for r in all_readings:
+                        readings_by_station[r["station_id"]].append(
+                            {"observed_at": str(r["observed_at"]), "sst": float(r["sst"])}
+                        )
+
                 total_anomalies = 0
                 for st in stations:
                     try:
-                        readings = await db.pool.fetch(
-                            "SELECT observed_at, sst FROM readings "
-                            "WHERE station_id = $1 AND sst IS NOT NULL "
-                            "ORDER BY observed_at DESC LIMIT 48",
-                            st["id"])
-                        readings_list = [
-                            {"observed_at": str(r["observed_at"]), "sst": float(r["sst"])}
-                            for r in readings
-                        ]
+                        readings_list = readings_by_station.get(st["id"], [])
 
                         from services.prophet_forecast import get_station_forecast_prophet
                         fc = await get_station_forecast_prophet(
