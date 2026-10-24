@@ -5,3 +5,4 @@ __pycache__/
 data/gfs_cache/
 graphify-out/
 .claude/.cache/
+venv/

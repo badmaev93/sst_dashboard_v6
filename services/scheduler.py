@@ -223,14 +223,29 @@ def start_scheduler():
                 stations = await db.pool.fetch(
                     "SELECT id, code, name FROM stations ORDER BY id")
 
+                station_ids = [st["id"] for st in stations]
+                all_readings = []
+                if station_ids:
+                    all_readings = await db.pool.fetch("""
+                        SELECT station_id, observed_at, sst
+                        FROM (
+                            SELECT station_id, observed_at, sst,
+                                   ROW_NUMBER() OVER(PARTITION BY station_id ORDER BY observed_at DESC) as rn
+                            FROM readings
+                            WHERE station_id = ANY($1) AND sst IS NOT NULL
+                        ) sub
+                        WHERE rn <= 48
+                        ORDER BY station_id, rn
+                    """, station_ids)
+
+                readings_by_station = {st_id: [] for st_id in station_ids}
+                for r in all_readings:
+                    readings_by_station[r["station_id"]].append(r)
+
                 total_anomalies = 0
                 for st in stations:
                     try:
-                        readings = await db.pool.fetch(
-                            "SELECT observed_at, sst FROM readings "
-                            "WHERE station_id = $1 AND sst IS NOT NULL "
-                            "ORDER BY observed_at DESC LIMIT 48",
-                            st["id"])
+                        readings = readings_by_station.get(st["id"], [])
                         readings_list = [
                             {"observed_at": str(r["observed_at"]), "sst": float(r["sst"])}
                             for r in readings
