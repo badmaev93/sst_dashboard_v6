@@ -457,8 +457,8 @@ async def _cmd_free_text(chat_id: int, text: str, pool) -> str:
                 context_parts.append("Заявки/документы (ожидают подписи или в работе):\n" + "\n".join(req_lines))
             else:
                 context_parts.append("Неподписанных заявок/документов нет.")
-        except Exception:
-            pass
+        except Exception as e:
+            logger.exception("Failed to fetch pending requests: %s", e)
         # Дежурства — сейчас и на ближайшие 3 дня
         try:
             duty_now = await pool.fetch("""
