@@ -413,8 +413,8 @@ async def _cmd_free_text(chat_id: int, text: str, pool) -> str:
                     f"(норма: {counts['normal']}, внимание: {counts['warning']}, "
                     f"критично: {counts['critical']}, офлайн: {counts['offline']})"
                 )
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("Station counts query failed: %s", e)
         try:
             recent = await pool.fetch("""
                 SELECT s.name, s.code, r.sst, r.wind_speed, r.wave_height, r.status
@@ -432,8 +432,8 @@ async def _cmd_free_text(chat_id: int, text: str, pool) -> str:
                     for r in recent
                 )
                 context_parts.append(f"Станции с аномалиями: {alerts}")
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("Recent anomalies query failed: %s", e)
         try:
             pending = await pool.fetch("""
                 SELECT r.id, r.title, r.priority, r.status, r.created_at,
@@ -457,8 +457,8 @@ async def _cmd_free_text(chat_id: int, text: str, pool) -> str:
                 context_parts.append(f"Заявки/документы (ожидают подписи или в работе):\n" + "\n".join(req_lines))
             else:
                 context_parts.append("Неподписанных заявок/документов нет.")
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("Pending requests query failed: %s", e)
         # Дежурства — сейчас и на ближайшие 3 дня
         try:
             duty_now = await pool.fetch("""
@@ -502,8 +502,8 @@ async def _cmd_free_text(chat_id: int, text: str, pool) -> str:
                                  f"{d['shift_start'].strftime('%d.%m %H:%M')}–{d['shift_end'].strftime('%H:%M')}, "
                                  f"роль: {d['role_on_duty'] or d['position']}")
                 context_parts.append("Ближайшие дежурства (3 дня):\n" + "\n".join(lines))
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("Duty query failed: %s", e)
         try:
             events = await pool.fetch("""
                 SELECT agent_name, event_type, severity, title, created_at
@@ -518,8 +518,8 @@ async def _cmd_free_text(chat_id: int, text: str, pool) -> str:
                     date_str = e["created_at"].strftime("%d.%m %H:%M") if e["created_at"] else ""
                     ev_lines.append(f"  [{e['severity']}] {e['title']} ({e['agent_name']}, {date_str})")
                 context_parts.append(f"События за 48ч:\n" + "\n".join(ev_lines))
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("Events query failed: %s", e)
         # Прогнозы Prophet по станциям с данными
         try:
             from services.prophet_forecast import get_station_forecast_prophet
@@ -547,8 +547,8 @@ async def _cmd_free_text(chat_id: int, text: str, pool) -> str:
                 fc_lines.append(f"  {fs['name']} ({fs['code']}): прогноз [{vals}], тренд: {trend_word}{anom}")
             if fc_lines:
                 context_parts.append("Прогнозы ТПО (Prophet, ближайшие 6-18ч):\n" + "\n".join(fc_lines))
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("Prophet forecast query failed: %s", e)
 
     context = "\n".join(context_parts) if context_parts else "Данные системы недоступны."
 
