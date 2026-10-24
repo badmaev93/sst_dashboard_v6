@@ -15,7 +15,6 @@ import logging
 import httpx
 
 from config import TELEGRAM_BOT_TOKEN
-import db
 
 logger = logging.getLogger(__name__)
 TG_API = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}"
@@ -388,7 +387,7 @@ async def _cmd_events(chat_id: int, pool) -> str:
         lines.append(f"{icon} <b>{e['title'][:60]}</b>\n   <i>{e['agent_name']} · {date_str}</i>")
 
     return (
-        f"🔔 <b>События за 48ч</b>\n\n"
+        "🔔 <b>События за 48ч</b>\n\n"
         + "\n\n".join(lines)
     )
 
@@ -414,7 +413,7 @@ async def _cmd_free_text(chat_id: int, text: str, pool) -> str:
                     f"критично: {counts['critical']}, офлайн: {counts['offline']})"
                 )
         except Exception:
-            pass
+            logger.exception("Failed to fetch stations count")
         try:
             recent = await pool.fetch("""
                 SELECT s.name, s.code, r.sst, r.wind_speed, r.wave_height, r.status
@@ -433,7 +432,7 @@ async def _cmd_free_text(chat_id: int, text: str, pool) -> str:
                 )
                 context_parts.append(f"Станции с аномалиями: {alerts}")
         except Exception:
-            pass
+            logger.exception("Failed to fetch recent anomalies")
         try:
             pending = await pool.fetch("""
                 SELECT r.id, r.title, r.priority, r.status, r.created_at,
@@ -454,11 +453,11 @@ async def _cmd_free_text(chat_id: int, text: str, pool) -> str:
                         f"статус: {r['status']} | станция: {r['station_name'] or '—'} | "
                         f"автор: {r['author'] or '—'} | дата: {date_str}"
                     )
-                context_parts.append(f"Заявки/документы (ожидают подписи или в работе):\n" + "\n".join(req_lines))
+                context_parts.append("Заявки/документы (ожидают подписи или в работе):\n" + "\n".join(req_lines))
             else:
                 context_parts.append("Неподписанных заявок/документов нет.")
         except Exception:
-            pass
+            logger.exception("Failed to fetch pending requests")
         # Дежурства — сейчас и на ближайшие 3 дня
         try:
             duty_now = await pool.fetch("""
@@ -503,7 +502,7 @@ async def _cmd_free_text(chat_id: int, text: str, pool) -> str:
                                  f"роль: {d['role_on_duty'] or d['position']}")
                 context_parts.append("Ближайшие дежурства (3 дня):\n" + "\n".join(lines))
         except Exception:
-            pass
+            logger.exception("Failed to fetch duty assignments")
         try:
             events = await pool.fetch("""
                 SELECT agent_name, event_type, severity, title, created_at
@@ -517,9 +516,9 @@ async def _cmd_free_text(chat_id: int, text: str, pool) -> str:
                 for e in events:
                     date_str = e["created_at"].strftime("%d.%m %H:%M") if e["created_at"] else ""
                     ev_lines.append(f"  [{e['severity']}] {e['title']} ({e['agent_name']}, {date_str})")
-                context_parts.append(f"События за 48ч:\n" + "\n".join(ev_lines))
+                context_parts.append("События за 48ч:\n" + "\n".join(ev_lines))
         except Exception:
-            pass
+            logger.exception("Failed to fetch agent events")
         # Прогнозы Prophet по станциям с данными
         try:
             from services.prophet_forecast import get_station_forecast_prophet
@@ -548,7 +547,7 @@ async def _cmd_free_text(chat_id: int, text: str, pool) -> str:
             if fc_lines:
                 context_parts.append("Прогнозы ТПО (Prophet, ближайшие 6-18ч):\n" + "\n".join(fc_lines))
         except Exception:
-            pass
+            logger.exception("Failed to fetch prophet forecasts")
 
     context = "\n".join(context_parts) if context_parts else "Данные системы недоступны."
 
@@ -619,7 +618,7 @@ async def _get_gfs_node_data(station) -> str | None:
                 f"📡 <i>GFS-прогноз узла: ТПО {_fmt(sst)}°C, ветер {_fmt(wind)} м/с</i>"
             )
     except Exception:
-        pass
+        logger.exception("Failed to fetch GFS node data")
     return None
 
 
