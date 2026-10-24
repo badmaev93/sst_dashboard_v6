@@ -16,6 +16,9 @@ TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
 AGENT_API_KEY = os.getenv("AGENT_API_KEY", "")
 GEE_PROJECT_ID = os.getenv("GEE_PROJECT_ID", "")
 
+# Nixtla TimeGPT API
+NIXTLA_API_KEY = os.getenv("NIXTLA_API_KEY", "")
+
 # GigaChat (Сбер LLM) — резервный вариант, если ключ Anthropic не задан
 GIGACHAT_CLIENT_ID = os.getenv("GIGACHAT_CLIENT_ID", "")
 GIGACHAT_CLIENT_SECRET = os.getenv("GIGACHAT_CLIENT_SECRET", "")
