@@ -109,16 +109,25 @@ async def seed_users(conn):
     print("Seeding users...")
     from passlib.context import CryptContext
     pwd = CryptContext(schemes=["bcrypt"], deprecated="auto")
-    user_ids = []
-    for username, password, full_name, role in USERS:
-        uid = await conn.fetchval(
-            """INSERT INTO users (username, password_hash, full_name, role)
-               VALUES ($1, $2, $3, $4)
-               ON CONFLICT (username) DO UPDATE SET full_name=EXCLUDED.full_name
-               RETURNING id""",
-            username, pwd.hash(password), full_name, role
-        )
-        user_ids.append(uid)
+    users_data = [
+        (username, pwd.hash(password), full_name, role)
+        for username, password, full_name, role in USERS
+    ]
+    await conn.executemany(
+        """INSERT INTO users (username, password_hash, full_name, role)
+           VALUES ($1, $2, $3, $4)
+           ON CONFLICT (username) DO UPDATE SET full_name=EXCLUDED.full_name""",
+        users_data
+    )
+
+    usernames = [u[0] for u in USERS]
+    records = await conn.fetch(
+        "SELECT id, username FROM users WHERE username = ANY($1::text[])",
+        usernames
+    )
+
+    id_map = {r['username']: r['id'] for r in records}
+    user_ids = [id_map[u] for u in usernames]
     print(f"  {len(user_ids)} users")
     return user_ids
 
