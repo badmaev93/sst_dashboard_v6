@@ -131,6 +131,17 @@ async def update_task(task_id: int, data: dict, user=Depends(get_current_user)):
     )
     return {"ok": True}
 
+@calendar_router.delete("/tasks/{task_id}")
+async def delete_task(task_id: int, user=Depends(get_current_user)):
+    existing = await db.pool.fetchrow("SELECT * FROM tasks WHERE id = $1", task_id)
+    if not existing:
+        raise HTTPException(404, "Task not found")
+    if user["role"] != "supervisor" and existing["assigned_to"] != user["id"]:
+        raise HTTPException(403, "Not authorized to delete this task")
+
+    await db.pool.execute("DELETE FROM tasks WHERE id = $1", task_id)
+    return {"ok": True}
+
 
 # ── Блоки фокусировки ───────────────────────────────
 
