@@ -128,16 +128,25 @@ async def main():
     print("Seeding stations...")
     station_ids = []
     station_coords = {}
-    for code, name, lat, lon, region in STATIONS:
-        sid = await conn.fetchval(
-            """INSERT INTO stations (code, name, lat, lon, region, status)
-               VALUES ($1, $2, $3, $4, $5, 'normal')
-               ON CONFLICT (code) DO UPDATE SET name=EXCLUDED.name
-               RETURNING id""",
-            code, name, lat, lon, region
-        )
+
+    records = await conn.fetch(
+        """INSERT INTO stations (code, name, lat, lon, region, status)
+           SELECT code, name, lat, lon, region, 'normal'
+           FROM unnest($1::text[], $2::text[], $3::float[], $4::float[], $5::text[])
+           AS u(code, name, lat, lon, region)
+           ON CONFLICT (code) DO UPDATE SET name=EXCLUDED.name
+           RETURNING id, lat, lon""",
+        [s[0] for s in STATIONS],
+        [s[1] for s in STATIONS],
+        [s[2] for s in STATIONS],
+        [s[3] for s in STATIONS],
+        [s[4] for s in STATIONS]
+    )
+    for row in records:
+        sid = row["id"]
         station_ids.append(sid)
-        station_coords[sid] = (lat, lon)
+        station_coords[sid] = (row["lat"], row["lon"])
+
     print(f"  {len(station_ids)} stations")
 
     # --- Измерения (30 дней, по часам) ---
