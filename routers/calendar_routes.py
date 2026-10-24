@@ -8,9 +8,9 @@ def _parse_date(s):
     if not s: return None
     if isinstance(s, (_date, _dt)): return s
     try: return _dt.fromisoformat(s)
-    except: pass
+    except ValueError: pass
     try: return _date.fromisoformat(s)
-    except: return s
+    except ValueError: return s
 
 calendar_router = APIRouter(prefix="/api/monitoring/calendar", tags=["calendar"])
 
