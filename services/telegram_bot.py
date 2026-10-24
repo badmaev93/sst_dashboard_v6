@@ -1,4 +1,3 @@
-from __future__ import annotations
 """
 @serendipity_sst_bot — расширенный Telegram бот.
 Функции:
@@ -11,11 +10,12 @@ from __future__ import annotations
   /events       — знаменательные события (аномалии, критические события)
   /help         — помощь
 """
+from __future__ import annotations
+
 import logging
 import httpx
 
 from config import TELEGRAM_BOT_TOKEN
-import db
 
 logger = logging.getLogger(__name__)
 TG_API = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}"
@@ -388,7 +388,7 @@ async def _cmd_events(chat_id: int, pool) -> str:
         lines.append(f"{icon} <b>{e['title'][:60]}</b>\n   <i>{e['agent_name']} · {date_str}</i>")
 
     return (
-        f"🔔 <b>События за 48ч</b>\n\n"
+        "🔔 <b>События за 48ч</b>\n\n"
         + "\n\n".join(lines)
     )
 
@@ -454,7 +454,7 @@ async def _cmd_free_text(chat_id: int, text: str, pool) -> str:
                         f"статус: {r['status']} | станция: {r['station_name'] or '—'} | "
                         f"автор: {r['author'] or '—'} | дата: {date_str}"
                     )
-                context_parts.append(f"Заявки/документы (ожидают подписи или в работе):\n" + "\n".join(req_lines))
+                context_parts.append("Заявки/документы (ожидают подписи или в работе):\n" + "\n".join(req_lines))
             else:
                 context_parts.append("Неподписанных заявок/документов нет.")
         except Exception:
@@ -517,7 +517,7 @@ async def _cmd_free_text(chat_id: int, text: str, pool) -> str:
                 for e in events:
                     date_str = e["created_at"].strftime("%d.%m %H:%M") if e["created_at"] else ""
                     ev_lines.append(f"  [{e['severity']}] {e['title']} ({e['agent_name']}, {date_str})")
-                context_parts.append(f"События за 48ч:\n" + "\n".join(ev_lines))
+                context_parts.append("События за 48ч:\n" + "\n".join(ev_lines))
         except Exception:
             pass
         # Прогнозы Prophet по станциям с данными
