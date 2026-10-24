@@ -124,3 +124,16 @@ class TaskCreate(BaseModel):
     estimated_minutes: Optional[int] = None
     due_date: Optional[datetime] = None
     station_id: Optional[int] = None
+
+class ReadingCreate(BaseModel):
+    station_id: int
+    sst: Optional[float] = None
+    temp_air: Optional[float] = None
+    wave_height: Optional[float] = None
+    wave_period: Optional[float] = None
+    wind_speed: Optional[float] = None
+    wind_dir: Optional[int] = None
+    pressure: Optional[float] = None
+    visibility: Optional[float] = None
+    humidity: Optional[float] = None
+    status: Optional[str] = "normal"
