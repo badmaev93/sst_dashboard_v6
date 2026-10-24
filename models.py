@@ -116,3 +116,11 @@ class DashboardSummary(BaseModel):
     open_requests: int
     recent_anomalies: int
     active_agents: list
+
+class TaskCreate(BaseModel):
+    title: str
+    description: Optional[str] = None
+    priority: str = "P2"
+    estimated_minutes: Optional[int] = None
+    due_date: Optional[datetime] = None
+    station_id: Optional[int] = None
