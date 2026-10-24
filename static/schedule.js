@@ -223,8 +223,9 @@
               <option>Техник</option>
             </select>
           </label>
+          <div id="sched-form-error" style="display:none;padding:8px 12px;border-radius:6px;background:#fef2f2;color:#dc2626;font-size:12px"></div>
           <div style="display:flex;gap:8px;margin-top:8px">
-            <button onclick="window._schedSave()" style="flex:1;padding:10px;border:none;border-radius:6px;background:#0066cc;color:#fff;cursor:pointer;font-weight:500;font-size:14px">Сохранить</button>
+            <button id="sched-save-btn" onclick="window._schedSave()" style="flex:1;padding:10px;border:none;border-radius:6px;background:#0066cc;color:#fff;cursor:pointer;font-weight:500;font-size:14px">Сохранить</button>
             <button onclick="window._schedCloseModal()" style="flex:1;padding:10px;border:1px solid #d1d5db;border-radius:6px;background:#fff;cursor:pointer;font-size:14px">Отмена</button>
           </div>
         </div>
@@ -244,6 +245,11 @@
       modal.style.display = 'flex';
       modal.focus();
     }
+    const errEl = document.getElementById('sched-form-error');
+    if (errEl) errEl.style.display = 'none';
+    const stEl = document.getElementById('sched-station');
+    if (stEl) stEl.focus();
+
     // Default to tomorrow 08:00 — 20:00
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
@@ -259,22 +265,55 @@
   window._schedCloseModal = function () {
     const modal = document.getElementById('sched-modal');
     if (modal) modal.style.display = 'none';
+    const errEl = document.getElementById('sched-form-error');
+    if (errEl) errEl.style.display = 'none';
   };
 
   window._schedSave = async function () {
-    const body = {
-      station_id: parseInt(document.getElementById('sched-station').value),
-      personnel_id: parseInt(document.getElementById('sched-person').value),
-      shift_start: new Date(document.getElementById('sched-start').value).toISOString(),
-      shift_end: new Date(document.getElementById('sched-end').value).toISOString(),
-      role_on_duty: document.getElementById('sched-role').value,
-    };
-    const res = await fetch(API, { method: 'POST', headers: hdr(), body: JSON.stringify(body) });
-    if (res.ok) {
-      window._schedCloseModal();
-      showScheduleView();
-    } else {
-      alert('Ошибка сохранения');
+    const btn = document.getElementById('sched-save-btn');
+    const errEl = document.getElementById('sched-form-error');
+    if (errEl) errEl.style.display = 'none';
+
+    const startVal = document.getElementById('sched-start').value;
+    const endVal = document.getElementById('sched-end').value;
+    if (!startVal || !endVal) {
+      if (errEl) {
+        errEl.textContent = 'Укажите время начала и конца смены';
+        errEl.style.display = 'block';
+      }
+      return;
+    }
+
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = 'Сохранение...';
+    }
+
+    try {
+      const body = {
+        station_id: parseInt(document.getElementById('sched-station').value),
+        personnel_id: parseInt(document.getElementById('sched-person').value),
+        shift_start: new Date(startVal).toISOString(),
+        shift_end: new Date(endVal).toISOString(),
+        role_on_duty: document.getElementById('sched-role').value,
+      };
+      const res = await fetch(API, { method: 'POST', headers: hdr(), body: JSON.stringify(body) });
+      if (res.ok) {
+        window._schedCloseModal();
+        showScheduleView();
+      } else {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.detail || 'Ошибка сохранения');
+      }
+    } catch (err) {
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = 'Сохранить';
+      }
+      if (errEl) {
+        errEl.textContent = err.message || 'Ошибка сохранения';
+        errEl.style.display = 'block';
+      }
     }
   };
 
