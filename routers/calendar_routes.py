@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends, Query
 from datetime import date as _date, datetime as _dt
 import db
 from auth import get_current_user, require_role
-from models import CalendarEventCreate
+from models import CalendarEventCreate, TaskCreate
 
 def _parse_date(s):
     if not s: return None
@@ -82,17 +82,17 @@ async def list_tasks(date: str = None, user_id: int = None, user=Depends(get_cur
     return [dict(r) for r in rows]
 
 @calendar_router.post("/tasks")
-async def create_task(data: dict, user=Depends(get_current_user)):
+async def create_task(data: TaskCreate, user=Depends(get_current_user)):
     row = await db.pool.fetchrow("""
         INSERT INTO tasks (title, description, priority, estimated_minutes, due_date, station_id, assigned_to)
         VALUES ($1, $2, $3, $4, $5::timestamptz, $6, $7) RETURNING id
     """,
-        data.get("title"),
-        data.get("description"),
-        data.get("priority", "P2"),
-        data.get("estimated_minutes"),
-        data.get("due_date"),
-        data.get("station_id"),
+        data.title,
+        data.description,
+        data.priority,
+        data.estimated_minutes,
+        data.due_date,
+        data.station_id,
         user["id"]
     )
     return {"id": row["id"]}
