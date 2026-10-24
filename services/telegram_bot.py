@@ -413,8 +413,8 @@ async def _cmd_free_text(chat_id: int, text: str, pool) -> str:
                     f"(норма: {counts['normal']}, внимание: {counts['warning']}, "
                     f"критично: {counts['critical']}, офлайн: {counts['offline']})"
                 )
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("Failed to fetch station counts: %s", e)
         try:
             recent = await pool.fetch("""
                 SELECT s.name, s.code, r.sst, r.wind_speed, r.wave_height, r.status
