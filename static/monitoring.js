@@ -93,6 +93,7 @@
         font-family: inherit; transition: background .15s;
       }
       .mon-btn-close:hover { background: ${CLR.border}; }
+      .mon-btn-close:focus-visible { outline: 2px solid ${CLR.info}; outline-offset: 2px; }
 
       /* ── Columns ── */
       .mon-columns {
@@ -126,8 +127,10 @@
       /* ── Status row ── */
       .mon-status-row {
         display: flex; align-items: center; gap: 6px;
-        font-size: 13px; padding: 4px 0;
+        font-size: 13px; padding: 4px 6px; border-radius: 4px; transition: background .15s;
       }
+      .mon-status-row:hover { background: ${CLR.surface}; }
+      .mon-status-row:focus-visible { outline: 2px solid ${CLR.info}; outline-offset: 1px; }
       .mon-status-dot {
         width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
       }
@@ -257,6 +260,7 @@
       .mon-action-btn.primary:hover {
         background: #388bfd; box-shadow: 0 0 12px rgba(56,139,253,.3);
       }
+      .mon-action-btn:focus-visible { outline: 2px solid ${CLR.info}; outline-offset: 2px; }
 
       /* ── Feed empty ── */
       .mon-feed-empty {
@@ -599,17 +603,17 @@
 
   function buildStatusCounts(online, warn, crit) {
     return `
-      <div class="mon-status-row" style="cursor:pointer" onclick="window._monShowStatusList('online')" title="Показать онлайн-станции">
+      <div class="mon-status-row" role="button" tabindex="0" aria-label="Показать онлайн-станции: ${online}" style="cursor:pointer" onclick="window._monShowStatusList('online')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window._monShowStatusList('online');}">
         <div class="mon-status-dot" style="background:${CLR.success}"></div>
         <span class="mon-status-count">${online}</span> онлайн
         <span style="margin-left:auto;font-size:10px;color:${CLR.textDim}">›</span>
       </div>
-      <div class="mon-status-row" style="cursor:pointer" onclick="window._monShowStatusList('warning')" title="Показать станции с предупреждением">
+      <div class="mon-status-row" role="button" tabindex="0" aria-label="Показать станции с предупреждением: ${warn}" style="cursor:pointer" onclick="window._monShowStatusList('warning')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window._monShowStatusList('warning');}">
         <div class="mon-status-dot" style="background:${CLR.warning}"></div>
         <span class="mon-status-count">${warn}</span> внимание
         <span style="margin-left:auto;font-size:10px;color:${CLR.textDim}">›</span>
       </div>
-      <div class="mon-status-row" style="cursor:pointer" onclick="window._monShowStatusList('critical')" title="Показать критичные станции">
+      <div class="mon-status-row" role="button" tabindex="0" aria-label="Показать критичные станции: ${crit}" style="cursor:pointer" onclick="window._monShowStatusList('critical')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window._monShowStatusList('critical');}">
         <div class="mon-status-dot" style="background:${CLR.critical}"></div>
         <span class="mon-status-count">${crit}</span> критично
         <span style="margin-left:auto;font-size:10px;color:${CLR.textDim}">›</span>
