@@ -4,17 +4,14 @@ AI Serendipity — коррекция систематической погре�
 Лимит Nixtla: 50 запросов/месяц → кэширование результатов на 7 дней для каждой станции.
 """
 import logging
-import os
 from datetime import datetime, timedelta, timezone
 from typing import Any
+
+from config import NIXTLA_API_KEY
 
 logger = logging.getLogger(__name__)
 
 # ── Конфигурация Nixtla ───────────────────────────────────────────────────────────
-NIXTLA_API_KEY: str = os.environ.get(
-    "NIXTLA_API_KEY",
-    "nixak-1f134f1e4f3ebde0143f6afd8f86a22ea55fc042d8090d2c1ff1db795f4eaaf850f7730b105d8c7b",
-)
 NIXTLA_BASE: str = "https://api.nixtla.io"
 _CACHE_TTL_DAYS: int = 7
 _MONTHLY_LIMIT: int = 50
@@ -162,6 +159,8 @@ async def _nixtla_post(endpoint: str, payload: dict) -> dict | None:
 # ── Асинхронные вызовы Nixtla ──────────────────────────────────────────────────────
 async def call_nixtla_forecast(station_code: str, readings: list[dict]) -> dict | None:
     """Вызов Nixtla TimeGPT для прогноза ТПО. Соблюдает лимит 50/мес с кэшем на 7 дней."""
+    if not NIXTLA_API_KEY:
+        return None
     skip_reason = _check_rate_limit(station_code, readings)
     if skip_reason == "cache_fresh":
         cached = _nixtla_cache[station_code]
@@ -213,6 +212,8 @@ async def call_nixtla_forecast(station_code: str, readings: list[dict]) -> dict 
 
 async def call_nixtla_anomaly(station_code: str, readings: list[dict]) -> dict | None:
     """Вызов детекции аномалий Nixtla. Соблюдает лимит 50/мес с кэшем на 7 дней."""
+    if not NIXTLA_API_KEY:
+        return None
     skip_reason = _check_rate_limit(station_code, readings)
     if skip_reason == "cache_fresh":
         cached = _nixtla_cache.get(station_code, {})
