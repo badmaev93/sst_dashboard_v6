@@ -1,15 +1,14 @@
 """Модуль JWT аутентификации."""
 import logging
 from datetime import datetime, timedelta, timezone
-from typing import Optional
 
-from fastapi import APIRouter, HTTPException, Depends, Header
+from fastapi import APIRouter, HTTPException, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import jwt, JWTError
 from passlib.context import CryptContext
 
 from config import JWT_SECRET, JWT_ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES, REFRESH_TOKEN_EXPIRE_DAYS
-from models import UserLogin, Token, UserResponse
+from models import UserLogin
 import db
 
 logger = logging.getLogger(__name__)
