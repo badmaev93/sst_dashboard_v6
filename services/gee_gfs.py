@@ -78,7 +78,6 @@ def _generate_fallback_grids(cycle_dt: datetime) -> dict:
     """Генерация реалистичных прогностических сеток без использования GEE."""
     month = cycle_dt.month
     seed = int(cycle_dt.strftime("%Y%m%d%H"))
-    rng = np.random.RandomState(seed)
 
     base_sst = _clim_sst_grid(month)
     base_wind_mean = float(_MONTHLY_WIND[month - 1])
