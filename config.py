@@ -1,4 +1,5 @@
 import os
+import secrets
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -9,6 +10,8 @@ DATABASE_URL = os.getenv(
 )
 NEON_DATABASE_URL = os.getenv("NEON_DATABASE_URL", "")
 JWT_SECRET = os.getenv("JWT_SECRET", "")
+if not JWT_SECRET:
+    JWT_SECRET = secrets.token_urlsafe(32)
 JWT_ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 REFRESH_TOKEN_EXPIRE_DAYS = 7
