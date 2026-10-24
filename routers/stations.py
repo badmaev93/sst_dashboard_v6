@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 import db
+from models import ReadingCreate
 from auth import get_current_user, require_role
 
 stations_router = APIRouter(prefix="/api/monitoring", tags=["stations"])
@@ -49,14 +50,14 @@ async def latest_readings(user=Depends(get_current_user)):
     return [dict(r) for r in rows]
 
 @stations_router.post("/readings")
-async def create_reading(data: dict, user=Depends(require_role("observer", "supervisor"))):
+async def create_reading(data: ReadingCreate, user=Depends(require_role("observer", "supervisor"))):
     # Добавление измерения
     row = await db.pool.fetchrow("""
         INSERT INTO readings (station_id, observed_at, sst, temp_air, wave_height, wave_period,
             wind_speed, wind_dir, pressure, visibility, humidity, status)
         VALUES ($1, now(), $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
         RETURNING id
-    """, data["station_id"], data.get("sst"), data.get("temp_air"), data.get("wave_height"),
-        data.get("wave_period"), data.get("wind_speed"), data.get("wind_dir"),
-        data.get("pressure"), data.get("visibility"), data.get("humidity"), data.get("status", "normal"))
+    """, data.station_id, data.sst, data.temp_air, data.wave_height,
+        data.wave_period, data.wind_speed, data.wind_dir,
+        data.pressure, data.visibility, data.humidity, data.status)
     return {"id": row["id"]}
