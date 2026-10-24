@@ -226,6 +226,9 @@ async function init() {
       const reqFormClose = document.getElementById("req-form-close");
       if (_isVisible(reqFormClose)) { reqFormClose.click(); return; }
 
+      const stDetailClose = document.querySelector("#station-detail button[aria-label='Закрыть панель']");
+      if (_isVisible(stDetailClose)) { stDetailClose.click(); return; }
+
       const monStatusClose = document.querySelector("#mon-status-modal button");
       if (_isVisible(monStatusClose)) { monStatusClose.click(); return; }
 
