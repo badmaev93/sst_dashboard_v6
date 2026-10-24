@@ -522,6 +522,8 @@ async def _cmd_free_text(chat_id: int, text: str, pool) -> str:
             pass
         # Прогнозы Prophet по станциям с данными
         try:
+            import asyncio
+            import json as _json
             from services.prophet_forecast import get_station_forecast_prophet
             forecast_stations = await pool.fetch("""
                 SELECT s.code, s.name,
@@ -536,16 +538,17 @@ async def _cmd_free_text(chat_id: int, text: str, pool) -> str:
                 GROUP BY s.code, s.name
                 LIMIT 8
             """)
-            fc_lines = []
-            for fs in forecast_stations:
-                import json as _json
+
+            async def _process_station(fs):
                 readings_list = [_json.loads(r) if isinstance(r, str) else r for r in fs["readings_arr"]]
                 fc = await get_station_forecast_prophet(fs["code"], readings_list, periods=3)
                 trend_word = "рост" if fc["trend"] > 0.05 else ("снижение" if fc["trend"] < -0.05 else "стабильно")
                 vals = ", ".join(f"{v}°C" for v in fc["forecast"][:3])
                 anom = f", аномалий: {fc['n_anomalies_24h']}" if fc.get("n_anomalies_24h", 0) > 0 else ""
-                fc_lines.append(f"  {fs['name']} ({fs['code']}): прогноз [{vals}], тренд: {trend_word}{anom}")
-            if fc_lines:
+                return f"  {fs['name']} ({fs['code']}): прогноз [{vals}], тренд: {trend_word}{anom}"
+
+            if forecast_stations:
+                fc_lines = await asyncio.gather(*(_process_station(fs) for fs in forecast_stations))
                 context_parts.append("Прогнозы ТПО (Prophet, ближайшие 6-18ч):\n" + "\n".join(fc_lines))
         except Exception:
             pass
