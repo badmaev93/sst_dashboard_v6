@@ -393,162 +393,201 @@ async def _cmd_events(chat_id: int, pool) -> str:
     )
 
 
+
+async def _get_stations_context(pool) -> str | None:
+    parts = []
+    try:
+        counts = await pool.fetchrow("""
+            SELECT COUNT(*) FILTER (WHERE status = 'normal') AS normal,
+                   COUNT(*) FILTER (WHERE status = 'warning') AS warning,
+                   COUNT(*) FILTER (WHERE status = 'critical') AS critical,
+                   COUNT(*) FILTER (WHERE status = 'offline') AS offline,
+                   COUNT(*) AS total
+            FROM stations
+        """)
+        if counts:
+            parts.append(
+                f"Станции: всего {counts['total']} "
+                f"(норма: {counts['normal']}, внимание: {counts['warning']}, "
+                f"критично: {counts['critical']}, офлайн: {counts['offline']})"
+            )
+    except Exception as e:
+        logger.warning("Failed to fetch station counts: %s", e)
+    try:
+        recent = await pool.fetch("""
+            SELECT s.name, s.code, r.sst, r.wind_speed, r.wave_height, r.status
+            FROM stations s
+            LEFT JOIN LATERAL (
+                SELECT sst, wind_speed, wave_height, status
+                FROM readings WHERE station_id = s.id ORDER BY observed_at DESC LIMIT 1
+            ) r ON true
+            WHERE r.status IN ('warning', 'critical')
+            LIMIT 5
+        """)
+        if recent:
+            alerts = "; ".join(
+                f"{r['name']} ({r['code']}): ТПО {_fmt(r['sst'])}°C, ветер {_fmt(r['wind_speed'])} м/с ({r['status']})"
+                for r in recent
+            )
+            parts.append(f"Станции с аномалиями: {alerts}")
+    except Exception:
+        pass
+
+    return "\n".join(parts) if parts else None
+
+
+async def _get_requests_context(pool) -> str | None:
+    try:
+        pending = await pool.fetch("""
+            SELECT r.id, r.title, r.priority, r.status, r.created_at,
+                   u.full_name as author, s.name as station_name
+            FROM requests r
+            LEFT JOIN users u ON u.id = r.created_by
+            LEFT JOIN stations s ON s.id = r.station_id
+            WHERE r.status IN ('pending', 'in_progress')
+            ORDER BY r.created_at DESC
+            LIMIT 15
+        """)
+        if pending:
+            req_lines = []
+            for r in pending:
+                date_str = r["created_at"].strftime("%d.%m.%Y %H:%M") if r["created_at"] else ""
+                req_lines.append(
+                    f"  #{r['id']} \"{r['title']}\" | приоритет: {r['priority']} | "
+                    f"статус: {r['status']} | станция: {r['station_name'] or '—'} | "
+                    f"автор: {r['author'] or '—'} | дата: {date_str}"
+                )
+            return "Заявки/документы (ожидают подписи или в работе):\n" + "\n".join(req_lines)
+        else:
+            return "Неподписанных заявок/документов нет."
+    except Exception:
+        pass
+    return None
+
+
+async def _get_duty_context(pool) -> str | None:
+    parts = []
+    try:
+        duty_now = await pool.fetch("""
+            SELECT u.full_name, p.position, a.role_on_duty,
+                   s.code as station_code, s.name as station_name,
+                   a.shift_start, a.shift_end
+            FROM assignments a
+            JOIN personnel p ON p.id = a.personnel_id
+            JOIN users u ON u.id = p.user_id
+            JOIN stations s ON s.id = a.station_id
+            WHERE a.shift_start <= now() AND a.shift_end >= now()
+               OR a.shift_start::date = current_date
+            ORDER BY s.code
+        """)
+        duty_upcoming = await pool.fetch("""
+            SELECT u.full_name, p.position, a.role_on_duty,
+                   s.code as station_code, s.name as station_name,
+                   a.shift_start, a.shift_end
+            FROM assignments a
+            JOIN personnel p ON p.id = a.personnel_id
+            JOIN users u ON u.id = p.user_id
+            JOIN stations s ON s.id = a.station_id
+            WHERE a.shift_start > now() AND a.shift_start <= now() + interval '3 days'
+              AND a.shift_start::date > current_date
+            ORDER BY a.shift_start, s.code
+            LIMIT 30
+        """)
+        if duty_now:
+            lines = []
+            for d in duty_now:
+                lines.append(f"  {d['full_name']} — {d['station_name']} ({d['station_code']}), "
+                             f"роль: {d['role_on_duty'] or d['position']}, "
+                             f"с {d['shift_start'].strftime('%H:%M')} до {d['shift_end'].strftime('%d.%m %H:%M')}")
+            parts.append("Дежурят сегодня (или прямо сейчас):\n" + "\n".join(lines))
+        else:
+            parts.append("Дежурят сегодня: никого (смен нет)")
+        if duty_upcoming:
+            lines = []
+            for d in duty_upcoming:
+                lines.append(f"  {d['full_name']} — {d['station_name']} ({d['station_code']}), "
+                             f"{d['shift_start'].strftime('%d.%m %H:%M')}–{d['shift_end'].strftime('%H:%M')}, "
+                             f"роль: {d['role_on_duty'] or d['position']}")
+            parts.append("Ближайшие дежурства (3 дня):\n" + "\n".join(lines))
+    except Exception:
+        pass
+
+    return "\n".join(parts) if parts else None
+
+
+async def _get_events_context(pool) -> str | None:
+    try:
+        events = await pool.fetch("""
+            SELECT agent_name, event_type, severity, title, created_at
+            FROM agent_activity
+            WHERE created_at > now() - interval '48 hours'
+            ORDER BY created_at DESC
+            LIMIT 10
+        """)
+        if events:
+            ev_lines = []
+            for e in events:
+                date_str = e["created_at"].strftime("%d.%m %H:%M") if e["created_at"] else ""
+                ev_lines.append(f"  [{e['severity']}] {e['title']} ({e['agent_name']}, {date_str})")
+            return "События за 48ч:\n" + "\n".join(ev_lines)
+    except Exception:
+        pass
+    return None
+
+
+async def _get_forecast_context(pool) -> str | None:
+    try:
+        from services.prophet_forecast import get_station_forecast_prophet
+        forecast_stations = await pool.fetch("""
+            SELECT s.code, s.name,
+                   array_agg(json_build_object('observed_at', r.observed_at::text, 'sst', r.sst)
+                             ORDER BY r.observed_at DESC) AS readings_arr
+            FROM stations s
+            JOIN LATERAL (
+                SELECT observed_at, sst FROM readings
+                WHERE station_id = s.id AND sst IS NOT NULL
+                ORDER BY observed_at DESC LIMIT 48
+            ) r ON true
+            GROUP BY s.code, s.name
+            LIMIT 8
+        """)
+        fc_lines = []
+        for fs in forecast_stations:
+            import json as _json
+            readings_list = [_json.loads(r) if isinstance(r, str) else r for r in fs["readings_arr"]]
+            fc = await get_station_forecast_prophet(fs["code"], readings_list, periods=3)
+            trend_word = "рост" if fc["trend"] > 0.05 else ("снижение" if fc["trend"] < -0.05 else "стабильно")
+            vals = ", ".join(f"{v}°C" for v in fc["forecast"][:3])
+            anom = f", аномалий: {fc['n_anomalies_24h']}" if fc.get("n_anomalies_24h", 0) > 0 else ""
+            fc_lines.append(f"  {fs['name']} ({fs['code']}): прогноз [{vals}], тренд: {trend_word}{anom}")
+        if fc_lines:
+            return "Прогнозы ТПО (Prophet, ближайшие 6-18ч):\n" + "\n".join(fc_lines)
+    except Exception:
+        pass
+    return None
+
 async def _cmd_free_text(chat_id: int, text: str, pool) -> str:
     """Обработка произвольного текста ИИ-ассистентом с контекстом из системы мониторинга."""
     # Сбор актуального контекста для ИИ
     context_parts = []
     if pool:
-        try:
-            counts = await pool.fetchrow("""
-                SELECT COUNT(*) FILTER (WHERE status = 'normal') AS normal,
-                       COUNT(*) FILTER (WHERE status = 'warning') AS warning,
-                       COUNT(*) FILTER (WHERE status = 'critical') AS critical,
-                       COUNT(*) FILTER (WHERE status = 'offline') AS offline,
-                       COUNT(*) AS total
-                FROM stations
-            """)
-            if counts:
-                context_parts.append(
-                    f"Станции: всего {counts['total']} "
-                    f"(норма: {counts['normal']}, внимание: {counts['warning']}, "
-                    f"критично: {counts['critical']}, офлайн: {counts['offline']})"
-                )
-        except Exception as e:
-            logger.warning("Failed to fetch station counts: %s", e)
-        try:
-            recent = await pool.fetch("""
-                SELECT s.name, s.code, r.sst, r.wind_speed, r.wave_height, r.status
-                FROM stations s
-                LEFT JOIN LATERAL (
-                    SELECT sst, wind_speed, wave_height, status
-                    FROM readings WHERE station_id = s.id ORDER BY observed_at DESC LIMIT 1
-                ) r ON true
-                WHERE r.status IN ('warning', 'critical')
-                LIMIT 5
-            """)
-            if recent:
-                alerts = "; ".join(
-                    f"{r['name']} ({r['code']}): ТПО {_fmt(r['sst'])}°C, ветер {_fmt(r['wind_speed'])} м/с ({r['status']})"
-                    for r in recent
-                )
-                context_parts.append(f"Станции с аномалиями: {alerts}")
-        except Exception:
-            pass
-        try:
-            pending = await pool.fetch("""
-                SELECT r.id, r.title, r.priority, r.status, r.created_at,
-                       u.full_name as author, s.name as station_name
-                FROM requests r
-                LEFT JOIN users u ON u.id = r.created_by
-                LEFT JOIN stations s ON s.id = r.station_id
-                WHERE r.status IN ('pending', 'in_progress')
-                ORDER BY r.created_at DESC
-                LIMIT 15
-            """)
-            if pending:
-                req_lines = []
-                for r in pending:
-                    date_str = r["created_at"].strftime("%d.%m.%Y %H:%M") if r["created_at"] else ""
-                    req_lines.append(
-                        f"  #{r['id']} \"{r['title']}\" | приоритет: {r['priority']} | "
-                        f"статус: {r['status']} | станция: {r['station_name'] or '—'} | "
-                        f"автор: {r['author'] or '—'} | дата: {date_str}"
-                    )
-                context_parts.append("Заявки/документы (ожидают подписи или в работе):\n" + "\n".join(req_lines))
-            else:
-                context_parts.append("Неподписанных заявок/документов нет.")
-        except Exception:
-            pass
+        st_ctx = await _get_stations_context(pool)
+        if st_ctx:
+            context_parts.append(st_ctx)
+        req_ctx = await _get_requests_context(pool)
+        if req_ctx:
+            context_parts.append(req_ctx)
         # Дежурства — сейчас и на ближайшие 3 дня
-        try:
-            duty_now = await pool.fetch("""
-                SELECT u.full_name, p.position, a.role_on_duty,
-                       s.code as station_code, s.name as station_name,
-                       a.shift_start, a.shift_end
-                FROM assignments a
-                JOIN personnel p ON p.id = a.personnel_id
-                JOIN users u ON u.id = p.user_id
-                JOIN stations s ON s.id = a.station_id
-                WHERE a.shift_start <= now() AND a.shift_end >= now() 
-                   OR a.shift_start::date = current_date
-                ORDER BY s.code
-            """)
-            duty_upcoming = await pool.fetch("""
-                SELECT u.full_name, p.position, a.role_on_duty,
-                       s.code as station_code, s.name as station_name,
-                       a.shift_start, a.shift_end
-                FROM assignments a
-                JOIN personnel p ON p.id = a.personnel_id
-                JOIN users u ON u.id = p.user_id
-                JOIN stations s ON s.id = a.station_id
-                WHERE a.shift_start > now() AND a.shift_start <= now() + interval '3 days'
-                  AND a.shift_start::date > current_date
-                ORDER BY a.shift_start, s.code
-                LIMIT 30
-            """)
-            if duty_now:
-                lines = []
-                for d in duty_now:
-                    lines.append(f"  {d['full_name']} — {d['station_name']} ({d['station_code']}), "
-                                 f"роль: {d['role_on_duty'] or d['position']}, "
-                                 f"с {d['shift_start'].strftime('%H:%M')} до {d['shift_end'].strftime('%d.%m %H:%M')}")
-                context_parts.append("Дежурят сегодня (или прямо сейчас):\n" + "\n".join(lines))
-            else:
-                context_parts.append("Дежурят сегодня: никого (смен нет)")
-            if duty_upcoming:
-                lines = []
-                for d in duty_upcoming:
-                    lines.append(f"  {d['full_name']} — {d['station_name']} ({d['station_code']}), "
-                                 f"{d['shift_start'].strftime('%d.%m %H:%M')}–{d['shift_end'].strftime('%H:%M')}, "
-                                 f"роль: {d['role_on_duty'] or d['position']}")
-                context_parts.append("Ближайшие дежурства (3 дня):\n" + "\n".join(lines))
-        except Exception:
-            pass
-        try:
-            events = await pool.fetch("""
-                SELECT agent_name, event_type, severity, title, created_at
-                FROM agent_activity
-                WHERE created_at > now() - interval '48 hours'
-                ORDER BY created_at DESC
-                LIMIT 10
-            """)
-            if events:
-                ev_lines = []
-                for e in events:
-                    date_str = e["created_at"].strftime("%d.%m %H:%M") if e["created_at"] else ""
-                    ev_lines.append(f"  [{e['severity']}] {e['title']} ({e['agent_name']}, {date_str})")
-                context_parts.append("События за 48ч:\n" + "\n".join(ev_lines))
-        except Exception:
-            pass
+        duty_ctx = await _get_duty_context(pool)
+        if duty_ctx:
+            context_parts.append(duty_ctx)
+        ev_ctx = await _get_events_context(pool)
+        if ev_ctx:
+            context_parts.append(ev_ctx)
         # Прогнозы Prophet по станциям с данными
-        try:
-            from services.prophet_forecast import get_station_forecast_prophet
-            forecast_stations = await pool.fetch("""
-                SELECT s.code, s.name,
-                       array_agg(json_build_object('observed_at', r.observed_at::text, 'sst', r.sst)
-                                 ORDER BY r.observed_at DESC) AS readings_arr
-                FROM stations s
-                JOIN LATERAL (
-                    SELECT observed_at, sst FROM readings
-                    WHERE station_id = s.id AND sst IS NOT NULL
-                    ORDER BY observed_at DESC LIMIT 48
-                ) r ON true
-                GROUP BY s.code, s.name
-                LIMIT 8
-            """)
-            fc_lines = []
-            for fs in forecast_stations:
-                import json as _json
-                readings_list = [_json.loads(r) if isinstance(r, str) else r for r in fs["readings_arr"]]
-                fc = await get_station_forecast_prophet(fs["code"], readings_list, periods=3)
-                trend_word = "рост" if fc["trend"] > 0.05 else ("снижение" if fc["trend"] < -0.05 else "стабильно")
-                vals = ", ".join(f"{v}°C" for v in fc["forecast"][:3])
-                anom = f", аномалий: {fc['n_anomalies_24h']}" if fc.get("n_anomalies_24h", 0) > 0 else ""
-                fc_lines.append(f"  {fs['name']} ({fs['code']}): прогноз [{vals}], тренд: {trend_word}{anom}")
-            if fc_lines:
-                context_parts.append("Прогнозы ТПО (Prophet, ближайшие 6-18ч):\n" + "\n".join(fc_lines))
-        except Exception:
-            pass
+        fc_ctx = await _get_forecast_context(pool)
+        if fc_ctx:
+            context_parts.append(fc_ctx)
 
     context = "\n".join(context_parts) if context_parts else "Данные системы недоступны."
 
