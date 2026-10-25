@@ -208,8 +208,146 @@ async function init() {
     }
   });
   document.addEventListener("click", _onDocClick);
+  // Omni-bar elements
+  const omniPalette = document.getElementById("omni-palette");
+  const omniInput = document.getElementById("omni-input");
+  const omniResults = document.getElementById("omni-results");
+
+  if (omniInput) {
+    let omniData = []; // To cache stations for search
+    let selectedIndex = -1;
+
+    // Helper to render results
+    const renderOmniResults = (results) => {
+        omniResults.innerHTML = '';
+        if (results.length === 0) return;
+        results.forEach((item, index) => {
+            const div = document.createElement("div");
+            div.className = "omni-item" + (index === selectedIndex ? " selected" : "");
+            div.innerHTML = `<span>${item.label}</span> <span style="color:#94a3b8;font-size:12px">${item.desc}</span>`;
+            div.onclick = () => {
+                omniInput.value = item.command;
+                omniInput.focus();
+                processOmniCommand();
+            };
+            omniResults.appendChild(div);
+        });
+    };
+
+    // Helper to process command
+    const processOmniCommand = () => {
+        const val = omniInput.value.trim();
+        omniPalette.style.display = "none";
+
+        if (val.startsWith("/st ")) {
+            const query = val.replace("/st ", "").trim().toLowerCase();
+            if (typeof window.getStationsData === 'function' && typeof window.flyToStation === 'function') {
+                 const stations = window.getStationsData();
+                 const st = stations.find(s => s.name.toLowerCase() === query || s.id.toLowerCase() === query);
+                 if (st) {
+                     showDetailTab("map");
+                     window.flyToStation(st.id);
+                 } else {
+                     console.warn("Station not found:", query);
+                 }
+            }
+        } else if (val === "/req") {
+            if (typeof window.showRequestsView === 'function') {
+                window.showRequestsView();
+                // We need to wait a tick for the requests UI to be fully visible before clicking the button
+                setTimeout(() => {
+                    const reqCreateBtn = document.getElementById('req-create');
+                    if (reqCreateBtn) reqCreateBtn.click();
+                }, 100);
+            }
+        }
+    };
+
+    omniInput.addEventListener("input", (e) => {
+        const val = e.target.value.trim().toLowerCase();
+        let results = [];
+        selectedIndex = -1;
+
+        if (val.startsWith("/st")) {
+            const query = val.replace("/st", "").trim();
+            if (typeof window.getStationsData === 'function') {
+                const stations = window.getStationsData();
+                const matches = stations.filter(s => s.name.toLowerCase().includes(query) || s.id.toLowerCase().includes(query));
+                results = matches.slice(0, 5).map(s => ({
+                    label: s.name,
+                    desc: s.id,
+                    command: `/st ${s.id}`
+                }));
+            }
+        } else if (val.startsWith("/r") || val === "/req") {
+            results = [{
+                label: "Создать запрос",
+                desc: "/req",
+                command: "/req"
+            }];
+        } else if (val === "/") {
+            results = [
+                { label: "Поиск станции", desc: "/st", command: "/st " },
+                { label: "Создать запрос", desc: "/req", command: "/req" }
+            ];
+        }
+
+        renderOmniResults(results);
+    });
+
+    omniInput.addEventListener("keydown", (e) => {
+      const items = omniResults.querySelectorAll(".omni-item");
+      if (e.key === "Enter") {
+        e.preventDefault();
+        if (selectedIndex >= 0 && items[selectedIndex]) {
+            items[selectedIndex].click();
+        } else {
+            processOmniCommand();
+        }
+      } else if (e.key === "ArrowDown") {
+          e.preventDefault();
+          if (items.length > 0) {
+              selectedIndex = (selectedIndex + 1) % items.length;
+              renderOmniResults(Array.from(items).map(item => ({
+                  label: item.children[0].innerText,
+                  desc: item.children[1].innerText,
+                  command: item.children[1].innerText === "/st" ? "/st " : item.children[1].innerText
+              })));
+          }
+      } else if (e.key === "ArrowUp") {
+          e.preventDefault();
+          if (items.length > 0) {
+              selectedIndex = (selectedIndex - 1 + items.length) % items.length;
+              renderOmniResults(Array.from(items).map(item => ({
+                  label: item.children[0].innerText,
+                  desc: item.children[1].innerText,
+                  command: item.children[1].innerText === "/st" ? "/st " : item.children[1].innerText
+              })));
+          }
+      }
+    });
+  }
+
   document.addEventListener("keydown", (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+      e.preventDefault();
+      if (_isVisible(omniPalette)) {
+        omniPalette.style.display = "none";
+      } else {
+        omniPalette.style.display = "flex";
+        omniInput.value = "";
+        omniResults.innerHTML = '';
+        omniInput.focus();
+      }
+      return;
+    }
+
     if (e.key === "Escape") {
+      if (_isVisible(omniPalette)) {
+        omniPalette.style.display = "none";
+        return;
+      }
+
       // 1. Submodals / dialogs inside modules
       const calPopupClose = document.getElementById("cal-popup-close");
       if (_isVisible(calPopupClose)) { calPopupClose.click(); return; }
