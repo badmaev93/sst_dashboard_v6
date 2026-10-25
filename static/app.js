@@ -254,12 +254,56 @@ async function init() {
         } else if (val === "/req") {
             if (typeof window.showRequestsView === 'function') {
                 window.showRequestsView();
-                // We need to wait a tick for the requests UI to be fully visible before clicking the button
                 setTimeout(() => {
                     const reqCreateBtn = document.getElementById('req-create');
                     if (reqCreateBtn) reqCreateBtn.click();
                 }, 100);
             }
+        } else if (val.startsWith("/task")) {
+            const taskText = val.replace("/task", "").trim();
+            if (typeof window.showCalendarView === 'function') {
+                window.showCalendarView();
+                setTimeout(() => {
+                    const addBtn = document.querySelector('.cal-add-task-btn');
+                    if (addBtn) addBtn.click();
+                    setTimeout(() => {
+                        const titleInp = document.getElementById('cal-tf-title');
+                        if (titleInp) {
+                            titleInp.value = taskText;
+                            titleInp.dispatchEvent(new Event('input'));
+                        }
+                    }, 50);
+                }, 150);
+            }
+        } else if (val === "/focus") {
+            if (window.focusTimer) {
+                if (typeof window.toggleFocusWidget === 'function') window.toggleFocusWidget();
+                window.focusTimer.start();
+            }
+        } else if (val === "/break") {
+            if (window.focusTimer) {
+                window.focusTimer.reset('break');
+                if (typeof window.toggleFocusWidget === 'function') window.toggleFocusWidget();
+                window.focusTimer.start();
+            }
+        } else if (val === "/pause") {
+            if (window.focusTimer) window.focusTimer.pause();
+        } else if (val === "/map") {
+            showDetailTab("map");
+        } else if (val === "/forecast") {
+            showDetailTab("forecast");
+        } else if (val === "/monitoring") {
+            if (typeof window.showMonitoringView === 'function') window.showMonitoringView();
+        } else if (val === "/calendar") {
+            if (typeof window.showCalendarView === 'function') window.showCalendarView();
+        } else if (val === "/requests") {
+            if (typeof window.showRequestsView === 'function') window.showRequestsView();
+        } else if (val === "/schedule") {
+            showDetailTab("schedule");
+        } else if (val === "/cabinet") {
+            if (typeof window.showCabinetView === 'function') window.showCabinetView();
+        } else if (val === "/help" || val === "/?") {
+            showShortcutsModal();
         }
     };
 
@@ -279,16 +323,33 @@ async function init() {
                     command: `/st ${s.id}`
                 }));
             }
+        } else if (val.startsWith("/task")) {
+            results = [{
+                label: "Быстрое создание задачи (Super Short-Syntax: !P1 @30m)",
+                desc: val,
+                command: val
+            }];
         } else if (val.startsWith("/r") || val === "/req") {
             results = [{
-                label: "Создать запрос",
+                label: "Создать запрос на обслуживание",
                 desc: "/req",
                 command: "/req"
             }];
+        } else if (val.startsWith("/f")) {
+            results = [
+                { label: "Таймер фокуса (Pomodoro)", desc: "/focus", command: "/focus" },
+                { label: "Карта прогнозов", desc: "/forecast", command: "/forecast" }
+            ];
         } else if (val === "/") {
             results = [
-                { label: "Поиск станции", desc: "/st", command: "/st " },
-                { label: "Создать запрос", desc: "/req", command: "/req" }
+                { label: "Поиск станции", desc: "/st <название>", command: "/st " },
+                { label: "Быстрая задача", desc: "/task <название>", command: "/task " },
+                { label: "Запустить таймер фокуса", desc: "/focus", command: "/focus" },
+                { label: "Создать запрос", desc: "/req", command: "/req" },
+                { label: "Перейти к Карте", desc: "/map", command: "/map" },
+                { label: "Перейти к Мониторингу", desc: "/monitoring", command: "/monitoring" },
+                { label: "Перейти к Календарю", desc: "/calendar", command: "/calendar" },
+                { label: "Горячие клавиши", desc: "/help", command: "/help" }
             ];
         }
 
@@ -423,6 +484,12 @@ async function init() {
 
     // Normalizing key string to lower-case and checking Cyrillic equivalents
     const key = e.key.toLowerCase();
+
+    if (e.key === "?" || (e.shiftKey && (key === "?" || e.key === "/"))) {
+      e.preventDefault();
+      showShortcutsModal();
+      return;
+    }
 
     // 1. Cycle forecast hours with ArrowLeft and ArrowRight
     if (e.key === "ArrowLeft") {
@@ -1675,6 +1742,51 @@ function loadForecastPanel(container) {
 function loadCalendarPanel(container) {
   if (typeof window.initCalendarUI === "function") window.initCalendarUI(container);
   else loadDashboard(container);
+}
+
+function showShortcutsModal() {
+  let modal = document.getElementById("shortcuts-modal");
+  if (modal) {
+    modal.remove();
+    return;
+  }
+  modal = document.createElement("div");
+  modal.id = "shortcuts-modal";
+  modal.className = "cal-modal-overlay";
+  modal.setAttribute("role", "dialog");
+  modal.setAttribute("aria-modal", "true");
+  modal.setAttribute("aria-label", "Горячие клавиши");
+
+  modal.innerHTML = `
+    <div class="cal-modal" style="width:480px;max-width:92vw;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <h3 style="margin:0;font-size:18px;">⌨️ Горячие клавиши & Команды</h3>
+        <button class="cal-close-btn" id="shortcuts-modal-close" aria-label="Закрыть">&times;</button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px;margin-bottom:16px;">
+        <div style="background:#f8fafc;padding:10px;border-radius:8px;">
+          <strong style="display:block;margin-bottom:6px;color:#0f172a;">Навигация & Поиск</strong>
+          <div><kbd style="padding:2px 6px;background:#e2e8f0;border-radius:4px;font-size:11px;">Ctrl+K</kbd> / <kbd style="padding:2px 6px;background:#e2e8f0;border-radius:4px;font-size:11px;">Cmd+K</kbd> Командная строка</div>
+          <div style="margin-top:4px;"><kbd style="padding:2px 6px;background:#e2e8f0;border-radius:4px;font-size:11px;">?</kbd> Эта справка</div>
+          <div style="margin-top:4px;"><kbd style="padding:2px 6px;background:#e2e8f0;border-radius:4px;font-size:11px;">ESC</kbd> Закрыть панель/окно</div>
+        </div>
+        <div style="background:#f8fafc;padding:10px;border-radius:8px;">
+          <strong style="display:block;margin-bottom:6px;color:#0f172a;">Команды Omni-bar</strong>
+          <div><code>/st &lt;название&gt;</code> Найти станцию</div>
+          <div style="margin-top:4px;"><code>/task &lt;текст&gt;</code> Новая задача</div>
+          <div style="margin-top:4px;"><code>/focus</code> Таймер фокуса</div>
+          <div style="margin-top:4px;"><code>/req</code> Создать заявку</div>
+        </div>
+      </div>
+      <div style="background:#eff6ff;border:1px solid #bfdbfe;padding:10px 12px;border-radius:8px;font-size:12px;color:#1e40af;">
+        <strong>💡 Super Syntax для задач:</strong> Пишите <code>!P1</code> (или <code>!high</code>) и <code>@30m</code> прямо в названии задачи для автооценки приоритета и времени!
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+  modal.querySelector("#shortcuts-modal-close").addEventListener("click", () => modal.remove());
+  modal.addEventListener("click", (e) => { if (e.target === modal) modal.remove(); });
 }
 
 // ──────────────────────────────────────────────

@@ -1036,6 +1036,17 @@
         const actions = document.createElement('div');
         actions.className = 'cal-header-actions';
 
+        // Focus timer pill button
+        const focusBtn = document.createElement('button');
+        focusBtn.className = 'cal-focus-pill-btn';
+        focusBtn.id = 'cal-focus-pill';
+        focusBtn.setAttribute('aria-label', 'Открыть таймер фокуса Pomodoro');
+        focusBtn.innerHTML = '⏱️ <span id="cal-focus-pill-text">' + formatTimerStr(FocusTimer.timeLeft) + '</span>';
+        focusBtn.style.cssText = 'padding:6px 12px;border:1px solid #3b82f6;background:#eff6ff;color:#1d4ed8;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all 0.15s;';
+        focusBtn.addEventListener('click', function() {
+            toggleFocusWidget();
+        });
+
         const addEventBtn = document.createElement('button');
         addEventBtn.className = 'cal-add-btn';
         addEventBtn.innerHTML = '<span style="font-size:14px">+</span> Событие';
@@ -1047,6 +1058,7 @@
         closeBtn.innerHTML = '&times;';
         closeBtn.addEventListener('click', hideCalendarView);
 
+        actions.appendChild(focusBtn);
         actions.appendChild(addEventBtn);
         actions.appendChild(closeBtn);
 
@@ -1274,6 +1286,8 @@
 
             const p = PRIORITY_CONFIG[task.priority] || PRIORITY_CONFIG.P2;
             const aiSuggestion = getAISuggestion(task);
+            const isTracking = TaskTracker.activeTaskId === task.id;
+            const elapsedMins = Math.floor((TaskTracker.taskElapsed[task.id] || 0) / 60);
 
             item.innerHTML = `
                 <div class="cal-task-top">
@@ -1284,11 +1298,25 @@
                         <div class="cal-task-meta">
                             <span class="cal-priority-badge" style="color:${p.color};background:${p.bg}">${task.priority || 'P2'}</span>
                             ${task.estimated_minutes ? '<span class="cal-task-est">' + task.estimated_minutes + ' мин</span>' : ''}
+                            <span class="cal-task-timer-badge ${isTracking ? 'active' : ''}">${isTracking ? '⏱️ ' + formatTimerStr(TaskTracker.elapsedSeconds) : (elapsedMins > 0 ? '⏱️ ' + elapsedMins + 'м' : '')}</span>
                             ${aiSuggestion ? '<span class="cal-ai-badge">&#9733; ' + aiSuggestion + '</span>' : ''}
                         </div>
                     </div>
+                    <button class="cal-task-track-btn ${isTracking ? 'tracking' : ''}" aria-label="${isTracking ? 'Остановить таймер' : 'Запустить таймер задачи'}">${isTracking ? '⏸' : '▶'}</button>
                 </div>
             `;
+
+            const trackBtn = item.querySelector('.cal-task-track-btn');
+            trackBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                if (TaskTracker.activeTaskId === task.id) {
+                    TaskTracker.stop();
+                } else {
+                    TaskTracker.start(task);
+                }
+                const list = document.getElementById('cal-tasks-list');
+                if (list) renderTaskItems(list, _tasks);
+            });
 
             // Toggle completion
             const checkbox = item.querySelector('.cal-task-checkbox');
@@ -1564,7 +1592,17 @@
 
         document.body.appendChild(overlay);
         const titleInput = overlay.querySelector('#cal-tf-title');
-        if (titleInput) titleInput.focus();
+        const prioritySelect = overlay.querySelector('#cal-tf-priority');
+        const estInput = overlay.querySelector('#cal-tf-est');
+
+        if (titleInput) {
+            titleInput.focus();
+            titleInput.addEventListener('input', function() {
+                const parsed = parseShortSyntax(titleInput.value);
+                if (parsed.priority) prioritySelect.value = parsed.priority;
+                if (parsed.estimatedMinutes) estInput.value = parsed.estimatedMinutes;
+            });
+        }
 
         overlay.querySelector('#cal-tf-close').addEventListener('click', function() { overlay.remove(); });
         overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
@@ -1573,9 +1611,11 @@
         submitBtn.addEventListener('click', async function() {
             const errEl = overlay.querySelector('#cal-tf-error');
             errEl.style.display = 'none';
-            const title = overlay.querySelector('#cal-tf-title').value.trim();
-            const priority = overlay.querySelector('#cal-tf-priority').value;
-            const est = parseInt(overlay.querySelector('#cal-tf-est').value) || null;
+            const rawTitle = overlay.querySelector('#cal-tf-title').value.trim();
+            const parsed = parseShortSyntax(rawTitle);
+            const title = parsed.cleanTitle || rawTitle;
+            const priority = parsed.priority || overlay.querySelector('#cal-tf-priority').value;
+            const est = parsed.estimatedMinutes || parseInt(overlay.querySelector('#cal-tf-est').value) || null;
             const date = overlay.querySelector('#cal-tf-date').value;
             const desc = overlay.querySelector('#cal-tf-desc').value.trim();
 
@@ -1610,6 +1650,252 @@
             }
         });
     }
+
+    // ── Super Productivity Short Syntax & Focus Timer Logic ─────
+    function parseShortSyntax(rawText) {
+        let text = rawText || '';
+        let priority = null;
+        let estimatedMinutes = null;
+
+        const pMatch = text.match(/!(P1|P2|P3|high|med|low)/i);
+        if (pMatch) {
+            const pVal = pMatch[1].toUpperCase();
+            if (pVal === 'HIGH') priority = 'P1';
+            else if (pVal === 'MED') priority = 'P2';
+            else if (pVal === 'LOW') priority = 'P3';
+            else priority = pVal;
+            text = text.replace(pMatch[0], '');
+        }
+
+        const tMatch = text.match(/@(\d+)(h|m)?/i);
+        if (tMatch) {
+            const val = parseInt(tMatch[1], 10);
+            const unit = (tMatch[2] || 'm').toLowerCase();
+            if (unit === 'h') estimatedMinutes = val * 60;
+            else estimatedMinutes = val;
+            text = text.replace(tMatch[0], '');
+        }
+
+        return {
+            cleanTitle: text.replace(/\s+/g, ' ').trim(),
+            priority: priority,
+            estimatedMinutes: estimatedMinutes
+        };
+    }
+
+    // Focus Session / Pomodoro Timer state
+    const FocusTimer = {
+        mode: 'work', // 'work' | 'break'
+        timeLeft: 1500, // 25 min default
+        totalTime: 1500,
+        isRunning: false,
+        intervalId: null,
+
+        start: function() {
+            if (this.isRunning) return;
+            this.isRunning = true;
+            const self = this;
+            this.intervalId = setInterval(function() {
+                if (self.timeLeft > 0) {
+                    self.timeLeft--;
+                    self.updatePillText();
+                    self.updateWidgetUI();
+                } else {
+                    self.onExpire();
+                }
+            }, 1000);
+            this.updatePillText();
+            this.updateWidgetUI();
+        },
+
+        pause: function() {
+            this.isRunning = false;
+            if (this.intervalId) {
+                clearInterval(this.intervalId);
+                this.intervalId = null;
+            }
+            this.updatePillText();
+            this.updateWidgetUI();
+        },
+
+        toggle: function() {
+            if (this.isRunning) this.pause();
+            else this.start();
+        },
+
+        reset: function(newMode) {
+            this.pause();
+            if (newMode) this.mode = newMode;
+            if (this.mode === 'work') {
+                this.timeLeft = 1500;
+                this.totalTime = 1500;
+            } else {
+                this.timeLeft = 300;
+                this.totalTime = 300;
+            }
+            this.updatePillText();
+            this.updateWidgetUI();
+        },
+
+        onExpire: function() {
+            this.pause();
+            playChimeSound();
+            if (this.mode === 'work') {
+                alert('⏱️ Время фокуса истекло! Время сделать 5-минутный перерыв.');
+                this.reset('break');
+            } else {
+                alert('⏱️ Перерыв окончен! Готовы продолжить фокус-сессию?');
+                this.reset('work');
+            }
+        },
+
+        updatePillText: function() {
+            const el = document.getElementById('cal-focus-pill-text');
+            if (el) {
+                el.textContent = (this.mode === 'work' ? 'Фокус: ' : 'Перерыв: ') + formatTimerStr(this.timeLeft);
+            }
+        },
+
+        updateWidgetUI: function() {
+            const modal = document.getElementById('focus-timer-modal');
+            if (!modal) return;
+            const timerVal = modal.querySelector('#focus-timer-val');
+            const modeLbl = modal.querySelector('#focus-timer-mode');
+            const playBtn = modal.querySelector('#focus-timer-play');
+            const progressBar = modal.querySelector('#focus-timer-progress');
+
+            if (timerVal) timerVal.textContent = formatTimerStr(this.timeLeft);
+            if (modeLbl) modeLbl.textContent = this.mode === 'work' ? 'Сессия фокуса (25 мин)' : 'Перерыв (5 мин)';
+            if (playBtn) playBtn.textContent = this.isRunning ? 'Пауза' : 'Старт';
+            if (progressBar && this.totalTime > 0) {
+                const pct = Math.max(0, Math.min(100, ((this.totalTime - this.timeLeft) / this.totalTime) * 100));
+                progressBar.style.width = pct + '%';
+            }
+        }
+    };
+
+    // Per-Task Time Tracker state
+    const TaskTracker = {
+        activeTaskId: null,
+        elapsedSeconds: 0,
+        taskElapsed: {},
+        intervalId: null,
+
+        start: function(task) {
+            if (this.activeTaskId === task.id) return;
+            this.stop();
+            this.activeTaskId = task.id;
+            this.elapsedSeconds = this.taskElapsed[task.id] || 0;
+            const self = this;
+            this.intervalId = setInterval(function() {
+                self.elapsedSeconds++;
+                self.taskElapsed[task.id] = self.elapsedSeconds;
+                const badge = document.querySelector(`.cal-task-item[data-task-id="${task.id}"] .cal-task-timer-badge`);
+                if (badge) {
+                    badge.classList.add('active');
+                    badge.textContent = '⏱️ ' + formatTimerStr(self.elapsedSeconds);
+                }
+            }, 1000);
+        },
+
+        stop: function() {
+            if (this.intervalId) {
+                clearInterval(this.intervalId);
+                this.intervalId = null;
+            }
+            if (this.activeTaskId) {
+                this.taskElapsed[this.activeTaskId] = this.elapsedSeconds;
+            }
+            this.activeTaskId = null;
+        }
+    };
+
+    function playChimeSound() {
+        try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
+            osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.3); // A5
+            gain.gain.setValueAtTime(0.15, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start();
+            osc.stop(ctx.currentTime + 0.5);
+        } catch(e) {}
+    }
+
+    function toggleFocusWidget() {
+        let modal = document.getElementById('focus-timer-modal');
+        if (modal) {
+            modal.remove();
+            return;
+        }
+
+        modal = document.createElement('div');
+        modal.id = 'focus-timer-modal';
+        modal.className = 'cal-modal-overlay';
+        modal.setAttribute('role', 'dialog');
+        modal.setAttribute('aria-modal', 'true');
+        modal.setAttribute('aria-label', 'Таймер фокуса');
+
+        modal.innerHTML = `
+            <div class="cal-modal" style="width:340px;text-align:center;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                    <h3 style="margin:0;font-size:16px;">⏱️ Режим Фокуса (Pomodoro)</h3>
+                    <button class="cal-close-btn" id="focus-timer-close" aria-label="Закрыть">&times;</button>
+                </div>
+                <div id="focus-timer-mode" style="font-size:13px;color:#64748b;margin-bottom:12px;font-weight:500;">
+                    ${FocusTimer.mode === 'work' ? 'Сессия фокуса (25 мин)' : 'Перерыв (5 мин)'}
+                </div>
+                <div id="focus-timer-val" style="font-size:42px;font-weight:700;font-family:monospace;color:#0f172a;margin:12px 0;">
+                    ${formatTimerStr(FocusTimer.timeLeft)}
+                </div>
+                <div style="width:100%;height:6px;background:#e2e8f0;border-radius:3px;overflow:hidden;margin-bottom:18px;">
+                    <div id="focus-timer-progress" style="height:100%;background:#3b82f6;width:${Math.max(0, Math.min(100, ((FocusTimer.totalTime - FocusTimer.timeLeft) / FocusTimer.totalTime) * 100))}%;transition:width 0.3s;"></div>
+                </div>
+                <div style="display:flex;justify-content:center;gap:10px;margin-bottom:16px;">
+                    <button class="cal-submit-btn" id="focus-timer-play" style="padding:8px 20px;">${FocusTimer.isRunning ? 'Пауза' : 'Старт'}</button>
+                    <button class="cal-today-btn" id="focus-timer-reset" style="padding:8px 14px;">Сброс</button>
+                </div>
+                <div style="display:flex;justify-content:center;gap:8px;font-size:12px;">
+                    <button id="focus-mode-work" style="padding:4px 10px;border-radius:6px;border:1px solid #cbd5e1;background:${FocusTimer.mode === 'work' ? '#3b82f6' : '#fff'};color:${FocusTimer.mode === 'work' ? '#fff' : '#64748b'};cursor:pointer;">25м Фокус</button>
+                    <button id="focus-mode-break" style="padding:4px 10px;border-radius:6px;border:1px solid #cbd5e1;background:${FocusTimer.mode === 'break' ? '#3b82f6' : '#fff'};color:${FocusTimer.mode === 'break' ? '#fff' : '#64748b'};cursor:pointer;">5м Перерыв</button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        modal.querySelector('#focus-timer-close').addEventListener('click', function() { modal.remove(); });
+        modal.addEventListener('click', function(e) { if (e.target === modal) modal.remove(); });
+
+        modal.querySelector('#focus-timer-play').addEventListener('click', function() {
+            FocusTimer.toggle();
+        });
+        modal.querySelector('#focus-timer-reset').addEventListener('click', function() {
+            FocusTimer.reset();
+        });
+        modal.querySelector('#focus-mode-work').addEventListener('click', function() {
+            FocusTimer.reset('work');
+        });
+        modal.querySelector('#focus-mode-break').addEventListener('click', function() {
+            FocusTimer.reset('break');
+        });
+    }
+
+    function formatTimerStr(seconds) {
+        const m = Math.floor(seconds / 60);
+        const s = seconds % 60;
+        return pad(m) + ':' + pad(s);
+    }
+
+    // Expose globals for Omni-bar & app integration
+    window.focusTimer = FocusTimer;
+    window.parseShortSyntax = parseShortSyntax;
+    window.toggleFocusWidget = toggleFocusWidget;
 
     // ── Helpers ──────────────────────────────────
     function pad(n) { return n < 10 ? '0' + n : '' + n; }
