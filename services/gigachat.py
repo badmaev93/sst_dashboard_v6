@@ -10,7 +10,6 @@ from typing import Optional
 import httpx
 
 from config import (
-    ANTHROPIC_API_KEY,
     GIGACHAT_CLIENT_ID, GIGACHAT_CLIENT_SECRET, GIGACHAT_SCOPE,
     GEMINI_API_KEY,
 )

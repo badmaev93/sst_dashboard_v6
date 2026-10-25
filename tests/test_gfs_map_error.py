@@ -2,7 +2,6 @@ from unittest.mock import patch
 from fastapi.testclient import TestClient
 from app import app
 from auth import get_current_user
-import pytest
 
 client = TestClient(app)
 

@@ -404,6 +404,12 @@ async function init() {
     }
 
     if (e.key === "Escape") {
+      const shortcutsModal = document.getElementById("shortcuts-modal");
+      if (_isVisible(shortcutsModal)) {
+        shortcutsModal.remove();
+        return;
+      }
+
       if (_isVisible(omniPalette)) {
         omniPalette.style.display = "none";
         return;
@@ -1750,12 +1756,18 @@ function showShortcutsModal() {
     modal.remove();
     return;
   }
+
+  const omniPalette = document.getElementById("omni-palette");
+  if (omniPalette) omniPalette.style.display = "none";
+
   modal = document.createElement("div");
   modal.id = "shortcuts-modal";
   modal.className = "cal-modal-overlay";
+  modal.style.cssText = "position:fixed;inset:0;background:rgba(15,23,42,0.6);backdrop-filter:blur(4px);z-index:9999;display:flex;align-items:center;justify-content:center;";
   modal.setAttribute("role", "dialog");
   modal.setAttribute("aria-modal", "true");
   modal.setAttribute("aria-label", "Горячие клавиши");
+  modal.setAttribute("tabindex", "-1");
 
   modal.innerHTML = `
     <div class="cal-modal" style="width:480px;max-width:92vw;">
@@ -1785,8 +1797,14 @@ function showShortcutsModal() {
   `;
 
   document.body.appendChild(modal);
-  modal.querySelector("#shortcuts-modal-close").addEventListener("click", () => modal.remove());
+  const closeBtn = modal.querySelector("#shortcuts-modal-close");
+  if (closeBtn) closeBtn.addEventListener("click", () => modal.remove());
   modal.addEventListener("click", (e) => { if (e.target === modal) modal.remove(); });
+  if (closeBtn) {
+    closeBtn.focus();
+  } else {
+    modal.focus();
+  }
 }
 
 // ──────────────────────────────────────────────

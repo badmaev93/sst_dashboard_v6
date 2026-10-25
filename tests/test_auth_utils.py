@@ -1,5 +1,4 @@
 from datetime import datetime, timezone
-import pytest
 from jose import jwt
 from auth import hash_password, verify_password, create_access_token, create_refresh_token
 from config import JWT_SECRET, JWT_ALGORITHM

@@ -1,8 +1,7 @@
 import asyncio
 import time
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock
 from services.telegram_bot import _cmd_free_text
-from services.prophet_forecast import get_station_forecast_prophet
 
 async def main():
     pool = AsyncMock()

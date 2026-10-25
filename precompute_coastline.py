@@ -9,7 +9,8 @@
 Запуск:
     python precompute_coastline.py
 """
-import os, urllib.request
+import os
+import urllib.request
 
 DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 
