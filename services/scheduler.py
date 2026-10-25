@@ -58,28 +58,36 @@ def start_scheduler():
                 stations = [{"id": r["id"], "code": r["code"], "lat": float(r["lat"]), "lon": float(r["lon"])} for r in rows]
 
                 readings = await fetch_bulk_readings(stations)
-                count = 0
+
+                readings_data = []
+                stations_data = []
                 for st in stations:
                     r = readings.get(st["id"])
                     if not r:
                         continue
-                    await db.pool.execute("""
+                    readings_data.append((
+                        st['id'], now, r['sst'], r['temp_air'],
+                        r['wave_height'], r['wave_period'],
+                        r['wind_speed'], r['wind_dir'],
+                        r['pressure'], r['visibility'],
+                        r['humidity'], r['status']
+                    ))
+                    stations_data.append((r['status'], st['id']))
+
+                if readings_data:
+                    await db.pool.executemany("""
                         INSERT INTO readings (station_id, observed_at, sst, temp_air,
                             wave_height, wave_period, wind_speed, wind_dir,
                             pressure, visibility, humidity, status)
                         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-                    """, st['id'], now, r['sst'], r['temp_air'],
-                        r['wave_height'], r['wave_period'],
-                        r['wind_speed'], r['wind_dir'],
-                        r['pressure'], r['visibility'],
-                        r['humidity'], r['status'])
+                    """, readings_data)
 
-                    await db.pool.execute(
+                    await db.pool.executemany(
                         "UPDATE stations SET status = $1 WHERE id = $2",
-                        r['status'], st['id'])
-                    count += 1
+                        stations_data
+                    )
 
-                logger.info("Open-Meteo: fetched %d/%d station readings at %s", count, len(stations), now.isoformat())
+                logger.info("Open-Meteo: fetched %d/%d station readings at %s", len(readings_data), len(stations), now.isoformat())
             except Exception as e:
                 logger.error("Hourly generation failed: %s", e)
 
