@@ -147,6 +147,11 @@ async def delete_task(task_id: int, user=Depends(get_current_user)):
 
 @calendar_router.get("/focus-blocks")
 async def list_focus_blocks(user_id: int = None, user=Depends(get_current_user)):
+    if user["role"] != "supervisor":
+        if user_id is not None and user_id != user["id"]:
+            raise HTTPException(403, "Not authorized to view other users' focus blocks")
+        user_id = user["id"]
+
     if user_id:
         rows = await db.pool.fetch(
             "SELECT * FROM focus_blocks WHERE user_id = $1 ORDER BY start_time", user_id

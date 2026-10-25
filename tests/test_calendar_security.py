@@ -111,6 +111,37 @@ def test_update_event_creator_engineer_allowed(mock_db_and_auth_engineer):
     assert response.json() == {"ok": True}
 
 
+def test_list_focus_blocks_non_supervisor_defaults_to_own(mock_db_and_auth_engineer):
+    mock_db = mock_db_and_auth_engineer
+    mock_db.fetch.return_value = [{"id": 1, "title": "My Block", "user_id": 10}]
+
+    response = client.get("/api/monitoring/calendar/focus-blocks")
+    assert response.status_code == 200
+    # Ensure query was filtered by user_id = 10 (logged in engineer ID)
+    mock_db.fetch.assert_called_once_with(
+        "SELECT * FROM focus_blocks WHERE user_id = $1 ORDER BY start_time", 10
+    )
+
+
+def test_list_focus_blocks_non_supervisor_forbidden_other_user(mock_db_and_auth_engineer):
+    mock_db = mock_db_and_auth_engineer
+
+    response = client.get("/api/monitoring/calendar/focus-blocks?user_id=99")
+    assert response.status_code == 403
+    assert "Not authorized to view other users' focus blocks" in response.json()["detail"]
+
+
+def test_list_focus_blocks_supervisor_allowed_any(mock_db_and_auth_supervisor):
+    mock_db = mock_db_and_auth_supervisor
+    mock_db.fetch.return_value = [{"id": 2, "title": "User 99 Block", "user_id": 99}]
+
+    response = client.get("/api/monitoring/calendar/focus-blocks?user_id=99")
+    assert response.status_code == 200
+    mock_db.fetch.assert_called_once_with(
+        "SELECT * FROM focus_blocks WHERE user_id = $1 ORDER BY start_time", 99
+    )
+
+
 def test_delete_task_unauthorized():
     response = client.delete("/api/monitoring/calendar/tasks/1")
     assert response.status_code == 401
