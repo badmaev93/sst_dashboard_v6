@@ -128,6 +128,25 @@
         });
     }
 
+    // ── API Expose ──────────────────────────────
+    window.getStationsData = function() {
+        return _stations;
+    };
+
+    window.flyToStation = function(stationId) {
+        if (!window.olMap || !_stations.length) return;
+        const st = _stations.find(s => s.id === stationId);
+        if (st) {
+            const coords = ol.proj.fromLonLat([st.lon, st.lat]);
+            window.olMap.getView().animate({
+                center: coords,
+                zoom: 8,
+                duration: 800
+            });
+            showPopup(st, window.olMap.getPixelFromCoordinate(coords));
+        }
+    };
+
     // ── Show Popup ──────────────────────────────
     function showPopup(st, pixel) {
         if (!_popup) return;

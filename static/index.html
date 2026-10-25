@@ -25,6 +25,17 @@
 <!-- Containers required by overlay JS modules (hidden by default) -->
 <div id="forecast-view" style="display:none"></div>
 
+<!-- ══ GLOBAL COMMAND PALETTE (OMNI-BAR) ══ -->
+<div id="omni-palette" role="dialog" aria-modal="true" aria-label="Командная панель" tabindex="-1" style="display:none">
+  <div class="omni-palette-content">
+    <input type="text" id="omni-input" placeholder="Поиск станции (/st ...), запрос (/req) или команда..." autocomplete="off">
+    <div id="omni-results" role="listbox"></div>
+    <div class="omni-footer">
+      <kbd>ESC</kbd> закрыть · <kbd>↵</kbd> выбрать · <span>Поиск: /st Магадан</span>
+    </div>
+  </div>
+</div>
+
 <!-- ══ COMPARE VIEW (default) ══ -->
 <div id="compare-view">
 
