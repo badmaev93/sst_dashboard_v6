@@ -1574,7 +1574,12 @@
                     </div>
                     <div class="cal-field">
                         <label>Оценка (мин)</label>
-                        <input id="cal-tf-est" type="number" min="5" step="5" value="30" />
+                        <div style="display:flex;gap:4px;align-items:center;">
+                            <input id="cal-tf-est" type="number" min="5" step="5" value="30" style="flex:1;" />
+                            <button type="button" class="cal-est-preset" data-mins="15" aria-label="Установить оценку 15 минут" style="padding:6px 8px;border:1px solid #d1d5db;background:#f8fafc;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;color:#475569;">15m</button>
+                            <button type="button" class="cal-est-preset" data-mins="30" aria-label="Установить оценку 30 минут" style="padding:6px 8px;border:1px solid #d1d5db;background:#f8fafc;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;color:#475569;">30m</button>
+                            <button type="button" class="cal-est-preset" data-mins="60" aria-label="Установить оценку 60 минут" style="padding:6px 8px;border:1px solid #d1d5db;background:#f8fafc;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;color:#475569;">60m</button>
+                        </div>
                     </div>
                 </div>
                 <div class="cal-field">
@@ -1603,6 +1608,16 @@
                 if (parsed.estimatedMinutes) estInput.value = parsed.estimatedMinutes;
             });
         }
+
+        overlay.querySelectorAll('.cal-est-preset').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                const mins = btn.getAttribute('data-mins');
+                if (estInput) {
+                    estInput.value = mins;
+                    estInput.dispatchEvent(new Event('input'));
+                }
+            });
+        });
 
         overlay.querySelector('#cal-tf-close').addEventListener('click', function() { overlay.remove(); });
         overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
