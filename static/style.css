@@ -68,8 +68,8 @@ body.detail-mode #panel-toggle { top: 56px; }
   font-weight: 700;
 }
 .detail-nav-back:focus-visible {
-  outline: 2px solid #4a9eff;
-  outline-offset: -2px;
+  outline: 2px solid #0055aa;
+  outline-offset: 1px;
 }
 .detail-nav-tabs {
   display: flex;
@@ -99,8 +99,8 @@ body.detail-mode #panel-toggle { top: 56px; }
 }
 .detail-tab:hover { color: rgba(255,255,255,0.85); background: rgba(255,255,255,0.05); }
 .detail-tab:focus-visible {
-  outline: 2px solid #4a9eff;
-  outline-offset: -2px;
+  outline: 2px solid #0055aa;
+  outline-offset: 1px;
 }
 .detail-tab.active {
   color: #fff;
@@ -311,7 +311,7 @@ body.detail-mode #panel-toggle { top: 56px; }
 }
 #panel-toggle:focus-visible {
   outline: 2px solid #0055aa;
-  outline-offset: 2px;
+  outline-offset: 1px;
 }
 
 /* ══════════════════════════════════════════════
