@@ -1,7 +1,15 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+
 from jose import jwt
-from auth import hash_password, verify_password, create_access_token, create_refresh_token
-from config import JWT_SECRET, JWT_ALGORITHM
+
+from auth import (
+    create_access_token,
+    create_refresh_token,
+    hash_password,
+    verify_password,
+)
+from config import JWT_ALGORITHM, JWT_SECRET
+
 
 def test_hash_password():
     password = "mysecretpassword"
@@ -29,8 +37,8 @@ def test_create_access_token():
     assert payload["type"] == "access"
     assert "exp" in payload
 
-    exp_datetime = datetime.fromtimestamp(payload["exp"], tz=timezone.utc)
-    now_datetime = datetime.now(timezone.utc)
+    exp_datetime = datetime.fromtimestamp(payload["exp"], tz=UTC)
+    now_datetime = datetime.now(UTC)
 
     assert exp_datetime > now_datetime
 
@@ -47,7 +55,7 @@ def test_create_refresh_token():
     assert payload["type"] == "refresh"
     assert "exp" in payload
 
-    exp_datetime = datetime.fromtimestamp(payload["exp"], tz=timezone.utc)
-    now_datetime = datetime.now(timezone.utc)
+    exp_datetime = datetime.fromtimestamp(payload["exp"], tz=UTC)
+    now_datetime = datetime.now(UTC)
 
     assert exp_datetime > now_datetime

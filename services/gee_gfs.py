@@ -4,11 +4,10 @@
 """
 
 import io
-import time
 import logging
-from datetime import datetime, timezone, timedelta
+import time
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
-from typing import Optional
 
 import numpy as np
 
@@ -109,10 +108,11 @@ def _generate_fallback_grids(cycle_dt: datetime) -> dict:
     return result
 
 
-def _try_gee_fetch(cycle_dt: datetime) -> Optional[dict]:
+def _try_gee_fetch(cycle_dt: datetime) -> dict | None:
     """Попытка загрузки из Google Earth Engine. Возвращает None в случае ошибки."""
     try:
         import ee
+
         from config import GEE_PROJECT_ID
     except ImportError:
         logger.info("earthengine-api not installed, using fallback")
@@ -172,12 +172,12 @@ class GFSFetcher:
     """Загружает прогностические сетки GFS из GEE с возможностью резервного перехода на синтетические данные."""
 
     def __init__(self):
-        self._current_cycle: Optional[datetime] = None
+        self._current_cycle: datetime | None = None
         self._data: dict = {}
 
     def _cycle_time(self) -> datetime:
         """Последний прогон GFS: 00, 06, 12 или 18 UTC за вычетом 6-часовой задержки."""
-        now = datetime.now(timezone.utc) - timedelta(hours=6)
+        now = datetime.now(UTC) - timedelta(hours=6)
         cycle_hour = (now.hour // 6) * 6
         return now.replace(hour=cycle_hour, minute=0, second=0, microsecond=0)
 
@@ -185,7 +185,7 @@ class GFSFetcher:
         ts = cycle_dt.strftime("%Y%m%d_%H")
         return CACHE_DIR / f"gfs_{ts}_f{hour:03d}.npz"
 
-    def _load_cache(self, cycle_dt: datetime, hour: int) -> Optional[dict]:
+    def _load_cache(self, cycle_dt: datetime, hour: int) -> dict | None:
         p = self._cache_path(cycle_dt, hour)
         if p.exists():
             d = dict(np.load(str(p), allow_pickle=True))
@@ -294,7 +294,7 @@ class GFSFetcher:
 
     def render_tile(self, variable: str, hour: int,
                     colormap: str = "RdYlBu_r",
-                    extent: Optional[tuple] = None) -> bytes:
+                    extent: tuple | None = None) -> bytes:
         """Рендеринг переменной прогноза в PNG с цветовой палитрой и прозрачностью.
         variable: 'sst', 'wind', 'pressure'
         Возвращает PNG в байтах.
@@ -360,7 +360,7 @@ class GFSFetcher:
                 logger.info("Deleted old GFS cache: %s", f.name)
 
     @property
-    def cycle_time(self) -> Optional[datetime]:
+    def cycle_time(self) -> datetime | None:
         return self._current_cycle
 
     @property
@@ -425,7 +425,7 @@ def _build_lut(name: str) -> np.ndarray:
 
 
 # Синглтон уровня модуля
-_fetcher: Optional[GFSFetcher] = None
+_fetcher: GFSFetcher | None = None
 
 
 def get_fetcher() -> GFSFetcher:

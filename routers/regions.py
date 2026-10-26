@@ -1,8 +1,10 @@
-from fastapi import APIRouter, HTTPException, Depends
-from fastapi.responses import FileResponse
-import db
 import json
 import os
+
+from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import FileResponse
+
+import db
 from auth import get_current_user
 
 regions_router = APIRouter(prefix="/api/regions", tags=["regions"])

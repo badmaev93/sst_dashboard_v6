@@ -1,8 +1,10 @@
 import asyncio
-import time
-import db
 import random
-from datetime import datetime, timezone, timedelta
+import time
+from datetime import UTC, datetime, timedelta
+
+import db
+
 
 async def setup_data():
     await db.init_db()
@@ -19,7 +21,7 @@ async def setup_data():
         stations.append(row["id"])
 
     # insert 100 readings for each
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     for st_id in stations:
         for i in range(100):
             obs_time = now - timedelta(hours=i)

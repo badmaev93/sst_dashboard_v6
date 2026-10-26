@@ -1,4 +1,5 @@
-from fastapi import APIRouter, HTTPException, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
+
 import db
 from auth import get_current_user, require_role
 from models import RequestCreate

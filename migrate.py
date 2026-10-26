@@ -1,6 +1,8 @@
 """Создание всех таблиц в базе данных."""
 import asyncio
+
 import asyncpg
+
 from config import DATABASE_URL
 
 SCHEMA = """

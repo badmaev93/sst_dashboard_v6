@@ -6,7 +6,7 @@
 """
 import logging
 import math
-from datetime import datetime, timezone, timedelta
+from datetime import UTC, datetime, timedelta
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +19,7 @@ def _cache_fresh(station_code: str) -> bool:
     entry = _prophet_cache.get(station_code)
     if not entry:
         return False
-    age = datetime.now(timezone.utc) - entry["ts"]
+    age = datetime.now(UTC) - entry["ts"]
     return age < timedelta(hours=_CACHE_TTL_HOURS)
 
 
@@ -156,6 +156,6 @@ async def get_station_forecast_prophet(station_code: str, readings: list[dict],
 
     _prophet_cache[station_code] = {
         "result": result,
-        "ts": datetime.now(timezone.utc),
+        "ts": datetime.now(UTC),
     }
     return result

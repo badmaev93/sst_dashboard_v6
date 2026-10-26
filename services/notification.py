@@ -1,6 +1,8 @@
 """Сервис уведомлений — Telegram + веб-уведомления."""
 import logging
+
 import httpx
+
 from config import TELEGRAM_BOT_TOKEN
 
 logger = logging.getLogger(__name__)

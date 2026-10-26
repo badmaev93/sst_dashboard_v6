@@ -1,7 +1,9 @@
-from fastapi import APIRouter, Query, Depends
-from datetime import datetime, timezone
-import db
 import logging
+from datetime import UTC, datetime
+
+from fastapi import APIRouter, Depends, Query
+
+import db
 from auth import get_current_user, require_role
 
 logger = logging.getLogger(__name__)
@@ -129,7 +131,7 @@ async def dashboard_summary(user=Depends(get_current_user)):
 
 @monitoring_router.post("/actions/{action}")
 async def run_action(action: str, user=Depends(require_role("supervisor"))):
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     if action == "digest":
         stations = await db.pool.fetch("""
             SELECT s.name, s.status, r.sst

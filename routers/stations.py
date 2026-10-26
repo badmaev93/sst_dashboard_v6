@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 import db
-from models import ReadingCreate
 from auth import get_current_user, require_role
+from models import ReadingCreate
 
 stations_router = APIRouter(prefix="/api/monitoring", tags=["stations"])
 

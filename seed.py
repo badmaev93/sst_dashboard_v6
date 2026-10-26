@@ -1,10 +1,11 @@
 """Заполнение базы данных демонстрационными данными: станции, пользователи, 30 дней измерений, прогнозы, активность агентов."""
 import asyncio
-import random
 import math
-from datetime import datetime, timedelta, timezone
+import random
+from datetime import UTC, datetime, timedelta
 
 import asyncpg
+
 from config import DATABASE_URL
 
 STATIONS = [
@@ -391,7 +392,7 @@ async def main():
     print("Connecting to NeonDB...")
     conn = await asyncpg.connect(DATABASE_URL)
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
 
     user_ids = await seed_users(conn)
     station_ids, station_coords = await seed_stations(conn)

@@ -1,6 +1,6 @@
-from pydantic import BaseModel
-from typing import Optional
 from datetime import datetime
+
+from pydantic import BaseModel
 
 
 class UserLogin(BaseModel):
@@ -15,7 +15,7 @@ class Token(BaseModel):
 class UserResponse(BaseModel):
     id: int
     username: str
-    full_name: Optional[str]
+    full_name: str | None
     role: str
     is_active: bool
 
@@ -25,91 +25,91 @@ class StationResponse(BaseModel):
     name: str
     lat: float
     lon: float
-    region: Optional[str]
+    region: str | None
     status: str
 
 class ReadingResponse(BaseModel):
     id: int
     station_id: int
     observed_at: datetime
-    sst: Optional[float]
-    temp_air: Optional[float]
-    wave_height: Optional[float]
-    wave_period: Optional[float]
-    wind_speed: Optional[float]
-    wind_dir: Optional[int]
-    pressure: Optional[float]
-    visibility: Optional[float]
-    humidity: Optional[float]
-    status: Optional[str]
+    sst: float | None
+    temp_air: float | None
+    wave_height: float | None
+    wave_period: float | None
+    wind_speed: float | None
+    wind_dir: int | None
+    pressure: float | None
+    visibility: float | None
+    humidity: float | None
+    status: str | None
 
 class ForecastResponse(BaseModel):
     station_id: int
     issued_at: datetime
     forecast_hour: int
-    sst_gfs: Optional[float]
-    sst_corrected: Optional[float]
-    wind_speed_gfs: Optional[float]
-    wind_speed_corr: Optional[float]
-    wave_height_gfs: Optional[float]
-    wave_height_corr: Optional[float]
-    correction_meta: Optional[dict]
+    sst_gfs: float | None
+    sst_corrected: float | None
+    wind_speed_gfs: float | None
+    wind_speed_corr: float | None
+    wave_height_gfs: float | None
+    wave_height_corr: float | None
+    correction_meta: dict | None
 
 class RequestCreate(BaseModel):
-    station_id: Optional[int]
+    station_id: int | None
     title: str
-    description: Optional[str]
+    description: str | None
     req_type: str
     priority: str = "normal"
-    assigned_to: Optional[int]
+    assigned_to: int | None
 
 class RequestResponse(BaseModel):
     id: int
-    station_id: Optional[int]
+    station_id: int | None
     created_by: int
-    assigned_to: Optional[int]
+    assigned_to: int | None
     title: str
-    description: Optional[str]
-    req_type: Optional[str]
+    description: str | None
+    req_type: str | None
     status: str
-    priority: Optional[str]
+    priority: str | None
     created_at: datetime
-    signed_at: Optional[datetime]
+    signed_at: datetime | None
 
 class CalendarEventCreate(BaseModel):
     title: str
-    description: Optional[str]
+    description: str | None
     event_type: str
-    station_id: Optional[int]
+    station_id: int | None
     starts_at: datetime
     ends_at: datetime
     all_day: bool = False
-    color: Optional[str]
+    color: str | None
 
 class CalendarEventResponse(BaseModel):
     id: int
     title: str
-    description: Optional[str]
+    description: str | None
     event_type: str
-    station_id: Optional[int]
-    created_by: Optional[int]
+    station_id: int | None
+    created_by: int | None
     starts_at: datetime
     ends_at: datetime
     all_day: bool
-    color: Optional[str]
+    color: str | None
 
 class AgentInsight(BaseModel):
     agent_name: str
     title: str
-    body: Optional[str] = None
+    body: str | None = None
     severity: str = "info"
-    metadata: Optional[dict] = None
+    metadata: dict | None = None
 
 class EquipmentCheckCreate(BaseModel):
     station_id: int
     equipment: str
     result: str
-    notes: Optional[str]
+    notes: str | None
 
 class DashboardSummary(BaseModel):
     station_counts: dict
@@ -119,21 +119,21 @@ class DashboardSummary(BaseModel):
 
 class TaskCreate(BaseModel):
     title: str
-    description: Optional[str] = None
+    description: str | None = None
     priority: str = "P2"
-    estimated_minutes: Optional[int] = None
-    due_date: Optional[datetime] = None
-    station_id: Optional[int] = None
+    estimated_minutes: int | None = None
+    due_date: datetime | None = None
+    station_id: int | None = None
 
 class ReadingCreate(BaseModel):
     station_id: int
-    sst: Optional[float] = None
-    temp_air: Optional[float] = None
-    wave_height: Optional[float] = None
-    wave_period: Optional[float] = None
-    wind_speed: Optional[float] = None
-    wind_dir: Optional[int] = None
-    pressure: Optional[float] = None
-    visibility: Optional[float] = None
-    humidity: Optional[float] = None
-    status: Optional[str] = "normal"
+    sst: float | None = None
+    temp_air: float | None = None
+    wave_height: float | None = None
+    wave_period: float | None = None
+    wind_speed: float | None = None
+    wind_dir: int | None = None
+    pressure: float | None = None
+    visibility: float | None = None
+    humidity: float | None = None
+    status: str | None = "normal"

@@ -1,6 +1,9 @@
 from unittest.mock import AsyncMock, patch
+
 import pytest
+
 import db
+
 
 @pytest.mark.asyncio
 async def test_init_db():

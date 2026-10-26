@@ -1,16 +1,25 @@
 """API прогнозов GFS — тайлы, значения по станциям, метаданные."""
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+
+import numpy as np
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import Response
 
 import db
 from auth import get_current_user
-from services.smb_gfs import get_smb_fetcher, FORECAST_HOURS, LON_MIN, LON_MAX, LAT_MIN, LAT_MAX
-from services.gee_gfs import _build_lut  # повторное использование таблицы поиска цветовой палитры
+from services.gee_gfs import (
+    _build_lut,  # повторное использование таблицы поиска цветовой палитры
+)
 from services.serendipity import correct_gfs_sst, correct_gfs_wind
-
-import numpy as np
+from services.smb_gfs import (
+    FORECAST_HOURS,
+    LAT_MAX,
+    LAT_MIN,
+    LON_MAX,
+    LON_MIN,
+    get_smb_fetcher,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -62,7 +71,7 @@ async def gfs_station_forecast(hour: int, user=Depends(get_current_user)):
         return []
 
     f = get_smb_fetcher()
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     raw_values = _extract_station_values(f, stations, hour)
 
     results = []
@@ -95,7 +104,7 @@ async def gfs_single_station(station_id: int, hour: int, user=Depends(get_curren
         return {"error": "Station not found"}
 
     f = get_smb_fetcher()
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     vals = _extract_station_values(f, [dict(row)], hour)
     if not vals:
         return {"error": "No data"}
@@ -119,8 +128,9 @@ async def gfs_single_station(station_id: int, hour: int, user=Depends(get_curren
 # ---------------------------------------------------------------------------
 
 def _render_tile(fetcher, variable: str, hour: int, colormap: str) -> bytes:
-    from PIL import Image
     import io
+
+    from PIL import Image
 
     data = fetcher.get_hour(hour)
 

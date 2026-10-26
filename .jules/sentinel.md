@@ -22,3 +22,8 @@
 **Vulnerability:** `GET /api/monitoring/calendar/focus-blocks` allowed any authenticated user (e.g. low-privilege observers or engineers) to fetch focus blocks belonging to all users if `user_id` query parameter was omitted, or fetch any target user's focus blocks by passing arbitrary `user_id`.
 **Learning:** Developers implemented object-level authorization (BOLA checks) on mutation endpoints (`PUT` and `DELETE` /focus-blocks/{block_id}) to ensure non-supervisors could only edit/delete their own focus blocks, but forgot to restrict read operations on `GET /focus-blocks`.
 **Prevention:** Always enforce object-level authorization (BOLA/IDOR protection) on read/list endpoints as well as mutation endpoints. Non-supervisors querying user-owned resources should be locked to their own user ID (`user["id"]`) by default and denied access to other users' data.
+
+## 2026-10-24 - [BOLA / Unrestricted Data Read Access in Calendar Tasks Endpoint]
+**Vulnerability:** `GET /api/monitoring/calendar/tasks` allowed any authenticated non-supervisor user (e.g. engineers or observers) to retrieve tasks assigned to all users across the system if `user_id` query parameter was omitted, or fetch any target user's assigned tasks by passing arbitrary `user_id` parameter (`?user_id=X`).
+**Learning:** Object-level authorization checks were enforced on task update and delete mutation endpoints (`PUT` and `DELETE` `/tasks/{task_id}`), but read operations (`GET /tasks`) omitted authorization filtering for non-supervisors.
+**Prevention:** Enforce consistent BOLA / IDOR checks on list/read endpoints by locking non-supervisor queries to `user["id"]` by default and rejecting queries targeting other user IDs with HTTP 403 Forbidden.

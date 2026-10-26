@@ -1,6 +1,8 @@
 import os
 import secrets
+
 from dotenv import load_dotenv
+
 load_dotenv()
 
 # Локальный PostgreSQL (docker-compose) — резервный вариант Neon, если переменная DATABASE_URL не задана
