@@ -1575,6 +1575,11 @@
                     <div class="cal-field">
                         <label>Оценка (мин)</label>
                         <input id="cal-tf-est" type="number" min="5" step="5" value="30" />
+                        <div style="display:flex;gap:4px;margin-top:4px;">
+                            <button type="button" class="cal-est-preset" data-mins="15" style="padding:2px 6px;font-size:10px;border:1px solid #cbd5e1;background:#f8fafc;border-radius:4px;cursor:pointer;color:#475569;">+15м</button>
+                            <button type="button" class="cal-est-preset" data-mins="30" style="padding:2px 6px;font-size:10px;border:1px solid #cbd5e1;background:#f8fafc;border-radius:4px;cursor:pointer;color:#475569;">+30м</button>
+                            <button type="button" class="cal-est-preset" data-mins="60" style="padding:2px 6px;font-size:10px;border:1px solid #cbd5e1;background:#f8fafc;border-radius:4px;cursor:pointer;color:#475569;">+1ч</button>
+                        </div>
                     </div>
                 </div>
                 <div class="cal-field">
@@ -1603,6 +1608,14 @@
                 if (parsed.estimatedMinutes) estInput.value = parsed.estimatedMinutes;
             });
         }
+
+        overlay.querySelectorAll('.cal-est-preset').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                const addMins = parseInt(btn.dataset.mins, 10) || 0;
+                const currMins = parseInt(estInput.value, 10) || 0;
+                estInput.value = currMins + addMins;
+            });
+        });
 
         overlay.querySelector('#cal-tf-close').addEventListener('click', function() { overlay.remove(); });
         overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
