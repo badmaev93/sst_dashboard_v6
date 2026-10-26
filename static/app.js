@@ -1029,36 +1029,43 @@ function syncUI() {
     const active = b.dataset.pct === String(percentile);
     b.classList.toggle("active", active);
     b.setAttribute("aria-pressed", active ? "true" : "false");
+    b.setAttribute("aria-label", "Перцентиль: " + b.dataset.pct);
   });
   document.querySelectorAll(".scale-btn").forEach(b => {
     const active = Number(b.dataset.scale) === scale;
     b.classList.toggle("active", active);
     b.setAttribute("aria-pressed", active ? "true" : "false");
+    b.setAttribute("aria-label", "Разрешение PNG: " + b.dataset.scale + "×");
   });
   document.querySelectorAll(".smooth-btn").forEach(b => {
     const active = (b.dataset.smooth === "1") === smooth;
     b.classList.toggle("active", active);
     b.setAttribute("aria-pressed", active ? "true" : "false");
+    b.setAttribute("aria-label", "Интерполяция: " + (b.dataset.smooth === "1" ? "Вкл" : "Выкл"));
   });
   document.querySelectorAll(".blur-btn").forEach(b => {
     const active = (b.dataset.blur === "1") === blur;
     b.classList.toggle("active", active);
     b.setAttribute("aria-pressed", active ? "true" : "false");
+    b.setAttribute("aria-label", "Размытие: " + (b.dataset.blur === "1" ? "Вкл" : "Выкл"));
   });
   document.querySelectorAll(".coast-btn").forEach(b => {
     const active = (b.dataset.coast === "1") === S.coastline;
     b.classList.toggle("active", active);
     b.setAttribute("aria-pressed", active ? "true" : "false");
+    b.setAttribute("aria-label", "Береговая линия: " + (b.dataset.coast === "1" ? "Вкл" : "Выкл"));
   });
   document.querySelectorAll(".contour-btn").forEach(b => {
     const active = (b.dataset.contour === "1") === S.contours;
     b.classList.toggle("active", active);
     b.setAttribute("aria-pressed", active ? "true" : "false");
+    b.setAttribute("aria-label", "Изолинии: " + (b.dataset.contour === "1" ? "Вкл" : "Выкл"));
   });
   document.querySelectorAll(".contlbl-btn").forEach(b => {
     const active = (b.dataset.contlbl === "1") === S.contourLabels;
     b.classList.toggle("active", active);
     b.setAttribute("aria-pressed", active ? "true" : "false");
+    b.setAttribute("aria-label", "Подписи изолиний: " + (b.dataset.contlbl === "1" ? "Вкл" : "Выкл"));
   });
 
   // Period buttons
@@ -1066,16 +1073,19 @@ function syncUI() {
     const active = S._periodSelected && i === periodIdx;
     btn.classList.toggle("active", active);
     btn.setAttribute("aria-pressed", active ? "true" : "false");
+    btn.setAttribute("aria-label", "Горизонт: " + GFS_SHORT[i]);
   });
 
   // Sync station and wind anim toggle buttons aria-pressed
   document.querySelectorAll(".station-toggle-btn").forEach(b => {
     const active = b.textContent.includes("Вкл") === S.showStations;
     b.setAttribute("aria-pressed", active ? "true" : "false");
+    b.setAttribute("aria-label", "Отображение станций: " + (b.textContent.includes("Вкл") ? "Вкл" : "Выкл"));
   });
   document.querySelectorAll(".wind-anim-btn").forEach(b => {
     const active = (b.textContent.includes("Вкл") && S.showWindAnim) || (b.textContent.includes("Выкл") && !S.showWindAnim);
     b.setAttribute("aria-pressed", active ? "true" : "false");
+    b.setAttribute("aria-label", "Анимация ветра: " + (b.textContent.includes("Вкл") ? "Вкл" : "Выкл"));
   });
 }
 
@@ -1276,6 +1286,7 @@ function toggleStations(on) {
     const active = b.textContent.includes("Вкл") === on;
     b.classList.toggle("active", active);
     b.setAttribute("aria-pressed", active ? "true" : "false");
+    b.setAttribute("aria-label", "Отображение станций: " + (b.textContent.includes("Вкл") ? "Вкл" : "Выкл"));
   });
   if (typeof updateStationsVisibility === "function") updateStationsVisibility(on);
 }
@@ -1287,6 +1298,7 @@ function toggleWindAnim(on) {
     const active = (b.textContent.includes("Вкл") && on) || (b.textContent.includes("Выкл") && !on);
     b.classList.toggle("active", active);
     b.setAttribute("aria-pressed", active ? "true" : "false");
+    b.setAttribute("aria-label", "Анимация ветра: " + (b.textContent.includes("Вкл") ? "Вкл" : "Выкл"));
   });
   if (on) {
     _startWindAnimation();
