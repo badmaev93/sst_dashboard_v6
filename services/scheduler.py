@@ -250,36 +250,47 @@ def start_scheduler():
                 for r in all_readings:
                     readings_by_station[r["station_id"]].append(r)
 
-                total_anomalies = 0
-                for st in stations:
+                from services.prophet_forecast import get_station_forecast_prophet
+
+                async def _process_station(st):
                     try:
                         readings = readings_by_station.get(st["id"], [])
                         readings_list = [
                             {"observed_at": str(r["observed_at"]), "sst": float(r["sst"])}
                             for r in readings
                         ]
-
-                        from services.prophet_forecast import get_station_forecast_prophet
                         fc = await get_station_forecast_prophet(
                             st["code"], readings_list, periods=6)
-
-                        n_anom = fc.get("n_anomalies_24h", 0)
-                        total_anomalies += n_anom
-
-                        if n_anom > 0:
-                            # Логирование события аномалии в agent_activity
-                            await db.pool.execute("""
-                                INSERT INTO agent_activity
-                                    (agent_name, event_type, severity, title, body, created_at)
-                                VALUES ($1, 'anomaly', $2, $3, $4, now())
-                            """, "ProphetMonitor",
-                                "warning" if n_anom < 3 else "critical",
-                                f"Prophet: {n_anom} аномалий ТПО за 24ч — {st['name']}",
-                                f"Метод: Prophet | Тренд: {fc.get('trend', 0):+.2f}°C/сут")
-
+                        return {"st": st, "fc": fc}
                     except Exception as e:
-                        logger.error("Daily monitoring failed for station %s: %s",
-                                     st["code"], e)
+                        logger.error("Daily monitoring failed for station %s: %s", st["code"], e)
+                        return None
+
+                results = await asyncio.gather(*[_process_station(st) for st in stations])
+
+                total_anomalies = 0
+                anomaly_records = []
+
+                for res in results:
+                    if not res:
+                        continue
+                    st = res["st"]
+                    fc = res["fc"]
+                    n_anom = fc.get("n_anomalies_24h", 0)
+                    total_anomalies += n_anom
+
+                    if n_anom > 0:
+                        severity = "warning" if n_anom < 3 else "critical"
+                        title = f"Prophet: {n_anom} аномалий ТПО за 24ч — {st['name']}"
+                        body = f"Метод: Prophet | Тренд: {fc.get('trend', 0):+.2f}°C/сут"
+                        anomaly_records.append(("ProphetMonitor", "anomaly", severity, title, body))
+
+                if anomaly_records:
+                    await db.pool.executemany("""
+                        INSERT INTO agent_activity
+                            (agent_name, event_type, severity, title, body, created_at)
+                        VALUES ($1, $2, $3, $4, $5, now())
+                    """, anomaly_records)
 
                 logger.info("Daily monitoring: %d total anomalies across %d stations",
                             total_anomalies, len(stations))
