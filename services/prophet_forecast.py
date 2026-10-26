@@ -7,7 +7,6 @@
 import logging
 import math
 from datetime import datetime, timezone, timedelta
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 

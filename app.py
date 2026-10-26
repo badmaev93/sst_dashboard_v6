@@ -5,7 +5,13 @@ GFS Dashboard v6 — FastAPI backend
 (26–72° с.ш., 117–246° в.д.) в PNG-тайлы в проекции Меркатора плюс
 векторную береговую линию Natural Earth.
 """
-import os, io, math, logging, time, datetime, tempfile
+import os
+import io
+import math
+import logging
+import time
+import datetime
+import tempfile
 from contextlib import asynccontextmanager
 from typing import Optional
 
