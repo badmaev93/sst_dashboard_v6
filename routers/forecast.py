@@ -1,12 +1,18 @@
 """Эндпоинт прогноза станции AI Serendipity."""
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, Depends, HTTPException
+
 import db
 from auth import get_current_user
-from services.serendipity import correct_gfs_sst, correct_gfs_wind, call_nixtla_forecast, call_nixtla_anomaly
 from services.data_generator import fetch_station_reading
+from services.serendipity import (
+    call_nixtla_anomaly,
+    call_nixtla_forecast,
+    correct_gfs_sst,
+    correct_gfs_wind,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +34,7 @@ async def get_station_forecast(station_id: int, user=Depends(get_current_user)):
         raise HTTPException(404, "Station not found")
 
     station = dict(station)
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     month = now.month
 
     # Получение недавних измерений (последние 30 для Nixtla)

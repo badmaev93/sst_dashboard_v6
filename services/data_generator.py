@@ -1,5 +1,6 @@
 """Получение реальных метеоданных из API Open-Meteo Marine + Weather для дальневосточных станций."""
 import logging
+
 import httpx
 
 logger = logging.getLogger(__name__)

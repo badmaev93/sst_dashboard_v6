@@ -1,10 +1,11 @@
 from unittest.mock import AsyncMock, MagicMock, patch
-from fastapi.testclient import TestClient
-import pytest
 
+import pytest
+from fastapi.testclient import TestClient
+
+import db
 from app import app
 from auth import get_current_user
-import db
 
 client = TestClient(app)
 

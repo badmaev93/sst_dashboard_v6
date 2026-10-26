@@ -1,8 +1,10 @@
 import asyncio
-import time
-from services.telegram_bot import _cmd_free_text
-from db import init_db, close_db
 import logging
+import time
+
+from db import close_db, init_db
+from services.telegram_bot import _cmd_free_text
+
 logging.basicConfig(level=logging.INFO)
 
 async def test_bot_perf():

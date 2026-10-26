@@ -1,8 +1,8 @@
 """Фоновый планировщик для почасовой генерации данных, симуляции событий и опроса Telegram."""
-import logging
 import asyncio
+import logging
 import random
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +52,7 @@ def start_scheduler():
                     continue
 
                 from services.data_generator import fetch_bulk_readings
-                now = datetime.now(timezone.utc)
+                now = datetime.now(UTC)
 
                 rows = await db.pool.fetch("SELECT id, code, lat, lon FROM stations")
                 stations = [{"id": r["id"], "code": r["code"], "lat": float(r["lat"]), "lon": float(r["lon"])} for r in rows]
@@ -96,6 +96,7 @@ def start_scheduler():
     async def _telegram_polling():
         """Long-polling для обновлений Telegram (localhost не может получать вебхуки)."""
         import httpx
+
         from config import TELEGRAM_BOT_TOKEN
         if not TELEGRAM_BOT_TOKEN:
             logger.info("Telegram polling skipped: no token")
@@ -212,7 +213,7 @@ def start_scheduler():
         """
         import datetime as _dt
         # Начальная задержка: ожидание до 08:00 UTC следующего дня
-        now = _dt.datetime.now(_dt.timezone.utc)
+        now = _dt.datetime.now(_dt.UTC)
         target = now.replace(hour=8, minute=0, second=0, microsecond=0)
         if target <= now:
             target += _dt.timedelta(days=1)

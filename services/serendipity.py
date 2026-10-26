@@ -1,10 +1,11 @@
 from __future__ import annotations
+
 """
 AI Serendipity — коррекция систематической погрешности + интеграция с Nixtla TimeGPT.
 Лимит Nixtla: 50 запросов/месяц → кэширование результатов на 7 дней для каждой станции.
 """
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from config import NIXTLA_API_KEY
@@ -25,7 +26,7 @@ _call_counter: dict[str, int] = {}
 
 # ── Утилиты счётчика и кэша ───────────────────────────────────────────────────────
 def _ym() -> str:
-    return datetime.now(timezone.utc).strftime("%Y-%m")
+    return datetime.now(UTC).strftime("%Y-%m")
 
 
 def _calls_this_month() -> int:
@@ -41,7 +42,7 @@ def _cache_fresh(station_code: str) -> bool:
     entry = _nixtla_cache.get(station_code)
     if not entry:
         return False
-    age = datetime.now(timezone.utc) - entry["ts"]
+    age = datetime.now(UTC) - entry["ts"]
     return age < timedelta(days=_CACHE_TTL_DAYS)
 
 
@@ -202,7 +203,7 @@ async def call_nixtla_forecast(station_code: str, readings: list[dict]) -> dict 
 
         entry = _nixtla_cache.setdefault(station_code, {})
         entry["forecast"] = [round(float(v), 2) for v in forecast_vals]
-        entry["ts"] = datetime.now(timezone.utc)
+        entry["ts"] = datetime.now(UTC)
         return {"forecast": entry["forecast"]}
 
     except Exception as e:
@@ -246,7 +247,7 @@ async def call_nixtla_anomaly(station_code: str, readings: list[dict]) -> dict |
 
         entry = _nixtla_cache.setdefault(station_code, {})
         entry["anomaly_scores"] = [float(s) for s in scores]
-        entry["ts"] = datetime.now(timezone.utc)
+        entry["ts"] = datetime.now(UTC)
         return {"anomaly_scores": entry["anomaly_scores"]}
 
     except Exception as e:

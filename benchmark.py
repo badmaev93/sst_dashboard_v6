@@ -1,7 +1,9 @@
 import asyncio
 import time
 from unittest.mock import AsyncMock
+
 from services.telegram_bot import _cmd_free_text
+
 
 async def main():
     pool = AsyncMock()

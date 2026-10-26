@@ -1,8 +1,9 @@
+from unittest.mock import AsyncMock, patch
+
 import pytest
 from fastapi import HTTPException
 from fastapi.security import HTTPAuthorizationCredentials
 from jose import JWTError
-from unittest.mock import patch, AsyncMock
 
 from auth import get_current_user
 

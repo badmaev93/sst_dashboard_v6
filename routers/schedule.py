@@ -1,7 +1,9 @@
+from datetime import UTC, datetime, timedelta
+
 from fastapi import APIRouter, Depends, Query
-from datetime import datetime, timezone, timedelta
+
 import db
-from auth import require_role, get_current_user
+from auth import get_current_user, require_role
 
 schedule_router = APIRouter(prefix="/api/monitoring/schedule", tags=["schedule"])
 
@@ -13,7 +15,7 @@ def _parse_date(s: str) -> datetime:
         try:
             dt = datetime.strptime(s, fmt)
             if dt.tzinfo is None:
-                dt = dt.replace(tzinfo=timezone.utc)
+                dt = dt.replace(tzinfo=UTC)
             return dt
         except ValueError:
             continue
@@ -119,7 +121,7 @@ async def delete_assignment(assignment_id: int, user=Depends(require_role("super
 
 @schedule_router.get("/today")
 async def get_today_schedule(user=Depends(get_current_user)):
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     rows = await db.pool.fetch("""
         SELECT a.id, a.shift_start, a.shift_end, a.role_on_duty,
                u.full_name, p.position,
@@ -136,7 +138,7 @@ async def get_today_schedule(user=Depends(get_current_user)):
 
 @schedule_router.get("/upcoming")
 async def get_upcoming_schedule(days: int = Query(7), user=Depends(get_current_user)):
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     end = now + timedelta(days=days)
     rows = await db.pool.fetch("""
         SELECT a.id, a.shift_start, a.shift_end, a.role_on_duty,

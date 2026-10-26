@@ -13,6 +13,8 @@
 from __future__ import annotations
 
 import logging
+from datetime import UTC
+
 import httpx
 
 from config import TELEGRAM_BOT_TOKEN
@@ -524,6 +526,7 @@ async def _cmd_free_text(chat_id: int, text: str, pool) -> str:
         try:
             import asyncio
             import json as _json
+
             from services.prophet_forecast import get_station_forecast_prophet
             forecast_stations = await pool.fetch("""
                 SELECT s.code, s.name,
@@ -661,5 +664,5 @@ def _fmt(val, decimals: int = 1) -> str:
 
 
 def _today() -> str:
-    from datetime import datetime, timezone
-    return datetime.now(timezone.utc).strftime("%d.%m.%Y")
+    from datetime import datetime
+    return datetime.now(UTC).strftime("%d.%m.%Y")

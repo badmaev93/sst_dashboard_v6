@@ -14,9 +14,8 @@
 import logging
 import os
 import tempfile
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Optional
 
 import numpy as np
 
@@ -55,7 +54,7 @@ CACHE_DIR.mkdir(parents=True, exist_ok=True)
 # Бэкенд файловой системы (Вариант B — смонтированный ресурс)
 # ---------------------------------------------------------------------------
 
-def _local_find_latest_date(base: Path) -> Optional[tuple[str, str, str]]:
+def _local_find_latest_date(base: Path) -> tuple[str, str, str] | None:
     """Обход <base>/YYYY/MM/DD/00/ для поиска наиболее свежей даты."""
     if not base.is_dir():
         logger.error("GFS_LOCAL_PATH does not exist or is not mounted: %s", base)
@@ -76,7 +75,7 @@ def _local_find_latest_date(base: Path) -> Optional[tuple[str, str, str]]:
     return None
 
 
-def _local_read_file(base: Path, year: str, month: str, day: str, hour: int) -> Optional[bytes]:
+def _local_read_file(base: Path, year: str, month: str, day: str, hour: int) -> bytes | None:
     fname = f"gfs.t00z.pgrb2.0p25.f{hour:03d}.grb2"
     fpath = base / year / month / day / "00" / fname
     if not fpath.exists():
@@ -118,7 +117,7 @@ def _smb_listdir(smb_p: str) -> list[str]:
         return []
 
 
-def _smb_find_latest_date() -> Optional[tuple[str, str, str]]:
+def _smb_find_latest_date() -> tuple[str, str, str] | None:
     _smb_register()
     base = _smb_path(SMB_BASE)
     years = [y for y in reversed(_smb_listdir(base)) if y.isdigit() and len(y) == 4]
@@ -136,7 +135,7 @@ def _smb_find_latest_date() -> Optional[tuple[str, str, str]]:
     return None
 
 
-def _smb_read_file(year: str, month: str, day: str, hour: int) -> Optional[bytes]:
+def _smb_read_file(year: str, month: str, day: str, hour: int) -> bytes | None:
     import smbclient
     fname = f"gfs.t00z.pgrb2.0p25.f{hour:03d}.grb2"
     p = _smb_path(SMB_BASE, year, month, day, "00", fname)
@@ -152,13 +151,13 @@ def _smb_read_file(year: str, month: str, day: str, hour: int) -> Optional[bytes
 # Единый интерфейс чтения
 # ---------------------------------------------------------------------------
 
-def find_latest_date() -> Optional[tuple[str, str, str]]:
+def find_latest_date() -> tuple[str, str, str] | None:
     if GFS_LOCAL_PATH:
         return _local_find_latest_date(Path(GFS_LOCAL_PATH))
     return _smb_find_latest_date()
 
 
-def read_grib_bytes(year: str, month: str, day: str, hour: int) -> Optional[bytes]:
+def read_grib_bytes(year: str, month: str, day: str, hour: int) -> bytes | None:
     if GFS_LOCAL_PATH:
         return _local_read_file(Path(GFS_LOCAL_PATH), year, month, day, hour)
     return _smb_read_file(year, month, day, hour)
@@ -168,7 +167,7 @@ def read_grib_bytes(year: str, month: str, day: str, hour: int) -> Optional[byte
 # Парсинг GRIB2 (cfgrib)
 # ---------------------------------------------------------------------------
 
-def _parse_grib2(data: bytes, forecast_hour: int) -> Optional[dict]:
+def _parse_grib2(data: bytes, forecast_hour: int) -> dict | None:
     try:
         import cfgrib
     except ImportError:
@@ -270,7 +269,7 @@ def _cache_path(date_str: str, hour: int) -> Path:
     return CACHE_DIR / f"gfs_smb_{date_str}_f{hour:03d}.npz"
 
 
-def _load_cache(date_str: str, hour: int) -> Optional[dict]:
+def _load_cache(date_str: str, hour: int) -> dict | None:
     p = _cache_path(date_str, hour)
     if p.exists():
         try:
@@ -295,7 +294,7 @@ class SMBGFSFetcher:
     """
 
     def __init__(self):
-        self._latest_date: Optional[tuple[str, str, str]] = None
+        self._latest_date: tuple[str, str, str] | None = None
         self._data: dict = {}
 
     def fetch_latest(self) -> dict:
@@ -354,15 +353,15 @@ class SMBGFSFetcher:
 
     def _synthetic_fallback(self) -> dict:
         from services.gee_gfs import _generate_fallback_grids
-        return _generate_fallback_grids(datetime.now(timezone.utc))
+        return _generate_fallback_grids(datetime.now(UTC))
 
     def _synthetic_hour(self, hour: int) -> dict:
         from services.gee_gfs import _generate_fallback_grids
-        grids = _generate_fallback_grids(datetime.now(timezone.utc))
+        grids = _generate_fallback_grids(datetime.now(UTC))
         return grids.get(hour, next(iter(grids.values())))
 
 
-_fetcher: Optional[SMBGFSFetcher] = None
+_fetcher: SMBGFSFetcher | None = None
 
 
 def get_smb_fetcher() -> SMBGFSFetcher:

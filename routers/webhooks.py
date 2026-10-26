@@ -1,7 +1,9 @@
 import json
 import logging
 import secrets
-from fastapi import APIRouter, Depends, HTTPException, Header, Request
+
+from fastapi import APIRouter, Depends, Header, HTTPException, Request
+
 import db
 from config import AGENT_API_KEY
 from models import AgentInsight

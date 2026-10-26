@@ -1,8 +1,12 @@
-from fastapi import APIRouter, HTTPException, Depends
-from datetime import date as _date, datetime as _dt
+from datetime import date as _date
+from datetime import datetime as _dt
+
+from fastapi import APIRouter, Depends, HTTPException
+
 import db
 from auth import get_current_user, require_role
 from models import CalendarEventCreate, TaskCreate
+
 
 def _parse_date(s):
     if not s: return None
@@ -71,6 +75,11 @@ async def delete_event(event_id: int, user=Depends(get_current_user)):
 
 @calendar_router.get("/tasks")
 async def list_tasks(date: str = None, user_id: int = None, user=Depends(get_current_user)):
+    if user["role"] != "supervisor":
+        if user_id is not None and user_id != user["id"]:
+            raise HTTPException(403, "Not authorized to view other users' tasks")
+        user_id = user["id"]
+
     conditions, params = [], []
     idx = 1
     if date:

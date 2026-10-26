@@ -1,4 +1,5 @@
 import asyncpg
+
 from config import DATABASE_URL
 
 pool = None

@@ -5,15 +5,14 @@ GFS Dashboard v6 — FastAPI backend
 (26–72° с.ш., 117–246° в.д.) в PNG-тайлы в проекции Меркатора плюс
 векторную береговую линию Natural Earth.
 """
-import os
-import io
-import math
-import logging
-import time
 import datetime
+import io
+import logging
+import math
+import os
 import tempfile
+import time
 from contextlib import asynccontextmanager
-from typing import Optional
 
 # Метка времени запуска сервера — передаётся клиентам для сброса кэша браузера
 # после перезапуска.
@@ -24,9 +23,9 @@ logging.basicConfig(level=logging.INFO,
 logger = logging.getLogger(__name__)
 
 import numpy as np
-from fastapi import FastAPI, HTTPException, Response, Depends
-from fastapi.staticfiles import StaticFiles
+from fastapi import Depends, FastAPI, HTTPException, Response
 from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 try:
     from auth import get_current_user
@@ -233,9 +232,10 @@ def _overlay_contours(img, vals: np.ndarray, finite: np.ndarray,
     try:
         import matplotlib
         matplotlib.use("Agg")
-        from matplotlib.figure import Figure
         import matplotlib.path as mpath
-        from PIL import Image as _PIL, ImageDraw, ImageFont
+        from matplotlib.figure import Figure
+        from PIL import Image as _PIL
+        from PIL import ImageDraw, ImageFont
 
         H, W = vals.shape
         n_levels = 8
@@ -360,9 +360,11 @@ def _render_mercator(field: np.ndarray, lat_arr: np.ndarray, lon_arr: np.ndarray
     lon_arr  : 1-D, конвенция 0-360
     scale    : коэффициент увеличения (1=1200×550, 2=2400×1100 и т.д.)
     """
+    from PIL import Image as _PIL
+    from PIL import ImageEnhance as _IE
+    from PIL import ImageFilter as _IF
     from pyproj import Transformer
     from scipy.interpolate import RegularGridInterpolator
-    from PIL import Image as _PIL, ImageEnhance as _IE, ImageFilter as _IF
 
     W = width  * scale
     H = height * scale
@@ -454,7 +456,7 @@ _gfs_png_cache: dict = {}
 _gfs_data_cache: dict = {}   # кэш сырых полей (массивы широты, долготы и данных)
 
 
-def _find_latest_gfs_00z_file(fhour: int = 0) -> tuple[Optional[str], str]:
+def _find_latest_gfs_00z_file(fhour: int = 0) -> tuple[str | None, str]:
     """Возвращает (path, run_label) для последнего доступного файла GFS 00Z для fhour."""
     today = datetime.date.today()
     fname = f"gfs.t00z.pgrb2.0p25.f{fhour:03d}.grb2"
@@ -861,7 +863,8 @@ def api_coastline_geojson():
                         media_type="application/geo+json",
                         headers={"Cache-Control": "public, max-age=86400"})
     import json
-    from shapely.geometry import shape, mapping
+
+    from shapely.geometry import mapping, shape
     from shapely.validation import make_valid
 
     geo = _load_coast_geojson()

@@ -5,13 +5,14 @@
 import base64
 import logging
 import time
-from typing import Optional
 
 import httpx
 
 from config import (
-    GIGACHAT_CLIENT_ID, GIGACHAT_CLIENT_SECRET, GIGACHAT_SCOPE,
     GEMINI_API_KEY,
+    GIGACHAT_CLIENT_ID,
+    GIGACHAT_CLIENT_SECRET,
+    GIGACHAT_SCOPE,
 )
 
 logger = logging.getLogger(__name__)
@@ -22,7 +23,7 @@ GEMINI_API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMI
 
 
 async def _gemini_chat(system_prompt: str, user_message: str,
-                       max_tokens: int = 800, temperature: float = 0.7) -> Optional[str]:
+                       max_tokens: int = 800, temperature: float = 0.7) -> str | None:
     if not GEMINI_API_KEY:
         return None
     try:
@@ -56,11 +57,11 @@ AUTH_URL = "https://ngw.devices.sberbank.ru:9443/api/v2/oauth"
 GIGACHAT_API_BASE = "https://gigachat.devices.sberbank.ru/api/v1"
 GIGACHAT_MODEL = "GigaChat"
 
-_gc_token: Optional[str] = None
+_gc_token: str | None = None
 _gc_token_expires: float = 0.0
 
 
-async def _gc_get_token() -> Optional[str]:
+async def _gc_get_token() -> str | None:
     global _gc_token, _gc_token_expires
     if _gc_token and time.time() < _gc_token_expires - 60:
         return _gc_token
@@ -92,7 +93,7 @@ async def _gc_get_token() -> Optional[str]:
 
 
 async def _gigachat_chat(system_prompt: str, user_message: str,
-                         max_tokens: int = 800, temperature: float = 0.7) -> Optional[str]:
+                         max_tokens: int = 800, temperature: float = 0.7) -> str | None:
     token = await _gc_get_token()
     if not token:
         return None
@@ -125,7 +126,7 @@ async def _gigachat_chat(system_prompt: str, user_message: str,
 # ── Публичный API (сначала пробы Gemini, затем GigaChat) ───────────────────────────
 
 async def chat(system_prompt: str, user_message: str,
-               max_tokens: int = 800, temperature: float = 0.7) -> Optional[str]:
+               max_tokens: int = 800, temperature: float = 0.7) -> str | None:
     result = await _gemini_chat(system_prompt, user_message, max_tokens, temperature)
     if result:
         return result
