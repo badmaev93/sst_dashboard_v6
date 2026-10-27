@@ -1714,7 +1714,8 @@ async function onMapClick(evt) {
 
 function _hidePopup() {
   document.getElementById("map-popup").style.display = "none";
-  S.popup.setPosition(undefined);
+  if (S.popup) S.popup.setPosition(undefined);
+  if (typeof window.hideStationPopup === "function") window.hideStationPopup();
 }
 
 // Format number with comma decimal separator
