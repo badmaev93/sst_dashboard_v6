@@ -85,6 +85,8 @@
         if (!el) {
             el = document.createElement('div');
             el.id = 'station-popup';
+            el.setAttribute('role', 'dialog');
+            el.setAttribute('tabindex', '-1');
             Object.assign(el.style, {
                 position: 'absolute',
                 background: '#fff',
@@ -165,13 +167,18 @@
         const obsAt = latest.observed_at || latest.last_reading_at || st.last_reading_at;
         const obsTime = obsAt ? new Date(obsAt).toLocaleTimeString('ru-RU', {hour:'2-digit',minute:'2-digit'}) : '';
 
+        _popup.setAttribute('aria-label', `Информация о станции ${st.name}`);
+
         _popup.innerHTML = `
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
                 <div style="font-size:15px;font-weight:700;color:#1a2030">${esc(st.name)}</div>
-                <span style="display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:10px;
-                      background:${statusColor}18;color:${statusColor};font-size:11px;font-weight:600">
-                  <span style="width:6px;height:6px;border-radius:50%;background:${statusColor}"></span>${statusLabel}
-                </span>
+                <div style="display:flex;align-items:center;gap:6px">
+                    <span style="display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:10px;
+                          background:${statusColor}18;color:${statusColor};font-size:11px;font-weight:600">
+                      <span style="width:6px;height:6px;border-radius:50%;background:${statusColor}"></span>${statusLabel}
+                    </span>
+                    <button onclick="window.hideStationPopup()" aria-label="Закрыть всплывающее окно" style="border:none;background:transparent;color:#94a3b8;font-size:16px;cursor:pointer;padding:0 2px;line-height:1">&times;</button>
+                </div>
             </div>
             <div style="font-size:11px;color:#94a3b8;margin-bottom:10px">${esc(st.code)} &bull; ${esc(st.region || '')}${obsTime ? ' &bull; ' + obsTime : ''}</div>
             <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px">
@@ -201,10 +208,10 @@
                 </div>
             </div>
             <div style="display:flex;gap:6px">
-                <button onclick="showStationDetail(${st.id})" style="flex:1;padding:7px;background:#2563eb;
+                <button onclick="showStationDetail(${st.id})" aria-label="Подробная информация о станции ${esc(st.name)}" style="flex:1;padding:7px;background:#2563eb;
                         color:#fff;border:none;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;
                         font-family:inherit">Подробнее</button>
-                <button onclick="showForecastPanel(${st.id})" style="flex:1;padding:7px;
+                <button onclick="showForecastPanel(${st.id})" aria-label="ИИ Прогноз для станции ${esc(st.name)}" style="flex:1;padding:7px;
                         background:linear-gradient(135deg,#8b5cf6,#06b6d4);color:#fff;border:none;
                         border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">
                     AI Прогноз</button>
@@ -225,11 +232,15 @@
         if (pr.bottom > window.innerHeight - 10) {
             _popup.style.top = (window.innerHeight - pr.height - 10) + 'px';
         }
+
+        _popup.focus();
     }
 
     function hidePopup() {
         if (_popup) _popup.style.display = 'none';
     }
+
+    window.hideStationPopup = hidePopup;
 
     // ── Station Detail Panel ────────────────────
     window.showStationDetail = async function(stationId) {
