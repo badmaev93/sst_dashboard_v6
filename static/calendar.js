@@ -1066,6 +1066,41 @@
         header.appendChild(actions);
         center.appendChild(header);
 
+        // Active Task Focus Banner
+        if (TaskTracker.activeTaskId) {
+            const activeTask = _tasks.find(function(t) { return t.id === TaskTracker.activeTaskId; });
+            if (activeTask) {
+                const banner = document.createElement('div');
+                banner.id = 'cal-active-task-banner';
+                banner.style.cssText = 'padding:10px 24px;background:#1e293b;color:#fff;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #334155;font-size:12px;';
+                const parsedTitle = parseShortSyntax(activeTask.title).cleanTitle || activeTask.title;
+                const isOvertime = activeTask.estimated_minutes && (TaskTracker.elapsedSeconds > activeTask.estimated_minutes * 60);
+
+                banner.innerHTML = `
+                    <div style="display:flex;align-items:center;gap:12px;overflow:hidden;">
+                        <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#10b981;animation:pulse 1.5s infinite;"></span>
+                        <span style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Выполняется: ${esc(parsedTitle)}</span>
+                        <span id="cal-atb-timer" style="font-family:monospace;font-weight:700;color:${isOvertime ? '#f87171' : '#38bdf8'};background:rgba(255,255,255,0.1);padding:2px 8px;border-radius:4px;">⏱️ ${formatTimerStr(TaskTracker.elapsedSeconds)}${isOvertime ? ' (Превышение!)' : ''}</span>
+                    </div>
+                    <div style="display:flex;gap:8px;align-items:center;flex-shrink:0;">
+                        <button id="cal-atb-pause" style="padding:4px 10px;background:#334155;color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;">⏸ Пауза</button>
+                        <button id="cal-atb-done" style="padding:4px 10px;background:#10b981;color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;">✓ Завершить</button>
+                    </div>
+                `;
+
+                banner.querySelector('#cal-atb-pause').addEventListener('click', function() {
+                    TaskTracker.stop();
+                    loadAndRender();
+                });
+                banner.querySelector('#cal-atb-done').addEventListener('click', function() {
+                    TaskTracker.stop();
+                    toggleTask(activeTask.id, true);
+                });
+
+                center.appendChild(banner);
+            }
+        }
+
         // Timeline
         const timelineWrap = document.createElement('div');
         timelineWrap.className = 'cal-timeline-wrap';
@@ -1287,18 +1322,25 @@
             const p = PRIORITY_CONFIG[task.priority] || PRIORITY_CONFIG.P2;
             const aiSuggestion = getAISuggestion(task);
             const isTracking = TaskTracker.activeTaskId === task.id;
-            const elapsedMins = Math.floor((TaskTracker.taskElapsed[task.id] || 0) / 60);
+            const currentSecs = isTracking ? TaskTracker.elapsedSeconds : (TaskTracker.taskElapsed[task.id] || 0);
+            const elapsedMins = Math.floor(currentSecs / 60);
+            const isOvertime = task.estimated_minutes && (currentSecs > task.estimated_minutes * 60);
+            const parsedMeta = parseShortSyntax(task.title);
+            const tagHtml = (parsedMeta.tags || []).map(function(t) {
+                return `<span class="cal-tag-badge" style="font-size:10px;font-weight:600;color:#0284c7;background:#e0f2fe;padding:1px 6px;border-radius:4px;">#${esc(t)}</span>`;
+            }).join(' ');
 
             item.innerHTML = `
                 <div class="cal-task-top">
                     <span class="cal-task-drag">&#8942;&#8942;</span>
                     <div class="cal-task-checkbox ${task.completed ? 'checked' : ''}" data-task-id="${task.id}" role="checkbox" tabindex="0" aria-checked="${task.completed ? 'true' : 'false'}" aria-label="${task.completed ? 'Отметить задачу как невыполненную' : 'Отметить задачу как выполненную'}"></div>
                     <div class="cal-task-info">
-                        <div class="cal-task-title">${esc(task.title)}</div>
+                        <div class="cal-task-title">${esc(parsedMeta.cleanTitle || task.title)}</div>
                         <div class="cal-task-meta">
                             <span class="cal-priority-badge" style="color:${p.color};background:${p.bg}">${task.priority || 'P2'}</span>
                             ${task.estimated_minutes ? '<span class="cal-task-est">' + task.estimated_minutes + ' мин</span>' : ''}
-                            <span class="cal-task-timer-badge ${isTracking ? 'active' : ''}">${isTracking ? '⏱️ ' + formatTimerStr(TaskTracker.elapsedSeconds) : (elapsedMins > 0 ? '⏱️ ' + elapsedMins + 'м' : '')}</span>
+                            ${tagHtml}
+                            <span class="cal-task-timer-badge ${isTracking ? 'active' : ''} ${isOvertime ? 'overtime' : ''}" style="${isOvertime ? 'color:#dc2626;background:#fef2f2;font-weight:700;' : ''}">${isTracking ? '⏱️ ' + formatTimerStr(TaskTracker.elapsedSeconds) : (elapsedMins > 0 ? '⏱️ ' + elapsedMins + 'м' : '')} ${isOvertime ? '⚠️ Превышение' : ''}</span>
                             ${aiSuggestion ? '<span class="cal-ai-badge">&#9733; ' + aiSuggestion + '</span>' : ''}
                         </div>
                     </div>
@@ -1560,9 +1602,10 @@
                     <button class="cal-close-btn" id="cal-tf-close" aria-label="Закрыть">&times;</button>
                 </div>
                 <div class="cal-field">
-                    <label>Название</label>
-                    <input id="cal-tf-title" type="text" placeholder="Что нужно сделать?" />
+                    <label>Название <span style="font-weight:normal;color:#94a3b8;font-size:11px;">(!P1, @30m, #тег)</span></label>
+                    <input id="cal-tf-title" type="text" placeholder="Напр.: Проверка датчиков !P1 @45m #оборудование" />
                 </div>
+                <div id="cal-tf-preview" style="display:none;margin-bottom:12px;padding:8px 10px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;font-size:11px;color:#0369a1;"></div>
                 <div class="cal-field-row">
                     <div class="cal-field">
                         <label>Приоритет</label>
@@ -1600,12 +1643,26 @@
         const prioritySelect = overlay.querySelector('#cal-tf-priority');
         const estInput = overlay.querySelector('#cal-tf-est');
 
+        const previewEl = overlay.querySelector('#cal-tf-preview');
         if (titleInput) {
             titleInput.focus();
             titleInput.addEventListener('input', function() {
                 const parsed = parseShortSyntax(titleInput.value);
                 if (parsed.priority) prioritySelect.value = parsed.priority;
                 if (parsed.estimatedMinutes) estInput.value = parsed.estimatedMinutes;
+
+                if (previewEl) {
+                    if (parsed.priority || parsed.estimatedMinutes || (parsed.tags && parsed.tags.length > 0)) {
+                        previewEl.style.display = 'block';
+                        let html = `<strong>Предпросмотр:</strong> ${esc(parsed.cleanTitle || 'Без названия')}`;
+                        if (parsed.priority) html += ` | <span style="font-weight:bold;color:#ef4444;">${parsed.priority}</span>`;
+                        if (parsed.estimatedMinutes) html += ` | ⏱️ ${parsed.estimatedMinutes} мин`;
+                        if (parsed.tags && parsed.tags.length > 0) html += ` | ` + parsed.tags.map(t => `#${esc(t)}`).join(' ');
+                        previewEl.innerHTML = html;
+                    } else {
+                        previewEl.style.display = 'none';
+                    }
+                }
             });
         }
 
@@ -1671,6 +1728,7 @@
         let text = rawText || '';
         let priority = null;
         let estimatedMinutes = null;
+        const tags = [];
 
         const pMatch = text.match(/!(P1|P2|P3|high|med|low)/i);
         if (pMatch) {
@@ -1691,20 +1749,35 @@
             text = text.replace(tMatch[0], '');
         }
 
+        const tagMatches = text.matchAll(/#([a-zA-Z0-9_\u0400-\u04FF]+)/g);
+        for (const tm of tagMatches) {
+            tags.push(tm[1]);
+            text = text.replace(tm[0], '');
+        }
+
         return {
             cleanTitle: text.replace(/\s+/g, ' ').trim(),
             priority: priority,
-            estimatedMinutes: estimatedMinutes
+            estimatedMinutes: estimatedMinutes,
+            tags: tags
         };
     }
 
     // Focus Session / Pomodoro Timer state
     const FocusTimer = {
-        mode: 'work', // 'work' | 'break'
+        mode: 'work', // 'work' | 'break' | 'long_break'
         timeLeft: 1500, // 25 min default
         totalTime: 1500,
+        completedSessions: 0,
         isRunning: false,
         intervalId: null,
+
+        adjustTime: function(deltaSeconds) {
+            this.timeLeft = Math.max(60, this.timeLeft + deltaSeconds);
+            this.totalTime = Math.max(this.timeLeft, this.totalTime);
+            this.updatePillText();
+            this.updateWidgetUI();
+        },
 
         start: function() {
             if (this.isRunning) return;
@@ -1744,8 +1817,11 @@
             if (this.mode === 'work') {
                 this.timeLeft = 1500;
                 this.totalTime = 1500;
+            } else if (this.mode === 'long_break') {
+                this.timeLeft = 900; // 15 min
+                this.totalTime = 900;
             } else {
-                this.timeLeft = 300;
+                this.timeLeft = 300; // 5 min
                 this.totalTime = 300;
             }
             this.updatePillText();
@@ -1756,8 +1832,14 @@
             this.pause();
             playChimeSound();
             if (this.mode === 'work') {
-                alert('⏱️ Время фокуса истекло! Время сделать 5-минутный перерыв.');
-                this.reset('break');
+                this.completedSessions++;
+                if (this.completedSessions % 4 === 0) {
+                    alert(`🎉 Вы успешно завершили 4 фокус-сессии! Пора сделать длинный перерыв (15 мин).`);
+                    this.reset('long_break');
+                } else {
+                    alert(`⏱️ Время фокуса истекло! Завершено сессий: ${this.completedSessions}. Сделайте 5-минутный перерыв.`);
+                    this.reset('break');
+                }
             } else {
                 alert('⏱️ Перерыв окончен! Готовы продолжить фокус-сессию?');
                 this.reset('work');
@@ -1767,7 +1849,8 @@
         updatePillText: function() {
             const el = document.getElementById('cal-focus-pill-text');
             if (el) {
-                el.textContent = (this.mode === 'work' ? 'Фокус: ' : 'Перерыв: ') + formatTimerStr(this.timeLeft);
+                const label = this.mode === 'work' ? 'Фокус: ' : (this.mode === 'long_break' ? 'Длин. перерыв: ' : 'Перерыв: ');
+                el.textContent = label + formatTimerStr(this.timeLeft) + (this.completedSessions > 0 ? ` (#${this.completedSessions})` : '');
             }
         },
 
@@ -1778,10 +1861,14 @@
             const modeLbl = modal.querySelector('#focus-timer-mode');
             const playBtn = modal.querySelector('#focus-timer-play');
             const progressBar = modal.querySelector('#focus-timer-progress');
+            const sessionLbl = modal.querySelector('#focus-session-count');
 
             if (timerVal) timerVal.textContent = formatTimerStr(this.timeLeft);
-            if (modeLbl) modeLbl.textContent = this.mode === 'work' ? 'Сессия фокуса (25 мин)' : 'Перерыв (5 мин)';
+            if (modeLbl) {
+                modeLbl.textContent = this.mode === 'work' ? 'Сессия фокуса (25 мин)' : (this.mode === 'long_break' ? 'Длинный перерыв (15 мин)' : 'Короткий перерыв (5 мин)');
+            }
             if (playBtn) playBtn.textContent = this.isRunning ? 'Пауза' : 'Старт';
+            if (sessionLbl) sessionLbl.textContent = `Завершено фокус-сессий: ${this.completedSessions}`;
             if (progressBar && this.totalTime > 0) {
                 const pct = Math.max(0, Math.min(100, ((this.totalTime - this.timeLeft) / this.totalTime) * 100));
                 progressBar.style.width = pct + '%';
@@ -1809,6 +1896,12 @@
                 if (badge) {
                     badge.classList.add('active');
                     badge.textContent = '⏱️ ' + formatTimerStr(self.elapsedSeconds);
+                }
+                const bannerTimer = document.getElementById('cal-atb-timer');
+                if (bannerTimer) {
+                    const isOver = task.estimated_minutes && (self.elapsedSeconds > task.estimated_minutes * 60);
+                    bannerTimer.style.color = isOver ? '#f87171' : '#38bdf8';
+                    bannerTimer.textContent = '⏱️ ' + formatTimerStr(self.elapsedSeconds) + (isOver ? ' (Превышение!)' : '');
                 }
             }, 1000);
         },
@@ -1857,16 +1950,23 @@
         modal.setAttribute('aria-label', 'Таймер фокуса');
 
         modal.innerHTML = `
-            <div class="cal-modal" style="width:340px;text-align:center;">
+            <div class="cal-modal" style="width:360px;text-align:center;">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
                     <h3 style="margin:0;font-size:16px;">⏱️ Режим Фокуса (Pomodoro)</h3>
                     <button class="cal-close-btn" id="focus-timer-close" aria-label="Закрыть">&times;</button>
                 </div>
-                <div id="focus-timer-mode" style="font-size:13px;color:#64748b;margin-bottom:12px;font-weight:500;">
-                    ${FocusTimer.mode === 'work' ? 'Сессия фокуса (25 мин)' : 'Перерыв (5 мин)'}
+                <div id="focus-timer-mode" style="font-size:13px;color:#64748b;margin-bottom:4px;font-weight:500;">
+                    ${FocusTimer.mode === 'work' ? 'Сессия фокуса (25 мин)' : (FocusTimer.mode === 'long_break' ? 'Длинный перерыв (15 мин)' : 'Короткий перерыв (5 мин)')}
                 </div>
-                <div id="focus-timer-val" style="font-size:42px;font-weight:700;font-family:monospace;color:#0f172a;margin:12px 0;">
-                    ${formatTimerStr(FocusTimer.timeLeft)}
+                <div id="focus-session-count" style="font-size:11px;color:#94a3b8;margin-bottom:12px;font-weight:600;">
+                    Завершено фокус-сессий: ${FocusTimer.completedSessions}
+                </div>
+                <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin:12px 0;">
+                    <button id="focus-time-minus" style="padding:4px 8px;border:1px solid #cbd5e1;background:#f8fafc;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;color:#475569;">-5м</button>
+                    <div id="focus-timer-val" style="font-size:42px;font-weight:700;font-family:monospace;color:#0f172a;">
+                        ${formatTimerStr(FocusTimer.timeLeft)}
+                    </div>
+                    <button id="focus-time-plus" style="padding:4px 8px;border:1px solid #cbd5e1;background:#f8fafc;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;color:#475569;">+5м</button>
                 </div>
                 <div style="width:100%;height:6px;background:#e2e8f0;border-radius:3px;overflow:hidden;margin-bottom:18px;">
                     <div id="focus-timer-progress" style="height:100%;background:#3b82f6;width:${Math.max(0, Math.min(100, ((FocusTimer.totalTime - FocusTimer.timeLeft) / FocusTimer.totalTime) * 100))}%;transition:width 0.3s;"></div>
@@ -1875,9 +1975,10 @@
                     <button class="cal-submit-btn" id="focus-timer-play" style="padding:8px 20px;">${FocusTimer.isRunning ? 'Пауза' : 'Старт'}</button>
                     <button class="cal-today-btn" id="focus-timer-reset" style="padding:8px 14px;">Сброс</button>
                 </div>
-                <div style="display:flex;justify-content:center;gap:8px;font-size:12px;">
-                    <button id="focus-mode-work" style="padding:4px 10px;border-radius:6px;border:1px solid #cbd5e1;background:${FocusTimer.mode === 'work' ? '#3b82f6' : '#fff'};color:${FocusTimer.mode === 'work' ? '#fff' : '#64748b'};cursor:pointer;">25м Фокус</button>
-                    <button id="focus-mode-break" style="padding:4px 10px;border-radius:6px;border:1px solid #cbd5e1;background:${FocusTimer.mode === 'break' ? '#3b82f6' : '#fff'};color:${FocusTimer.mode === 'break' ? '#fff' : '#64748b'};cursor:pointer;">5м Перерыв</button>
+                <div style="display:flex;justify-content:center;gap:6px;font-size:11px;">
+                    <button id="focus-mode-work" style="padding:4px 8px;border-radius:6px;border:1px solid #cbd5e1;background:${FocusTimer.mode === 'work' ? '#3b82f6' : '#fff'};color:${FocusTimer.mode === 'work' ? '#fff' : '#64748b'};cursor:pointer;">25м Фокус</button>
+                    <button id="focus-mode-break" style="padding:4px 8px;border-radius:6px;border:1px solid #cbd5e1;background:${FocusTimer.mode === 'break' ? '#3b82f6' : '#fff'};color:${FocusTimer.mode === 'break' ? '#fff' : '#64748b'};cursor:pointer;">5м Перерыв</button>
+                    <button id="focus-mode-lbreak" style="padding:4px 8px;border-radius:6px;border:1px solid #cbd5e1;background:${FocusTimer.mode === 'long_break' ? '#3b82f6' : '#fff'};color:${FocusTimer.mode === 'long_break' ? '#fff' : '#64748b'};cursor:pointer;">15м Длин. перерыв</button>
                 </div>
             </div>
         `;
@@ -1893,11 +1994,20 @@
         modal.querySelector('#focus-timer-reset').addEventListener('click', function() {
             FocusTimer.reset();
         });
+        modal.querySelector('#focus-time-minus').addEventListener('click', function() {
+            FocusTimer.adjustTime(-300);
+        });
+        modal.querySelector('#focus-time-plus').addEventListener('click', function() {
+            FocusTimer.adjustTime(300);
+        });
         modal.querySelector('#focus-mode-work').addEventListener('click', function() {
             FocusTimer.reset('work');
         });
         modal.querySelector('#focus-mode-break').addEventListener('click', function() {
             FocusTimer.reset('break');
+        });
+        modal.querySelector('#focus-mode-lbreak').addEventListener('click', function() {
+            FocusTimer.reset('long_break');
         });
     }
 
