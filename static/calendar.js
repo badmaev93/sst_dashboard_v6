@@ -1066,6 +1066,61 @@
         header.appendChild(actions);
         center.appendChild(header);
 
+        // Active Task Focus Banner
+        if (TaskTracker.activeTaskId) {
+            const activeTask = _tasks.find(t => t.id === TaskTracker.activeTaskId);
+            if (activeTask) {
+                const banner = document.createElement('div');
+                banner.id = 'cal-active-task-banner';
+                banner.style.cssText = 'padding:10px 24px;background:#1e293b;color:#fff;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #334155;';
+
+                const leftInfo = document.createElement('div');
+                leftInfo.style.cssText = 'display:flex;align-items:center;gap:12px;';
+
+                const pulseDot = document.createElement('span');
+                pulseDot.style.cssText = 'width:10px;height:10px;border-radius:50%;background:#10b981;box-shadow:0 0 8px #10b981;';
+
+                const taskTitle = document.createElement('span');
+                taskTitle.style.cssText = 'font-size:13px;font-weight:600;';
+                taskTitle.textContent = activeTask.title;
+
+                const timerVal = document.createElement('span');
+                timerVal.id = 'cal-banner-timer';
+                timerVal.style.cssText = 'font-size:12px;font-family:monospace;color:#94a3b8;background:#0f172a;padding:2px 8px;border-radius:4px;';
+                timerVal.textContent = formatTimerStr(TaskTracker.elapsedSeconds);
+
+                leftInfo.appendChild(pulseDot);
+                leftInfo.appendChild(taskTitle);
+                leftInfo.appendChild(timerVal);
+
+                const rightControls = document.createElement('div');
+                rightControls.style.cssText = 'display:flex;align-items:center;gap:8px;';
+
+                const pauseBtn = document.createElement('button');
+                pauseBtn.style.cssText = 'padding:4px 12px;border:1px solid #475569;background:#334155;color:#fff;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;';
+                pauseBtn.textContent = '⏸ Пауза';
+                pauseBtn.addEventListener('click', function() {
+                    TaskTracker.stop();
+                    loadAndRender();
+                });
+
+                const doneBtn = document.createElement('button');
+                doneBtn.style.cssText = 'padding:4px 12px;border:none;background:#10b981;color:#fff;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;';
+                doneBtn.textContent = '✓ Завершить';
+                doneBtn.addEventListener('click', function() {
+                    TaskTracker.stop();
+                    toggleTask(activeTask.id, true);
+                });
+
+                rightControls.appendChild(pauseBtn);
+                rightControls.appendChild(doneBtn);
+
+                banner.appendChild(leftInfo);
+                banner.appendChild(rightControls);
+                center.appendChild(banner);
+            }
+        }
+
         // Timeline
         const timelineWrap = document.createElement('div');
         timelineWrap.className = 'cal-timeline-wrap';
@@ -1288,6 +1343,10 @@
             const aiSuggestion = getAISuggestion(task);
             const isTracking = TaskTracker.activeTaskId === task.id;
             const elapsedMins = Math.floor((TaskTracker.taskElapsed[task.id] || 0) / 60);
+            const isOvertime = task.estimated_minutes && elapsedMins > task.estimated_minutes;
+            const overtimeMins = isOvertime ? elapsedMins - task.estimated_minutes : 0;
+            const parsed = parseShortSyntax(task.title);
+            const tagBadges = (parsed.tags || []).map(function(t) { return '<span style="font-size:9px;font-weight:600;color:#2563eb;background:#eff6ff;padding:1px 5px;border-radius:4px;">#' + esc(t) + '</span>'; }).join(' ');
 
             item.innerHTML = `
                 <div class="cal-task-top">
@@ -1299,6 +1358,8 @@
                             <span class="cal-priority-badge" style="color:${p.color};background:${p.bg}">${task.priority || 'P2'}</span>
                             ${task.estimated_minutes ? '<span class="cal-task-est">' + task.estimated_minutes + ' мин</span>' : ''}
                             <span class="cal-task-timer-badge ${isTracking ? 'active' : ''}">${isTracking ? '⏱️ ' + formatTimerStr(TaskTracker.elapsedSeconds) : (elapsedMins > 0 ? '⏱️ ' + elapsedMins + 'м' : '')}</span>
+                            ${isOvertime ? '<span style="font-size:9px;font-weight:700;color:#dc2626;background:#fef2f2;padding:1px 5px;border-radius:4px;">⚠️ +' + overtimeMins + 'м</span>' : ''}
+                            ${tagBadges}
                             ${aiSuggestion ? '<span class="cal-ai-badge">&#9733; ' + aiSuggestion + '</span>' : ''}
                         </div>
                     </div>
@@ -1561,7 +1622,8 @@
                 </div>
                 <div class="cal-field">
                     <label>Название</label>
-                    <input id="cal-tf-title" type="text" placeholder="Что нужно сделать?" />
+                    <input id="cal-tf-title" type="text" placeholder="Что нужно сделать? (поддерживает !P1, @30m, #тег)" />
+                    <div id="cal-tf-preview" style="font-size:11px;color:#64748b;margin-top:4px;display:none;padding:4px 8px;background:#f8fafc;border-radius:6px;border:1px solid #e2e8f0;"></div>
                 </div>
                 <div class="cal-field-row">
                     <div class="cal-field">
@@ -1602,10 +1664,25 @@
 
         if (titleInput) {
             titleInput.focus();
+            const previewEl = overlay.querySelector('#cal-tf-preview');
             titleInput.addEventListener('input', function() {
                 const parsed = parseShortSyntax(titleInput.value);
                 if (parsed.priority) prioritySelect.value = parsed.priority;
                 if (parsed.estimatedMinutes) estInput.value = parsed.estimatedMinutes;
+
+                if (previewEl) {
+                    if (parsed.priority || parsed.estimatedMinutes || (parsed.tags && parsed.tags.length > 0)) {
+                        let parts = [];
+                        if (parsed.cleanTitle) parts.push(`<strong>Заголовок:</strong> ${esc(parsed.cleanTitle)}`);
+                        if (parsed.priority) parts.push(`<strong>Приоритет:</strong> ${parsed.priority}`);
+                        if (parsed.estimatedMinutes) parts.push(`<strong>Оценка:</strong> ${parsed.estimatedMinutes}m`);
+                        if (parsed.tags && parsed.tags.length) parts.push(`<strong>Теги:</strong> ${parsed.tags.map(t => '#' + esc(t)).join(', ')}`);
+                        previewEl.innerHTML = parts.join(' • ');
+                        previewEl.style.display = 'block';
+                    } else {
+                        previewEl.style.display = 'none';
+                    }
+                }
             });
         }
 
@@ -1671,6 +1748,7 @@
         let text = rawText || '';
         let priority = null;
         let estimatedMinutes = null;
+        const tags = [];
 
         const pMatch = text.match(/!(P1|P2|P3|high|med|low)/i);
         if (pMatch) {
@@ -1691,10 +1769,19 @@
             text = text.replace(tMatch[0], '');
         }
 
+        const tagMatches = text.match(/#([\wа-яА-Я0-9_-]+)/gi);
+        if (tagMatches) {
+            tagMatches.forEach(function(t) {
+                tags.push(t.substring(1));
+                text = text.replace(t, '');
+            });
+        }
+
         return {
             cleanTitle: text.replace(/\s+/g, ' ').trim(),
             priority: priority,
-            estimatedMinutes: estimatedMinutes
+            estimatedMinutes: estimatedMinutes,
+            tags: tags
         };
     }
 
@@ -1703,6 +1790,7 @@
         mode: 'work', // 'work' | 'break'
         timeLeft: 1500, // 25 min default
         totalTime: 1500,
+        sessionsCompleted: 0,
         isRunning: false,
         intervalId: null,
 
@@ -1756,8 +1844,16 @@
             this.pause();
             playChimeSound();
             if (this.mode === 'work') {
-                alert('⏱️ Время фокуса истекло! Время сделать 5-минутный перерыв.');
+                this.sessionsCompleted++;
+                const isLongBreak = this.sessionsCompleted % 4 === 0;
+                alert('⏱️ Время фокуса истекло! (Сессия ' + this.sessionsCompleted + ')\nВремя сделать ' + (isLongBreak ? '15-минутный длинный' : '5-минутный') + ' перерыв.');
                 this.reset('break');
+                if (isLongBreak) {
+                    this.timeLeft = 900;
+                    this.totalTime = 900;
+                    this.updatePillText();
+                    this.updateWidgetUI();
+                }
             } else {
                 alert('⏱️ Перерыв окончен! Готовы продолжить фокус-сессию?');
                 this.reset('work');
@@ -1780,7 +1876,7 @@
             const progressBar = modal.querySelector('#focus-timer-progress');
 
             if (timerVal) timerVal.textContent = formatTimerStr(this.timeLeft);
-            if (modeLbl) modeLbl.textContent = this.mode === 'work' ? 'Сессия фокуса (25 мин)' : 'Перерыв (5 мин)';
+            if (modeLbl) modeLbl.textContent = (this.mode === 'work' ? 'Сессия фокуса (25 мин)' : 'Перерыв (5 мин)') + ' • Завершено сессий: ' + this.sessionsCompleted;
             if (playBtn) playBtn.textContent = this.isRunning ? 'Пауза' : 'Старт';
             if (progressBar && this.totalTime > 0) {
                 const pct = Math.max(0, Math.min(100, ((this.totalTime - this.timeLeft) / this.totalTime) * 100));
@@ -1809,6 +1905,10 @@
                 if (badge) {
                     badge.classList.add('active');
                     badge.textContent = '⏱️ ' + formatTimerStr(self.elapsedSeconds);
+                }
+                const bannerTimer = document.getElementById('cal-banner-timer');
+                if (bannerTimer) {
+                    bannerTimer.textContent = formatTimerStr(self.elapsedSeconds);
                 }
             }, 1000);
         },
