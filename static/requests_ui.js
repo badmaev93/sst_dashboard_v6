@@ -113,7 +113,7 @@
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
                 <h2 style="margin:0;font-size:18px;font-weight:700;color:#1a2030">Заявки</h2>
                 <div style="display:flex;gap:8px">
-                    <button id="req-create" style="padding:8px 18px;background:#2563eb;color:#fff;border:none;
+                    <button id="req-create" aria-label="Создать новую заявку" style="padding:8px 18px;background:#2563eb;color:#fff;border:none;
                             border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">
                         Создать заявку
                     </button>
@@ -137,8 +137,8 @@
 
         html += `
             <div style="display:flex;gap:10px;margin-bottom:16px">
-                <select id="req-filter-status" style="${selectStyle()}">${statusOpts}</select>
-                <select id="req-filter-type" style="${selectStyle()}">${typeOpts}</select>
+                <select id="req-filter-status" aria-label="Фильтр заявок по статусу" style="${selectStyle()}">${statusOpts}</select>
+                <select id="req-filter-type" aria-label="Фильтр заявок по типу" style="${selectStyle()}">${typeOpts}</select>
             </div>
         `;
 
@@ -500,7 +500,7 @@
     function tdStyle() { return 'padding:10px 10px'; }
     function selectStyle() {
         return 'padding:7px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:12px;' +
-               'outline:none;font-family:inherit;background:#fff;color:#334155;cursor:pointer';
+               'font-family:inherit;background:#fff;color:#334155;cursor:pointer';
     }
     function inputStyle() {
         return 'width:100%;padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;' +
