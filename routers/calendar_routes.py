@@ -71,6 +71,11 @@ async def delete_event(event_id: int, user=Depends(get_current_user)):
 
 @calendar_router.get("/tasks")
 async def list_tasks(date: str = None, user_id: int = None, user=Depends(get_current_user)):
+    if user["role"] != "supervisor":
+        if user_id is not None and user_id != user["id"]:
+            raise HTTPException(403, "Not authorized to view other users' tasks")
+        user_id = user["id"]
+
     conditions, params = [], []
     idx = 1
     if date:
