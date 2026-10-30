@@ -1,6 +1,7 @@
 """Получение реальных метеоданных из API Open-Meteo Marine + Weather для дальневосточных станций."""
 import logging
 import httpx
+import asyncio
 
 logger = logging.getLogger(__name__)
 
@@ -76,7 +77,7 @@ async def fetch_bulk_readings(stations: list) -> dict:
                 "longitude": lons,
                 "current": "temperature_2m,relative_humidity_2m,surface_pressure,wind_speed_10m,wind_direction_10m,visibility",
             })
-            marine_resp, weather_resp = await marine_task, await weather_task
+            marine_resp, weather_resp = await asyncio.gather(marine_task, weather_task)
 
         marine_data = marine_resp.json() if marine_resp.is_success else []
         weather_data = weather_resp.json() if weather_resp.is_success else []
@@ -135,24 +136,26 @@ async def _fetch_both(client, lat, lon):
     """Fetch marine and weather data concurrently for a single point."""
     marine_resp = None
     weather_resp = None
-    try:
-        r = await client.get(MARINE_API, params={
-            "latitude": lat, "longitude": lon,
-            "current": "wave_height,wave_direction,wave_period,sea_surface_temperature",
-        })
-        if r.is_success:
-            marine_resp = r.json()
-    except Exception as e:
-        logger.warning("Marine API error: %s", e)
 
-    try:
-        r = await client.get(WEATHER_API, params={
-            "latitude": lat, "longitude": lon,
-            "current": "temperature_2m,relative_humidity_2m,surface_pressure,wind_speed_10m,wind_direction_10m,visibility",
-        })
-        if r.is_success:
-            weather_resp = r.json()
-    except Exception as e:
-        logger.warning("Weather API error: %s", e)
+    marine_task = client.get(MARINE_API, params={
+        "latitude": lat, "longitude": lon,
+        "current": "wave_height,wave_direction,wave_period,sea_surface_temperature",
+    })
+    weather_task = client.get(WEATHER_API, params={
+        "latitude": lat, "longitude": lon,
+        "current": "temperature_2m,relative_humidity_2m,surface_pressure,wind_speed_10m,wind_direction_10m,visibility",
+    })
+
+    resps = await asyncio.gather(marine_task, weather_task, return_exceptions=True)
+
+    if isinstance(resps[0], Exception):
+        logger.warning("Marine API error: %s", resps[0])
+    elif resps[0].is_success:
+        marine_resp = resps[0].json()
+
+    if isinstance(resps[1], Exception):
+        logger.warning("Weather API error: %s", resps[1])
+    elif resps[1].is_success:
+        weather_resp = resps[1].json()
 
     return marine_resp, weather_resp
