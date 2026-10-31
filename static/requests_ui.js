@@ -252,6 +252,10 @@
 
         var modal = document.createElement('div');
         modal.id = 'req-detail-modal';
+        modal.setAttribute('role', 'dialog');
+        modal.setAttribute('aria-modal', 'true');
+        modal.setAttribute('aria-label', 'Детали заявки: ' + (r.title || 'Без названия'));
+        modal.setAttribute('tabindex', '-1');
         Object.assign(modal.style, {
             position: 'fixed', top: '47px', left: '0', right: '0', bottom: '0',
             zIndex: '8800', background: '#fff', padding: '32px 40px',
@@ -324,7 +328,13 @@
         `;
 
         document.body.appendChild(modal);
-        document.getElementById('detail-close').addEventListener('click', function() { modal.remove(); });
+        const detailCloseBtn = document.getElementById('detail-close');
+        if (detailCloseBtn) {
+            detailCloseBtn.addEventListener('click', function() { modal.remove(); });
+            detailCloseBtn.focus();
+        } else {
+            modal.focus();
+        }
 
         if (r.status === 'pending' && isSupervisor) {
             document.getElementById('detail-approve').addEventListener('click', async function() {
@@ -395,6 +405,10 @@
 
         form = document.createElement('div');
         form.id = 'req-create-form';
+        form.setAttribute('role', 'dialog');
+        form.setAttribute('aria-modal', 'true');
+        form.setAttribute('aria-label', 'Создать новую заявку');
+        form.setAttribute('tabindex', '-1');
         Object.assign(form.style, {
             position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)',
             zIndex: '8600', background: '#fff', borderRadius: '14px', padding: '28px',
@@ -438,6 +452,13 @@
         `;
 
         document.body.appendChild(form);
+
+        const titleInput = document.getElementById('req-f-title');
+        if (titleInput) {
+            titleInput.focus();
+        } else {
+            form.focus();
+        }
 
         document.getElementById('req-form-close').addEventListener('click', function() { form.remove(); });
         document.getElementById('req-form-submit').addEventListener('click', async function() {
