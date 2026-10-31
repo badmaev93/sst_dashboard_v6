@@ -2,6 +2,32 @@
 "use strict";
 
 (function() {
+    const style = document.createElement('style');
+    style.textContent = `
+        #req-create:focus-visible,
+        #req-close:focus-visible,
+        #req-filter-status:focus-visible,
+        #req-filter-type:focus-visible,
+        #detail-close:focus-visible,
+        #req-form-close:focus-visible,
+        #req-form-submit:focus-visible,
+        #detail-approve:focus-visible,
+        #detail-reject:focus-visible,
+        #detail-submit:focus-visible,
+        button[data-action]:focus-visible {
+            outline: 2px solid #0055aa;
+            outline-offset: 1px;
+        }
+        tr[data-row="true"]:focus-visible {
+            outline: 2px solid #0055aa;
+            outline-offset: -2px;
+        }
+    `;
+    document.head.appendChild(style);
+})();
+
+
+(function() {
     const STATUS_MAP = {
         pending:     { label: 'На подписи',  color: '#a16207', bg: '#fef9c3' },
         in_progress: { label: 'В работе',    color: '#2563eb', bg: '#dbeafe' },
@@ -51,11 +77,17 @@
         if (!_container) {
             _container = document.createElement('div');
             _container.id = 'requests-view';
+            _container.setAttribute('role', 'dialog');
+            _container.setAttribute('aria-modal', 'true');
+            _container.setAttribute('aria-label', 'Управление заявками');
+            _container.setAttribute('tabindex', '-1');
             applyOverlayStyle(_container);
             document.body.appendChild(_container);
         }
         _container.style.display = 'flex';
         loadAndRender();
+        // Auto-focus
+        setTimeout(() => { const btn = document.getElementById('req-close'); if(btn) btn.focus(); else _container.focus(); }, 100);
     };
 
     window.hideRequestsView = function() {
@@ -167,7 +199,7 @@
             const tp = TYPE_MAP[r.req_type || r.type] || { label: r.req_type || r.type || '-' };
             const pr = PRIORITY_MAP[r.priority] || { label: r.priority || '-', color: '#6b7280' };
 
-            html += `<tr style="border-bottom:1px solid #f1f5f9;cursor:pointer" data-id="${r.id}" data-row="true">
+            html += `<tr style=\"border-bottom:1px solid #f1f5f9;cursor:pointer\" data-id=\"${r.id}\" data-row=\"true\" role=\"button\" tabindex=\"0\">
                 <td style="${tdStyle()};font-weight:600;color:#1a2030;max-width:200px;overflow:hidden;
                     text-overflow:ellipsis;white-space:nowrap">${esc(r.title || '-')}</td>
                 <td style="${tdStyle()}">${badge(tp.label, '#475569', '#f1f5f9')}</td>
@@ -234,6 +266,12 @@
 
         // Row click → detail view
         panel.querySelectorAll('tr[data-row]').forEach(function(row) {
+            row.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    row.click();
+                }
+            });
             row.addEventListener('click', function(e) {
                 if (e.target.closest('[data-action]')) return;
                 const id = parseInt(row.dataset.id);
@@ -252,6 +290,10 @@
 
         var modal = document.createElement('div');
         modal.id = 'req-detail-modal';
+        modal.setAttribute('role', 'dialog');
+        modal.setAttribute('aria-modal', 'true');
+        modal.setAttribute('aria-label', 'Детали заявки');
+        modal.setAttribute('tabindex', '-1');
         Object.assign(modal.style, {
             position: 'fixed', top: '47px', left: '0', right: '0', bottom: '0',
             zIndex: '8800', background: '#fff', padding: '32px 40px',
@@ -324,6 +366,7 @@
         `;
 
         document.body.appendChild(modal);
+        setTimeout(() => { const btn = document.getElementById('detail-close'); if(btn) btn.focus(); else modal.focus(); }, 10);
         document.getElementById('detail-close').addEventListener('click', function() { modal.remove(); });
 
         if (r.status === 'pending' && isSupervisor) {
@@ -395,6 +438,10 @@
 
         form = document.createElement('div');
         form.id = 'req-create-form';
+        form.setAttribute('role', 'dialog');
+        form.setAttribute('aria-modal', 'true');
+        form.setAttribute('aria-label', 'Создание заявки');
+        form.setAttribute('tabindex', '-1');
         Object.assign(form.style, {
             position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)',
             zIndex: '8600', background: '#fff', borderRadius: '14px', padding: '28px',
@@ -438,6 +485,7 @@
         `;
 
         document.body.appendChild(form);
+        setTimeout(() => { const title = document.getElementById('req-f-title'); if(title) title.focus(); else form.focus(); }, 10);
 
         document.getElementById('req-form-close').addEventListener('click', function() { form.remove(); });
         document.getElementById('req-form-submit').addEventListener('click', async function() {
