@@ -31,7 +31,7 @@ from fastapi.responses import FileResponse
 try:
     from auth import get_current_user
 except Exception:
-    get_current_user = None
+    get_current_user = lambda: None
     logger.warning("auth module not loaded — endpoints requiring auth will be unavailable")
 
 DATA_DIR   = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
