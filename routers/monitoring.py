@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Query, Depends
 from datetime import datetime, timezone
+import asyncio
 import db
 import logging
 from auth import get_current_user, require_role
@@ -38,7 +39,8 @@ async def activity_feed(limit: int = Query(50, le=200), offset: int = 0,
 
 @monitoring_router.get("/dashboard/summary")
 async def dashboard_summary(user=Depends(get_current_user)):
-    counts = await db.pool.fetchrow("""
+    # ⚡ Bolt: Execute independent queries concurrently to reduce dashboard latency
+    counts_task = db.pool.fetchrow("""
         SELECT
             COUNT(*) FILTER (WHERE status = 'normal') as normal,
             COUNT(*) FILTER (WHERE status = 'warning') as warning,
@@ -46,28 +48,25 @@ async def dashboard_summary(user=Depends(get_current_user)):
             COUNT(*) FILTER (WHERE status = 'offline') as offline
         FROM stations
     """)
-    open_req = await db.pool.fetchval(
+    open_req_task = db.pool.fetchval(
         "SELECT COUNT(*) FROM requests WHERE status IN ('pending','in_progress')")
-    anomalies = await db.pool.fetchval(
+    anomalies_task = db.pool.fetchval(
         "SELECT COUNT(*) FROM agent_activity WHERE severity = 'critical' AND created_at > now() - interval '7 days'")
-    agents = await db.pool.fetch("""
+    agents_task = db.pool.fetch("""
         SELECT DISTINCT ON (agent_name) agent_name, created_at as last_activity
         FROM agent_activity ORDER BY agent_name, created_at DESC
     """)
-    avg_sst = await db.pool.fetch("""
+    avg_sst_task = db.pool.fetch("""
         SELECT date_trunc('day', observed_at) as day, AVG(sst) as avg_sst
         FROM readings WHERE observed_at > now() - interval '7 days' AND sst IS NOT NULL
         GROUP BY 1 ORDER BY 1
     """)
-    anomaly_days = await db.pool.fetch("""
+    anomaly_days_task = db.pool.fetch("""
         SELECT date_trunc('day', created_at) as day, COUNT(*) as cnt
         FROM agent_activity WHERE severity = 'critical' AND created_at > now() - interval '30 days'
         GROUP BY 1 ORDER BY 1
     """)
-    sc = dict(counts) if counts else {"normal":0,"warning":0,"critical":0,"offline":0}
-
-    # Список станций с последними измерениями для кликабельных счетчиков статуса
-    station_rows = await db.pool.fetch("""
+    station_rows_task = db.pool.fetch("""
         SELECT s.id, s.code, s.name, s.region, s.lat, s.lon, s.status,
                r.sst, r.temp_air, r.wind_speed, r.wave_height, r.pressure, r.humidity,
                r.observed_at
@@ -78,6 +77,20 @@ async def dashboard_summary(user=Depends(get_current_user)):
         ) r ON true
         ORDER BY s.id
     """)
+    events_rows_task = db.pool.fetch("""
+        SELECT agent_name, severity, title as message, created_at as timestamp
+        FROM agent_activity
+        WHERE created_at > now() - interval '48 hours'
+        ORDER BY created_at DESC LIMIT 20
+    """)
+
+    counts, open_req, anomalies, agents, avg_sst, anomaly_days, station_rows, events_rows = await asyncio.gather(
+        counts_task, open_req_task, anomalies_task, agents_task, avg_sst_task, anomaly_days_task, station_rows_task, events_rows_task
+    )
+
+    sc = dict(counts) if counts else {"normal":0,"warning":0,"critical":0,"offline":0}
+
+    # Список станций с последними измерениями для кликабельных счетчиков статуса
     stations_list = []
     for row in station_rows:
         d = dict(row)
@@ -86,12 +99,6 @@ async def dashboard_summary(user=Depends(get_current_user)):
         stations_list.append(d)
 
     # События станций из недавней активности агентов
-    events_rows = await db.pool.fetch("""
-        SELECT agent_name, severity, title as message, created_at as timestamp
-        FROM agent_activity
-        WHERE created_at > now() - interval '48 hours'
-        ORDER BY created_at DESC LIMIT 20
-    """)
     station_events = [{"station_name": r["agent_name"],
                        "severity": r["severity"], "message": r["message"],
                        "timestamp": r["timestamp"].isoformat() if r["timestamp"] else None}
