@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from datetime import date as _date, datetime as _dt
 import db
 from auth import get_current_user, require_role
-from models import CalendarEventCreate, TaskCreate
+from models import CalendarEventCreate, TaskCreate, FocusBlockCreate
 
 def _parse_date(s):
     if not s: return None
@@ -166,18 +166,19 @@ async def list_focus_blocks(user_id: int = None, user=Depends(get_current_user))
     return [dict(r) for r in rows]
 
 @calendar_router.post("/focus-blocks")
-async def create_focus_block(data: dict, user=Depends(get_current_user)):
+async def create_focus_block(data: FocusBlockCreate, user=Depends(get_current_user)):
+    # Security: Validate focus block input using FocusBlockCreate model
     row = await db.pool.fetchrow("""
         INSERT INTO focus_blocks (title, start_time, end_time, color, user_id, day_of_week, recurring)
         VALUES ($1, $2::time, $3::time, $4, $5, $6, $7) RETURNING id
     """,
-        data.get("title"),
-        data.get("start_time"),
-        data.get("end_time"),
-        data.get("color", "#3b82f6"),
+        data.title,
+        data.start_time,
+        data.end_time,
+        data.color or "#3b82f6",
         user["id"],
-        data.get("day_of_week"),
-        data.get("recurring", False)
+        data.day_of_week,
+        data.recurring
     )
     return {"id": row["id"]}
 

@@ -125,6 +125,14 @@ class TaskCreate(BaseModel):
     due_date: Optional[datetime] = None
     station_id: Optional[int] = None
 
+class FocusBlockCreate(BaseModel):
+    title: str
+    start_time: str
+    end_time: str
+    color: Optional[str] = "#3b82f6"
+    day_of_week: Optional[int] = None
+    recurring: bool = False
+
 class ReadingCreate(BaseModel):
     station_id: int
     sst: Optional[float] = None
