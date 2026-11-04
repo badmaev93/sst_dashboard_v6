@@ -2,6 +2,7 @@ from fastapi import APIRouter, Query, Depends
 from datetime import datetime, timezone
 import db
 import logging
+import asyncio
 from auth import get_current_user, require_role
 
 logger = logging.getLogger(__name__)
@@ -38,46 +39,56 @@ async def activity_feed(limit: int = Query(50, le=200), offset: int = 0,
 
 @monitoring_router.get("/dashboard/summary")
 async def dashboard_summary(user=Depends(get_current_user)):
-    counts = await db.pool.fetchrow("""
-        SELECT
-            COUNT(*) FILTER (WHERE status = 'normal') as normal,
-            COUNT(*) FILTER (WHERE status = 'warning') as warning,
-            COUNT(*) FILTER (WHERE status = 'critical') as critical,
-            COUNT(*) FILTER (WHERE status = 'offline') as offline
-        FROM stations
-    """)
-    open_req = await db.pool.fetchval(
-        "SELECT COUNT(*) FROM requests WHERE status IN ('pending','in_progress')")
-    anomalies = await db.pool.fetchval(
-        "SELECT COUNT(*) FROM agent_activity WHERE severity = 'critical' AND created_at > now() - interval '7 days'")
-    agents = await db.pool.fetch("""
-        SELECT DISTINCT ON (agent_name) agent_name, created_at as last_activity
-        FROM agent_activity ORDER BY agent_name, created_at DESC
-    """)
-    avg_sst = await db.pool.fetch("""
-        SELECT date_trunc('day', observed_at) as day, AVG(sst) as avg_sst
-        FROM readings WHERE observed_at > now() - interval '7 days' AND sst IS NOT NULL
-        GROUP BY 1 ORDER BY 1
-    """)
-    anomaly_days = await db.pool.fetch("""
-        SELECT date_trunc('day', created_at) as day, COUNT(*) as cnt
-        FROM agent_activity WHERE severity = 'critical' AND created_at > now() - interval '30 days'
-        GROUP BY 1 ORDER BY 1
-    """)
+    # ⚡ Bolt: Batch independent DB queries to avoid sequential await bottleneck
+    counts, open_req, anomalies, agents, avg_sst, anomaly_days, station_rows, events_rows = await asyncio.gather(
+        db.pool.fetchrow("""
+            SELECT
+                COUNT(*) FILTER (WHERE status = 'normal') as normal,
+                COUNT(*) FILTER (WHERE status = 'warning') as warning,
+                COUNT(*) FILTER (WHERE status = 'critical') as critical,
+                COUNT(*) FILTER (WHERE status = 'offline') as offline
+            FROM stations
+        """),
+        db.pool.fetchval(
+            "SELECT COUNT(*) FROM requests WHERE status IN ('pending','in_progress')"),
+        db.pool.fetchval(
+            "SELECT COUNT(*) FROM agent_activity WHERE severity = 'critical' AND created_at > now() - interval '7 days'"),
+        db.pool.fetch("""
+            SELECT DISTINCT ON (agent_name) agent_name, created_at as last_activity
+            FROM agent_activity ORDER BY agent_name, created_at DESC
+        """),
+        db.pool.fetch("""
+            SELECT date_trunc('day', observed_at) as day, AVG(sst) as avg_sst
+            FROM readings WHERE observed_at > now() - interval '7 days' AND sst IS NOT NULL
+            GROUP BY 1 ORDER BY 1
+        """),
+        db.pool.fetch("""
+            SELECT date_trunc('day', created_at) as day, COUNT(*) as cnt
+            FROM agent_activity WHERE severity = 'critical' AND created_at > now() - interval '30 days'
+            GROUP BY 1 ORDER BY 1
+        """),
+        db.pool.fetch("""
+            SELECT s.id, s.code, s.name, s.region, s.lat, s.lon, s.status,
+                   r.sst, r.temp_air, r.wind_speed, r.wave_height, r.pressure, r.humidity,
+                   r.observed_at
+            FROM stations s
+            LEFT JOIN LATERAL (
+                SELECT sst, temp_air, wind_speed, wave_height, pressure, humidity, observed_at
+                FROM readings WHERE station_id = s.id ORDER BY observed_at DESC LIMIT 1
+            ) r ON true
+            ORDER BY s.id
+        """),
+        db.pool.fetch("""
+            SELECT agent_name, severity, title as message, created_at as timestamp
+            FROM agent_activity
+            WHERE created_at > now() - interval '48 hours'
+            ORDER BY created_at DESC LIMIT 20
+        """)
+    )
+
     sc = dict(counts) if counts else {"normal":0,"warning":0,"critical":0,"offline":0}
 
     # Список станций с последними измерениями для кликабельных счетчиков статуса
-    station_rows = await db.pool.fetch("""
-        SELECT s.id, s.code, s.name, s.region, s.lat, s.lon, s.status,
-               r.sst, r.temp_air, r.wind_speed, r.wave_height, r.pressure, r.humidity,
-               r.observed_at
-        FROM stations s
-        LEFT JOIN LATERAL (
-            SELECT sst, temp_air, wind_speed, wave_height, pressure, humidity, observed_at
-            FROM readings WHERE station_id = s.id ORDER BY observed_at DESC LIMIT 1
-        ) r ON true
-        ORDER BY s.id
-    """)
     stations_list = []
     for row in station_rows:
         d = dict(row)
@@ -86,12 +97,6 @@ async def dashboard_summary(user=Depends(get_current_user)):
         stations_list.append(d)
 
     # События станций из недавней активности агентов
-    events_rows = await db.pool.fetch("""
-        SELECT agent_name, severity, title as message, created_at as timestamp
-        FROM agent_activity
-        WHERE created_at > now() - interval '48 hours'
-        ORDER BY created_at DESC LIMIT 20
-    """)
     station_events = [{"station_name": r["agent_name"],
                        "severity": r["severity"], "message": r["message"],
                        "timestamp": r["timestamp"].isoformat() if r["timestamp"] else None}
