@@ -111,6 +111,37 @@ def test_update_event_creator_engineer_allowed(mock_db_and_auth_engineer):
     assert response.json() == {"ok": True}
 
 
+def test_create_focus_block_unauthorized():
+    response = client.post("/api/monitoring/calendar/focus-blocks", json={
+        "title": "Deep Work",
+        "start_time": "09:00:00",
+        "end_time": "11:00:00",
+    })
+    assert response.status_code == 401
+
+
+def test_create_focus_block_validation_missing_fields(mock_db_and_auth_engineer):
+    # Missing required start_time and end_time
+    response = client.post("/api/monitoring/calendar/focus-blocks", json={"title": "Test Block"})
+    assert response.status_code == 422
+
+
+def test_create_focus_block_validation_success(mock_db_and_auth_engineer):
+    mock_db = mock_db_and_auth_engineer
+    mock_db.fetchrow.return_value = {"id": 105}
+
+    response = client.post("/api/monitoring/calendar/focus-blocks", json={
+        "title": "Code Review Focus",
+        "start_time": "14:00:00",
+        "end_time": "15:30:00",
+        "color": "#10b981",
+        "day_of_week": 1,
+        "recurring": True,
+    })
+    assert response.status_code == 200
+    assert response.json() == {"id": 105}
+
+
 def test_list_tasks_non_supervisor_defaults_to_own(mock_db_and_auth_engineer):
     mock_db = mock_db_and_auth_engineer
     mock_db.fetch.return_value = [{"id": 1, "title": "My Task", "assigned_to": 10}]
