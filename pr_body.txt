@@ -1,0 +1,7 @@
+💡 What: Converted 8 sequential database queries in `dashboard_summary` endpoint to execute concurrently using `asyncio.gather()`.
+
+🎯 Why: To solve an N+1 queries performance bottleneck. Awaiting 8 separate queries sequentially on every dashboard load drastically increases I/O wait time, especially under load.
+
+📊 Impact: Reduces total query wait time for the `/dashboard/summary` endpoint from the sum of all 8 queries to roughly the duration of the single slowest query, significantly improving response latency.
+
+🔬 Measurement: Verify the improvement by running the full backend test suite (`python -m pytest tests/`) and profiling the endpoint using any standard HTTP load testing tool.
