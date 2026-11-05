@@ -165,17 +165,23 @@ def start_scheduler():
                     continue
 
                 n_requests = random.randint(1, 2)
+                requests_data = []
                 for st in list(stations)[:n_requests]:
                     title, req_type, priority, description = random.choice(REQUEST_TEMPLATES)
-                    await db.pool.execute("""
+                    requests_data.append((
+                        st["id"], operator["id"],
+                        supervisor["id"] if supervisor else None,
+                        title, description, req_type, priority
+                    ))
+                    logger.info("Simulated request created: %s", title[:40])
+
+                if requests_data:
+                    await db.pool.executemany("""
                         INSERT INTO requests
                             (station_id, created_by, assigned_to, title, description, req_type, status, priority, created_at)
                         VALUES ($1, $2, $3, $4, $5, $6, 'pending', $7, now())
                         ON CONFLICT DO NOTHING
-                    """, st["id"], operator["id"],
-                        supervisor["id"] if supervisor else None,
-                        title, description, req_type, priority)
-                    logger.info("Simulated request created: %s", title[:40])
+                    """, requests_data)
 
             except Exception as e:
                 logger.error("Request generation failed: %s", e)
