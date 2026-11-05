@@ -9,6 +9,7 @@ import logging
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from typing import Optional
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import numpy as np
 
@@ -138,10 +139,11 @@ def _try_gee_fetch(cycle_dt: datetime) -> Optional[dict]:
                .filterBounds(region))
 
         result = {}
-        for fh in FORECAST_HOURS:
+
+        def fetch_hour(fh):
             img = col.filter(ee.Filter.eq("forecast_hours", fh)).first()
             if img is None:
-                continue
+                return None
 
             sst_band = img.select("temperature_2m_above_ground")
             u_band = img.select("u_component_of_wind_10m")
@@ -155,18 +157,26 @@ def _try_gee_fetch(cycle_dt: datetime) -> Optional[dict]:
             wind_u_arr = _to_np(u_band)
             wind_v_arr = _to_np(v_band)
 
-            result[fh] = {
+            return fh, {
                 "sst": sst_arr,
                 "wind_u": wind_u_arr,
                 "wind_v": wind_v_arr,
                 "lats": LATS.astype(np.float32),
                 "lons": LONS.astype(np.float32),
             }
+
+        with ThreadPoolExecutor(max_workers=len(FORECAST_HOURS)) as executor:
+            futures = [executor.submit(fetch_hour, fh) for fh in FORECAST_HOURS]
+            for future in as_completed(futures):
+                res = future.result()
+                if res is not None:
+                    fh, data = res
+                    result[fh] = data
+
         return result if result else None
     except Exception as exc:
         logger.warning("GEE fetch error: %s", exc)
         return None
-
 
 class GFSFetcher:
     """Загружает прогностические сетки GFS из GEE с возможностью резервного перехода на синтетические данные."""
