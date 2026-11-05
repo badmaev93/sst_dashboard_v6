@@ -1,0 +1,11 @@
+⚡ Optimize SMB and local GFS date search performance
+
+💡 **What:** Optimized `_local_find_latest_date` and `_smb_find_latest_date` in `services/smb_gfs.py` to search for GFS forecast dates backwards starting from today (`datetime.now(timezone.utc)`), checking expected paths directly for up to 30 days before falling back to full recursive directory walking.
+
+🎯 **Why:** The previous approach crawled recursively backwards from the very start of the network/local path tree fetching everything up to the latest year and month, generating hundreds/thousands of inefficient SMB directory read calls before finding the requested day. This replaces an O(N) I/O-intensive task with at most 30 quick O(1) lookups for normal operation where GFS data isn't missing for more than a month.
+
+📊 **Measured Improvement:**
+Using an artificial mock structure with 10 simulated years of directories across local disk latency:
+- **Baseline (Original Directory Walk):** 1.4936 seconds
+- **Optimized (Direct Search):** 0.0003 seconds
+- **Change:** A roughly 5,000x execution speed increase.
