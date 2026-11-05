@@ -6,3 +6,4 @@ data/gfs_cache/
 graphify-out/
 .claude/.cache/
 venv/
+mock_smb/

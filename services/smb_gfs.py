@@ -14,7 +14,7 @@
 import logging
 import os
 import tempfile
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from typing import Optional
 
@@ -56,11 +56,25 @@ CACHE_DIR.mkdir(parents=True, exist_ok=True)
 # ---------------------------------------------------------------------------
 
 def _local_find_latest_date(base: Path) -> Optional[tuple[str, str, str]]:
-    """Обход <base>/YYYY/MM/DD/00/ для поиска наиболее свежей даты."""
+    """Поиск наиболее свежей даты (оптимизировано: поиск от текущей даты назад)."""
     if not base.is_dir():
         logger.error("GFS_LOCAL_PATH does not exist or is not mounted: %s", base)
         return None
 
+    # Оптимизация: пробуем искать назад от текущей даты
+    current = datetime.now(timezone.utc)
+    for i in range(30):
+        d = current - timedelta(days=i)
+        year = d.strftime("%Y")
+        month = d.strftime("%m")
+        day = d.strftime("%d")
+
+        hour_dir = base / year / month / day / "00"
+        if hour_dir.is_dir() and any(hour_dir.iterdir()):
+            logger.info("GFS latest (optimized): %s/%s/%s/00", year, month, day)
+            return year, month, day
+
+    # Fallback: обход дерева, если ничего не найдено за последние 30 дней
     years = sorted((d.name for d in base.iterdir() if d.is_dir() and d.name.isdigit()), reverse=True)
     for year in years:
         months = sorted((d.name for d in (base / year).iterdir()
@@ -71,7 +85,7 @@ def _local_find_latest_date(base: Path) -> Optional[tuple[str, str, str]]:
             for day in days:
                 hour_dir = base / year / month / day / "00"
                 if hour_dir.is_dir() and any(hour_dir.iterdir()):
-                    logger.info("GFS latest: %s/%s/%s/00", year, month, day)
+                    logger.info("GFS latest (fallback): %s/%s/%s/00", year, month, day)
                     return year, month, day
     return None
 
@@ -121,6 +135,21 @@ def _smb_listdir(smb_p: str) -> list[str]:
 def _smb_find_latest_date() -> Optional[tuple[str, str, str]]:
     _smb_register()
     base = _smb_path(SMB_BASE)
+
+    # Оптимизация: пробуем искать назад от текущей даты
+    current = datetime.now(timezone.utc)
+    for i in range(30):
+        d = current - timedelta(days=i)
+        year = d.strftime("%Y")
+        month = d.strftime("%m")
+        day = d.strftime("%d")
+
+        hour_dir = f"{base}\\{year}\\{month}\\{day}\\00"
+        if _smb_listdir(hour_dir):
+            logger.info("GFS latest (SMB, optimized): %s/%s/%s/00", year, month, day)
+            return year, month, day
+
+    # Fallback: обход дерева, если ничего не найдено за последние 30 дней
     years = [y for y in reversed(_smb_listdir(base)) if y.isdigit() and len(y) == 4]
     for year in years:
         months = [m for m in reversed(_smb_listdir(f"{base}\\{year}"))
@@ -131,7 +160,7 @@ def _smb_find_latest_date() -> Optional[tuple[str, str, str]]:
             for day in days:
                 hour_dir = f"{base}\\{year}\\{month}\\{day}\\00"
                 if _smb_listdir(hour_dir):
-                    logger.info("GFS latest (SMB): %s/%s/%s/00", year, month, day)
+                    logger.info("GFS latest (SMB, fallback): %s/%s/%s/00", year, month, day)
                     return year, month, day
     return None
 
