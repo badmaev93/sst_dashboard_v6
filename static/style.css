@@ -273,6 +273,7 @@ body.detail-mode #panel-toggle { top: 56px; }
   pointer-events: none;
   white-space: nowrap;
   transform: translate(12px, -50%);
+  transition: opacity 0.15s, transform 0.1s;
 }
 
 #hover-tooltip.hidden { display: none; }
@@ -1326,9 +1327,10 @@ body.detail-mode #panel-toggle { top: 56px; }
   overflow: hidden;
   box-shadow: 0 1px 6px rgba(0,0,0,0.07);
   cursor: pointer;
-  transition: box-shadow 0.13s, border-color 0.13s;
+  transition: all 0.2s ease;
 }
 .cmp-cell:hover {
+  transform: translateY(-2px);
   border-color: rgba(0,100,200,0.4);
   box-shadow: 0 3px 14px rgba(0,100,200,0.15);
 }
@@ -1516,4 +1518,36 @@ body.detail-mode #panel-toggle { top: 56px; }
 #focus-timer-close:focus-visible {
   outline: 2px solid #0055aa;
   outline-offset: 1px;
+}
+
+/* Custom Scrollbars */
+body::-webkit-scrollbar,
+.detail-panel::-webkit-scrollbar,
+#left-panel::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+body::-webkit-scrollbar-track,
+.detail-panel::-webkit-scrollbar-track,
+#left-panel::-webkit-scrollbar-track {
+  background: transparent;
+}
+body::-webkit-scrollbar-thumb,
+.detail-panel::-webkit-scrollbar-thumb,
+#left-panel::-webkit-scrollbar-thumb {
+  background: rgba(0, 80, 160, 0.2);
+  border-radius: 4px;
+}
+body::-webkit-scrollbar-thumb:hover,
+.detail-panel::-webkit-scrollbar-thumb:hover,
+#left-panel::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 80, 160, 0.4);
+}
+
+/* Active Button Feedback */
+.lp-btn:active,
+.detail-tab:active,
+.compare-btn:active,
+.param-btn:active {
+  transform: scale(0.98);
 }

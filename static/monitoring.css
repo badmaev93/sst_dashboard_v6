@@ -168,7 +168,7 @@
   font-family: inherit;
   font-size: 13px;
   outline: none;
-  transition: border-color 0.15s;
+  transition: all 0.2s ease;
 }
 .form-group input:focus { border-color: #0066cc; }
 .form-error {
@@ -437,9 +437,9 @@
   border-radius: 8px;
   padding: 12px;
   cursor: pointer;
-  transition: border-color 0.15s;
+  transition: all 0.2s ease;
 }
-.mon-activity-card:hover { border-color: #58a6ff; }
+.mon-activity-card:hover { transform: translateY(-2px); border-color: #58a6ff; }
 .mon-activity-card.severity-critical { border-left: 3px solid #f85149; }
 .mon-activity-card.severity-warning { border-left: 3px solid #d29922; }
 .mon-activity-card.severity-info { border-left: 3px solid #58a6ff; }
@@ -781,4 +781,9 @@
   color: rgba(100,116,139,0.45);
   font-family: 'Inter', system-ui, sans-serif;
   white-space: nowrap;
+}
+
+/* Active Button Feedback */
+.mon-action-btn:active {
+  transform: scale(0.98);
 }

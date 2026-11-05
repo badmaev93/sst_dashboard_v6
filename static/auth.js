@@ -96,7 +96,7 @@
             <div role="dialog" aria-modal="true" aria-label="Вход в систему" tabindex="-1"
                  style="background:#fff;border-radius:14px;padding:36px 32px 28px;width:370px;
                         box-shadow:0 20px 60px rgba(0,0,0,0.18);font-family:inherit;position:relative">
-                <button id="auth-close" aria-label="Закрыть" style="position:absolute;top:12px;right:12px;width:32px;height:32px;
+                <button id="auth-close" aria-label="Закрыть окно входа" style="position:absolute;top:12px;right:12px;width:32px;height:32px;
                         border:none;background:#f3f4f6;border-radius:8px;font-size:18px;color:#6b7280;
                         cursor:pointer;display:flex;align-items:center;justify-content:center;
                         transition:background .15s"
