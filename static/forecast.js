@@ -60,6 +60,24 @@ const AI_ICON_SVG    = `✨`;
   transition: border-color .15s;
 }
 .fv-search:focus { border-color: #8b5cf6; }
+.fv-search:focus-visible { outline: 2px solid #8b5cf6; outline-offset: 1px; }
+
+.fv-clear-search-btn {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  color: #4b5563;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+.fv-clear-search-btn:hover { background: #f3f4f6; border-color: #9ca3af; color: #1f2937; }
+.fv-clear-search-btn:focus-visible { outline: 2px solid #8b5cf6; outline-offset: 1px; }
 
 .fv-station-list {
   flex: 1;
@@ -283,6 +301,14 @@ const AI_ICON_SVG    = `✨`;
 })();
 
 /* ── helpers ──────────────────────────────────────────────────── */
+function escHtml(s) {
+  return String(s || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
 function _el(tag, cls, text) {
   const e = document.createElement(tag || "div");
   if (cls) e.className = cls;
@@ -317,9 +343,9 @@ window.showForecastView = async function showForecastView() {
       <div class="fv-sidebar-header">
         <div class="fv-sidebar-title">${AI_ICON_SVG} ИИ Прогноз</div>
         <div class="fv-sidebar-sub">ML-коррекция прогнозов GFS для станций ДВ</div>
-        <input class="fv-search" id="fv-search" placeholder="Поиск станции..." />
+        <input type="search" class="fv-search" id="fv-search" placeholder="Поиск станции..." aria-label="Поиск станции по названию, коду или региону" autocomplete="off" />
       </div>
-      <div class="fv-station-list" id="fv-station-list">
+      <div class="fv-station-list" id="fv-station-list" role="region" aria-label="Список гидрометеостанций">
         <div class="fv-loading"><div class="fv-spinner"></div>Загрузка станций...</div>
       </div>
     </div>
@@ -354,8 +380,16 @@ window.showForecastView = async function showForecastView() {
   }
 
   _renderStationList("");
-  document.getElementById("fv-search").addEventListener("input", function() {
+  const searchInput = document.getElementById("fv-search");
+  searchInput.addEventListener("input", function() {
     _renderStationList(this.value);
+  });
+  searchInput.addEventListener("keydown", function(e) {
+    if (e.key === "Escape" && this.value) {
+      e.stopPropagation();
+      this.value = "";
+      _renderStationList("");
+    }
   });
 };
 
@@ -371,7 +405,23 @@ function _renderStationList(filter) {
   });
 
   if (!filtered.length) {
-    listEl.innerHTML = '<div style="padding:20px;text-align:center;color:#94a3b8;font-size:13px">Нет станций</div>';
+    listEl.innerHTML = `
+      <div style="padding:24px 16px;text-align:center;color:#64748b;font-size:13px">
+        <div>Станций по запросу «<strong>${escHtml(filter || "")}</strong>» не найдено</div>
+        <button type="button" class="fv-clear-search-btn" id="fv-clear-search" aria-label="Сбросить поиск станций">Сбросить поиск</button>
+      </div>
+    `;
+    const clearBtn = listEl.querySelector("#fv-clear-search");
+    if (clearBtn) {
+      clearBtn.addEventListener("click", function() {
+        const searchInput = document.getElementById("fv-search");
+        if (searchInput) {
+          searchInput.value = "";
+          searchInput.focus();
+        }
+        _renderStationList("");
+      });
+    }
     return;
   }
 
