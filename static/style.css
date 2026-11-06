@@ -1551,3 +1551,5 @@ body::-webkit-scrollbar-thumb:hover,
 .param-btn:active {
   transform: scale(0.98);
 }
+
+#omni-input:focus-visible, .omni-footer button:focus-visible { outline: 2px solid #0055aa; outline-offset: 1px; }

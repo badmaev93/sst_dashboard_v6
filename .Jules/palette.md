@@ -70,3 +70,7 @@ Super Productivity (https://github.com/super-productivity/super-productivity) is
 ## 2026-08-01 - Decoupled Overlay Styling and Hierarchical Focus Management for Global Modal Dialogs
 **Learning:** In modular single-page applications where modal dialogs (like help cheat sheets) can be triggered globally from any view, relying on dynamic CSS classes injected by secondary module files (such as `calendar.js`) can lead to unstyled or hidden modals if invoked before that module loads. Explicitly defining self-contained inline overlay styling (`position: fixed; inset: 0; backdrop-filter: ...`) guarantees visual consistency. Furthermore, when modals are opened from inside another overlay (such as the omni-bar command palette), automatically dismissing parent overlays and placing immediate programmatic focus on the modal's primary action button ensures flawless keyboard accessibility and hierarchical `Escape` key dismissal.
 **Action:** Always ensure globally invokable modal dialogs carry self-contained layout styling, programmatically shift focus to close buttons upon mount, and prioritize modal dismissal over parent palette overlays in keydown handlers.
+
+## 2024-05-20 - Omni-bar Accessibility
+**Learning:** Interactive components like command palettes require clear visual focus indicators and ARIA roles (like `role="option"` and `aria-selected`) for keyboard and screen reader accessibility.
+**Action:** Always add `:focus-visible` styles for inputs/buttons and synchronize `aria-selected` state for listbox options during active selection changes.
