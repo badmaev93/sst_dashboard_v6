@@ -22,12 +22,17 @@ async def send_telegram(chat_id: int, message: str):
 async def notify_supervisors(pool, message: str):
     supervisors = await pool.fetch(
         "SELECT telegram_chat_id FROM users WHERE role = 'supervisor' AND telegram_chat_id IS NOT NULL")
+    notification_records = []
     for s in supervisors:
         await send_telegram(s['telegram_chat_id'], message)
-        await pool.execute(
+        notification_records.append((message, s['telegram_chat_id']))
+
+    if notification_records:
+        # Bolt optimization: batch inserts to avoid N+1 queries bottleneck
+        await pool.executemany(
             "INSERT INTO notifications (user_id, channel, message) "
             "SELECT id, 'telegram', $1 FROM users WHERE telegram_chat_id = $2",
-            message, s['telegram_chat_id'])
+            notification_records)
 
 async def notify_user(pool, user_id: int, message: str):
     user = await pool.fetchrow("SELECT telegram_chat_id FROM users WHERE id = $1", user_id)
