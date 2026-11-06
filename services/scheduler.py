@@ -37,281 +37,287 @@ AGENT_EVENT_TEMPLATES = [
 
 _scheduler_started = False
 
+
+async def _generate_hourly():
+    while True:
+        try:
+            import db
+            if db.pool is None:
+                await asyncio.sleep(60)
+                continue
+
+            from services.data_generator import fetch_bulk_readings
+            now = datetime.now(timezone.utc)
+
+            rows = await db.pool.fetch("SELECT id, code, lat, lon FROM stations")
+            stations = [{"id": r["id"], "code": r["code"], "lat": float(r["lat"]), "lon": float(r["lon"])} for r in rows]
+
+            readings = await fetch_bulk_readings(stations)
+
+            readings_data = []
+            stations_data = []
+            for st in stations:
+                r = readings.get(st["id"])
+                if not r:
+                    continue
+                readings_data.append((
+                    st['id'], now, r['sst'], r['temp_air'],
+                    r['wave_height'], r['wave_period'],
+                    r['wind_speed'], r['wind_dir'],
+                    r['pressure'], r['visibility'],
+                    r['humidity'], r['status']
+                ))
+                stations_data.append((r['status'], st['id']))
+
+            if readings_data:
+                await db.pool.executemany("""
+                    INSERT INTO readings (station_id, observed_at, sst, temp_air,
+                        wave_height, wave_period, wind_speed, wind_dir,
+                        pressure, visibility, humidity, status)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+                """, readings_data)
+
+                await db.pool.executemany(
+                    "UPDATE stations SET status = $1 WHERE id = $2",
+                    stations_data
+                )
+
+            logger.info("Open-Meteo: fetched %d/%d station readings at %s", len(readings_data), len(stations), now.isoformat())
+        except Exception as e:
+            logger.error("Hourly generation failed: %s", e)
+
+        await asyncio.sleep(3600)
+
+
+async def _telegram_polling():
+    """Long-polling для обновлений Telegram (localhost не может получать вебхуки)."""
+    import httpx
+    from config import TELEGRAM_BOT_TOKEN
+    if not TELEGRAM_BOT_TOKEN:
+        logger.info("Telegram polling skipped: no token")
+        return
+
+    api = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}"
+    offset = 0
+    logger.info("Telegram polling started")
+
+    # Удаление существующего вебхука и сброс ожидающих обновлений
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            await client.post(f"{api}/deleteWebhook", json={"drop_pending_updates": True})
+            logger.info("Telegram webhook deleted, pending updates dropped")
+    except Exception as e:
+        logger.warning("Failed to delete webhook: %s", e)
+
+    await asyncio.sleep(2)
+
+    while True:
+        try:
+            import db
+            if db.pool is None:
+                await asyncio.sleep(5)
+                continue
+
+            async with httpx.AsyncClient(timeout=35) as client:
+                resp = await client.get(f"{api}/getUpdates", params={
+                    "offset": offset, "timeout": 30, "allowed_updates": ["message"]
+                })
+                if resp.status_code == 409:
+                    logger.warning("Telegram 409 conflict — retrying in 5s")
+                    await asyncio.sleep(5)
+                    continue
+                if resp.is_success:
+                    data = resp.json()
+                    for update in data.get("result", []):
+                        offset = update["update_id"] + 1
+                        try:
+                            from services.telegram_bot import handle_telegram_update
+                            await handle_telegram_update(update, db.pool)
+                        except Exception as e:
+                            logger.error("Telegram handler error: %s", e)
+        except Exception as e:
+            logger.error("Telegram polling error: %s", e)
+            await asyncio.sleep(5)
+
+
+async def _generate_requests():
+    """Симуляция реалистичных заявок, как если бы операторы подавали их в реальном времени."""
+    # Начальная задержка для готовности БД
+    await asyncio.sleep(120)
+    while True:
+        try:
+            import db
+            if db.pool is None:
+                await asyncio.sleep(60)
+                continue
+
+            stations = await db.pool.fetch("SELECT id FROM stations ORDER BY random() LIMIT 2")
+            supervisor = await db.pool.fetchrow(
+                "SELECT id FROM users WHERE role = 'supervisor' LIMIT 1")
+            operator = await db.pool.fetchrow(
+                "SELECT id FROM users WHERE role IN ('operator', 'observer') LIMIT 1")
+
+            if not stations or not operator:
+                await asyncio.sleep(300)
+                continue
+
+            n_requests = random.randint(1, 2)
+            requests_data = []
+            for st in list(stations)[:n_requests]:
+                title, req_type, priority, description = random.choice(REQUEST_TEMPLATES)
+                requests_data.append((
+                    st["id"], operator["id"],
+                    supervisor["id"] if supervisor else None,
+                    title, description, req_type, priority
+                ))
+                logger.info("Simulated request created: %s", title[:40])
+
+            if requests_data:
+                await db.pool.executemany("""
+                    INSERT INTO requests
+                        (station_id, created_by, assigned_to, title, description, req_type, status, priority, created_at)
+                    VALUES ($1, $2, $3, $4, $5, $6, 'pending', $7, now())
+                    ON CONFLICT DO NOTHING
+                """, requests_data)
+
+        except Exception as e:
+            logger.error("Request generation failed: %s", e)
+
+        # Пауза 2-4 часа между пакетами заявок
+        await asyncio.sleep(random.randint(7200, 14400))
+
+
+async def _generate_agent_events():
+    """Периодическая генерация событий активности AI-агентов."""
+    await asyncio.sleep(180)
+    while True:
+        try:
+            import db
+            if db.pool is None:
+                await asyncio.sleep(60)
+                continue
+
+            agent_name, event_type, title, severity, body = random.choice(AGENT_EVENT_TEMPLATES)
+            await db.pool.execute("""
+                INSERT INTO agent_activity (agent_name, event_type, severity, title, body, created_at)
+                VALUES ($1, $2, $3, $4, $5, now())
+            """, agent_name, event_type, severity, title, body)
+            logger.info("Simulated agent event: [%s] %s", severity, title[:50])
+
+        except Exception as e:
+            logger.error("Agent event generation failed: %s", e)
+
+        await asyncio.sleep(random.randint(3600, 7200))  # 1-2 hours
+
+
+async def _daily_monitoring():
+    """
+    Ежедневный запуск прогноза Prophet + детекция аномалий для всех станций.
+    Отправляет сводку в Telegram супервайзерам в 08:00 UTC.
+    """
+    import datetime as _dt
+    # Начальная задержка: ожидание до 08:00 UTC следующего дня
+    now = _dt.datetime.now(_dt.timezone.utc)
+    target = now.replace(hour=8, minute=0, second=0, microsecond=0)
+    if target <= now:
+        target += _dt.timedelta(days=1)
+    wait_sec = (target - now).total_seconds()
+    logger.info("Daily monitoring: first run in %.0f seconds (at 08:00 UTC)", wait_sec)
+    await asyncio.sleep(wait_sec)
+
+    while True:
+        try:
+            import db
+            if db.pool is None:
+                await asyncio.sleep(300)
+                continue
+
+            logger.info("Daily monitoring run started")
+            stations = await db.pool.fetch(
+                "SELECT id, code, name FROM stations ORDER BY id")
+
+            station_ids = [st["id"] for st in stations]
+            all_readings = []
+            if station_ids:
+                all_readings = await db.pool.fetch("""
+                    SELECT station_id, observed_at, sst
+                    FROM (
+                        SELECT station_id, observed_at, sst,
+                               ROW_NUMBER() OVER(PARTITION BY station_id ORDER BY observed_at DESC) as rn
+                        FROM readings
+                        WHERE station_id = ANY($1) AND sst IS NOT NULL
+                    ) sub
+                    WHERE rn <= 48
+                    ORDER BY station_id, rn
+                """, station_ids)
+
+            readings_by_station = {st_id: [] for st_id in station_ids}
+            for r in all_readings:
+                readings_by_station[r["station_id"]].append(r)
+
+            from services.prophet_forecast import get_station_forecast_prophet
+
+            async def _process_station(st):
+                try:
+                    readings = readings_by_station.get(st["id"], [])
+                    readings_list = [
+                        {"observed_at": str(r["observed_at"]), "sst": float(r["sst"])}
+                        for r in readings
+                    ]
+                    fc = await get_station_forecast_prophet(
+                        st["code"], readings_list, periods=6)
+                    return {"st": st, "fc": fc}
+                except Exception as e:
+                    logger.error("Daily monitoring failed for station %s: %s", st["code"], e)
+                    return None
+
+            results = await asyncio.gather(*[_process_station(st) for st in stations])
+
+            total_anomalies = 0
+            anomaly_records = []
+
+            for res in results:
+                if not res:
+                    continue
+                st = res["st"]
+                fc = res["fc"]
+                n_anom = fc.get("n_anomalies_24h", 0)
+                total_anomalies += n_anom
+
+                if n_anom > 0:
+                    severity = "warning" if n_anom < 3 else "critical"
+                    title = f"Prophet: {n_anom} аномалий ТПО за 24ч — {st['name']}"
+                    body = f"Метод: Prophet | Тренд: {fc.get('trend', 0):+.2f}°C/сут"
+                    anomaly_records.append(("ProphetMonitor", "anomaly", severity, title, body))
+
+            if anomaly_records:
+                await db.pool.executemany("""
+                    INSERT INTO agent_activity
+                        (agent_name, event_type, severity, title, body, created_at)
+                    VALUES ($1, $2, $3, $4, $5, now())
+                """, anomaly_records)
+
+            logger.info("Daily monitoring: %d total anomalies across %d stations",
+                        total_anomalies, len(stations))
+
+            # Отправка сводки в Telegram
+            try:
+                from services.telegram_bot import send_daily_summary
+                await send_daily_summary(db.pool)
+            except Exception as e:
+                logger.error("Daily Telegram summary failed: %s", e)
+
+        except Exception as e:
+            logger.error("Daily monitoring error: %s", e)
+
+        await asyncio.sleep(86400)  # 24 hours
+
+
 def start_scheduler():
     global _scheduler_started
     if _scheduler_started:
         return
     _scheduler_started = True
-
-    async def _generate_hourly():
-        while True:
-            try:
-                import db
-                if db.pool is None:
-                    await asyncio.sleep(60)
-                    continue
-
-                from services.data_generator import fetch_bulk_readings
-                now = datetime.now(timezone.utc)
-
-                rows = await db.pool.fetch("SELECT id, code, lat, lon FROM stations")
-                stations = [{"id": r["id"], "code": r["code"], "lat": float(r["lat"]), "lon": float(r["lon"])} for r in rows]
-
-                readings = await fetch_bulk_readings(stations)
-
-                readings_data = []
-                stations_data = []
-                for st in stations:
-                    r = readings.get(st["id"])
-                    if not r:
-                        continue
-                    readings_data.append((
-                        st['id'], now, r['sst'], r['temp_air'],
-                        r['wave_height'], r['wave_period'],
-                        r['wind_speed'], r['wind_dir'],
-                        r['pressure'], r['visibility'],
-                        r['humidity'], r['status']
-                    ))
-                    stations_data.append((r['status'], st['id']))
-
-                if readings_data:
-                    await db.pool.executemany("""
-                        INSERT INTO readings (station_id, observed_at, sst, temp_air,
-                            wave_height, wave_period, wind_speed, wind_dir,
-                            pressure, visibility, humidity, status)
-                        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-                    """, readings_data)
-
-                    await db.pool.executemany(
-                        "UPDATE stations SET status = $1 WHERE id = $2",
-                        stations_data
-                    )
-
-                logger.info("Open-Meteo: fetched %d/%d station readings at %s", len(readings_data), len(stations), now.isoformat())
-            except Exception as e:
-                logger.error("Hourly generation failed: %s", e)
-
-            await asyncio.sleep(3600)
-
-    async def _telegram_polling():
-        """Long-polling для обновлений Telegram (localhost не может получать вебхуки)."""
-        import httpx
-        from config import TELEGRAM_BOT_TOKEN
-        if not TELEGRAM_BOT_TOKEN:
-            logger.info("Telegram polling skipped: no token")
-            return
-
-        api = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}"
-        offset = 0
-        logger.info("Telegram polling started")
-
-        # Удаление существующего вебхука и сброс ожидающих обновлений
-        try:
-            async with httpx.AsyncClient(timeout=10) as client:
-                await client.post(f"{api}/deleteWebhook", json={"drop_pending_updates": True})
-                logger.info("Telegram webhook deleted, pending updates dropped")
-        except Exception as e:
-            logger.warning("Failed to delete webhook: %s", e)
-
-        await asyncio.sleep(2)
-
-        while True:
-            try:
-                import db
-                if db.pool is None:
-                    await asyncio.sleep(5)
-                    continue
-
-                async with httpx.AsyncClient(timeout=35) as client:
-                    resp = await client.get(f"{api}/getUpdates", params={
-                        "offset": offset, "timeout": 30, "allowed_updates": ["message"]
-                    })
-                    if resp.status_code == 409:
-                        logger.warning("Telegram 409 conflict — retrying in 5s")
-                        await asyncio.sleep(5)
-                        continue
-                    if resp.is_success:
-                        data = resp.json()
-                        for update in data.get("result", []):
-                            offset = update["update_id"] + 1
-                            try:
-                                from services.telegram_bot import handle_telegram_update
-                                await handle_telegram_update(update, db.pool)
-                            except Exception as e:
-                                logger.error("Telegram handler error: %s", e)
-            except Exception as e:
-                logger.error("Telegram polling error: %s", e)
-                await asyncio.sleep(5)
-
-    async def _generate_requests():
-        """Симуляция реалистичных заявок, как если бы операторы подавали их в реальном времени."""
-        # Начальная задержка для готовности БД
-        await asyncio.sleep(120)
-        while True:
-            try:
-                import db
-                if db.pool is None:
-                    await asyncio.sleep(60)
-                    continue
-
-                stations = await db.pool.fetch("SELECT id FROM stations ORDER BY random() LIMIT 2")
-                supervisor = await db.pool.fetchrow(
-                    "SELECT id FROM users WHERE role = 'supervisor' LIMIT 1")
-                operator = await db.pool.fetchrow(
-                    "SELECT id FROM users WHERE role IN ('operator', 'observer') LIMIT 1")
-
-                if not stations or not operator:
-                    await asyncio.sleep(300)
-                    continue
-
-                n_requests = random.randint(1, 2)
-                requests_data = []
-                for st in list(stations)[:n_requests]:
-                    title, req_type, priority, description = random.choice(REQUEST_TEMPLATES)
-                    requests_data.append((
-                        st["id"], operator["id"],
-                        supervisor["id"] if supervisor else None,
-                        title, description, req_type, priority
-                    ))
-                    logger.info("Simulated request created: %s", title[:40])
-
-                if requests_data:
-                    await db.pool.executemany("""
-                        INSERT INTO requests
-                            (station_id, created_by, assigned_to, title, description, req_type, status, priority, created_at)
-                        VALUES ($1, $2, $3, $4, $5, $6, 'pending', $7, now())
-                        ON CONFLICT DO NOTHING
-                    """, requests_data)
-
-            except Exception as e:
-                logger.error("Request generation failed: %s", e)
-
-            # Пауза 2-4 часа между пакетами заявок
-            await asyncio.sleep(random.randint(7200, 14400))
-
-    async def _generate_agent_events():
-        """Периодическая генерация событий активности AI-агентов."""
-        await asyncio.sleep(180)
-        while True:
-            try:
-                import db
-                if db.pool is None:
-                    await asyncio.sleep(60)
-                    continue
-
-                agent_name, event_type, title, severity, body = random.choice(AGENT_EVENT_TEMPLATES)
-                await db.pool.execute("""
-                    INSERT INTO agent_activity (agent_name, event_type, severity, title, body, created_at)
-                    VALUES ($1, $2, $3, $4, $5, now())
-                """, agent_name, event_type, severity, title, body)
-                logger.info("Simulated agent event: [%s] %s", severity, title[:50])
-
-            except Exception as e:
-                logger.error("Agent event generation failed: %s", e)
-
-            await asyncio.sleep(random.randint(3600, 7200))  # 1-2 hours
-
-    async def _daily_monitoring():
-        """
-        Ежедневный запуск прогноза Prophet + детекция аномалий для всех станций.
-        Отправляет сводку в Telegram супервайзерам в 08:00 UTC.
-        """
-        import datetime as _dt
-        # Начальная задержка: ожидание до 08:00 UTC следующего дня
-        now = _dt.datetime.now(_dt.timezone.utc)
-        target = now.replace(hour=8, minute=0, second=0, microsecond=0)
-        if target <= now:
-            target += _dt.timedelta(days=1)
-        wait_sec = (target - now).total_seconds()
-        logger.info("Daily monitoring: first run in %.0f seconds (at 08:00 UTC)", wait_sec)
-        await asyncio.sleep(wait_sec)
-
-        while True:
-            try:
-                import db
-                if db.pool is None:
-                    await asyncio.sleep(300)
-                    continue
-
-                logger.info("Daily monitoring run started")
-                stations = await db.pool.fetch(
-                    "SELECT id, code, name FROM stations ORDER BY id")
-
-                station_ids = [st["id"] for st in stations]
-                all_readings = []
-                if station_ids:
-                    all_readings = await db.pool.fetch("""
-                        SELECT station_id, observed_at, sst
-                        FROM (
-                            SELECT station_id, observed_at, sst,
-                                   ROW_NUMBER() OVER(PARTITION BY station_id ORDER BY observed_at DESC) as rn
-                            FROM readings
-                            WHERE station_id = ANY($1) AND sst IS NOT NULL
-                        ) sub
-                        WHERE rn <= 48
-                        ORDER BY station_id, rn
-                    """, station_ids)
-
-                readings_by_station = {st_id: [] for st_id in station_ids}
-                for r in all_readings:
-                    readings_by_station[r["station_id"]].append(r)
-
-                from services.prophet_forecast import get_station_forecast_prophet
-
-                async def _process_station(st):
-                    try:
-                        readings = readings_by_station.get(st["id"], [])
-                        readings_list = [
-                            {"observed_at": str(r["observed_at"]), "sst": float(r["sst"])}
-                            for r in readings
-                        ]
-                        fc = await get_station_forecast_prophet(
-                            st["code"], readings_list, periods=6)
-                        return {"st": st, "fc": fc}
-                    except Exception as e:
-                        logger.error("Daily monitoring failed for station %s: %s", st["code"], e)
-                        return None
-
-                results = await asyncio.gather(*[_process_station(st) for st in stations])
-
-                total_anomalies = 0
-                anomaly_records = []
-
-                for res in results:
-                    if not res:
-                        continue
-                    st = res["st"]
-                    fc = res["fc"]
-                    n_anom = fc.get("n_anomalies_24h", 0)
-                    total_anomalies += n_anom
-
-                    if n_anom > 0:
-                        severity = "warning" if n_anom < 3 else "critical"
-                        title = f"Prophet: {n_anom} аномалий ТПО за 24ч — {st['name']}"
-                        body = f"Метод: Prophet | Тренд: {fc.get('trend', 0):+.2f}°C/сут"
-                        anomaly_records.append(("ProphetMonitor", "anomaly", severity, title, body))
-
-                if anomaly_records:
-                    await db.pool.executemany("""
-                        INSERT INTO agent_activity
-                            (agent_name, event_type, severity, title, body, created_at)
-                        VALUES ($1, $2, $3, $4, $5, now())
-                    """, anomaly_records)
-
-                logger.info("Daily monitoring: %d total anomalies across %d stations",
-                            total_anomalies, len(stations))
-
-                # Отправка сводки в Telegram
-                try:
-                    from services.telegram_bot import send_daily_summary
-                    await send_daily_summary(db.pool)
-                except Exception as e:
-                    logger.error("Daily Telegram summary failed: %s", e)
-
-            except Exception as e:
-                logger.error("Daily monitoring error: %s", e)
-
-            await asyncio.sleep(86400)  # 24 hours
 
     loop = asyncio.get_event_loop()
     loop.create_task(_generate_hourly())
