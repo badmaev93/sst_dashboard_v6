@@ -223,7 +223,7 @@ async function init() {
         if (results.length === 0) return;
         results.forEach((item, index) => {
             const div = document.createElement("div");
-            div.className = "omni-item" + (index === selectedIndex ? " selected" : "");
+            div.className = "omni-item" + (index === selectedIndex ? " selected" : ""); div.setAttribute("role", "option"); div.setAttribute("aria-selected", index === selectedIndex ? "true" : "false");
             div.innerHTML = `<span>${item.label}</span> <span style="color:#94a3b8;font-size:12px">${item.desc}</span>`;
             div.onclick = () => {
                 omniInput.value = item.command;
