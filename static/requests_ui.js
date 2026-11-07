@@ -20,7 +20,7 @@
         }
         tr[data-row="true"]:focus-visible {
             outline: 2px solid #0055aa;
-            outline-offset: -2px;
+            outline-offset: -1px;
         }
     `;
     document.head.appendChild(style);
