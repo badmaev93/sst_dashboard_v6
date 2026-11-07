@@ -398,53 +398,120 @@ async def _cmd_free_text(chat_id: int, text: str, pool) -> str:
     # Сбор актуального контекста для ИИ
     context_parts = []
     if pool:
-        try:
-            counts = await pool.fetchrow("""
-                SELECT COUNT(*) FILTER (WHERE status = 'normal') AS normal,
-                       COUNT(*) FILTER (WHERE status = 'warning') AS warning,
-                       COUNT(*) FILTER (WHERE status = 'critical') AS critical,
-                       COUNT(*) FILTER (WHERE status = 'offline') AS offline,
-                       COUNT(*) AS total
-                FROM stations
-            """)
-            if counts:
-                context_parts.append(
-                    f"Станции: всего {counts['total']} "
-                    f"(норма: {counts['normal']}, внимание: {counts['warning']}, "
-                    f"критично: {counts['critical']}, офлайн: {counts['offline']})"
-                )
-        except Exception as e:
-            logger.warning("Failed to fetch station counts: %s", e)
-        try:
-            recent = await pool.fetch("""
-                SELECT s.name, s.code, r.sst, r.wind_speed, r.wave_height, r.status
-                FROM stations s
-                LEFT JOIN LATERAL (
-                    SELECT sst, wind_speed, wave_height, status
-                    FROM readings WHERE station_id = s.id ORDER BY observed_at DESC LIMIT 1
-                ) r ON true
-                WHERE r.status IN ('warning', 'critical')
-                LIMIT 5
-            """)
-            if recent:
-                alerts = "; ".join(
-                    f"{r['name']} ({r['code']}): ТПО {_fmt(r['sst'])}°C, ветер {_fmt(r['wind_speed'])} м/с ({r['status']})"
-                    for r in recent
-                )
-                context_parts.append(f"Станции с аномалиями: {alerts}")
-        except Exception:
-            pass
-        try:
-            pending = await pool.fetch("""
-                SELECT r.id, r.title, r.priority, r.status, r.created_at,
-                       u.full_name as author, s.name as station_name
-                FROM requests r
-                LEFT JOIN users u ON u.id = r.created_by
-                LEFT JOIN stations s ON s.id = r.station_id
-                WHERE r.status IN ('pending', 'in_progress')
-                ORDER BY r.created_at DESC
-                LIMIT 15
-            """)
+        import asyncio
+        counts_task = pool.fetchrow("""
+            SELECT COUNT(*) FILTER (WHERE status = 'normal') AS normal,
+                   COUNT(*) FILTER (WHERE status = 'warning') AS warning,
+                   COUNT(*) FILTER (WHERE status = 'critical') AS critical,
+                   COUNT(*) FILTER (WHERE status = 'offline') AS offline,
+                   COUNT(*) AS total
+            FROM stations
+        """)
+
+        recent_task = pool.fetch("""
+            SELECT s.name, s.code, r.sst, r.wind_speed, r.wave_height, r.status
+            FROM stations s
+            LEFT JOIN LATERAL (
+                SELECT sst, wind_speed, wave_height, status
+                FROM readings WHERE station_id = s.id ORDER BY observed_at DESC LIMIT 1
+            ) r ON true
+            WHERE r.status IN ('warning', 'critical')
+            LIMIT 5
+        """)
+
+        pending_task = pool.fetch("""
+            SELECT r.id, r.title, r.priority, r.status, r.created_at,
+                   u.full_name as author, s.name as station_name
+            FROM requests r
+            LEFT JOIN users u ON u.id = r.created_by
+            LEFT JOIN stations s ON s.id = r.station_id
+            WHERE r.status IN ('pending', 'in_progress')
+            ORDER BY r.created_at DESC
+            LIMIT 15
+        """)
+
+        duty_now_task = pool.fetch("""
+            SELECT u.full_name, p.position, a.role_on_duty,
+                   s.code as station_code, s.name as station_name,
+                   a.shift_start, a.shift_end
+            FROM assignments a
+            JOIN personnel p ON p.id = a.personnel_id
+            JOIN users u ON u.id = p.user_id
+            JOIN stations s ON s.id = a.station_id
+            WHERE a.shift_start <= now() AND a.shift_end >= now()
+               OR a.shift_start::date = current_date
+            ORDER BY s.code
+        """)
+
+        duty_upcoming_task = pool.fetch("""
+            SELECT u.full_name, p.position, a.role_on_duty,
+                   s.code as station_code, s.name as station_name,
+                   a.shift_start, a.shift_end
+            FROM assignments a
+            JOIN personnel p ON p.id = a.personnel_id
+            JOIN users u ON u.id = p.user_id
+            JOIN stations s ON s.id = a.station_id
+            WHERE a.shift_start > now() AND a.shift_start <= now() + interval '3 days'
+              AND a.shift_start::date > current_date
+            ORDER BY a.shift_start, s.code
+            LIMIT 30
+        """)
+
+        events_task = pool.fetch("""
+            SELECT agent_name, event_type, severity, title, created_at
+            FROM agent_activity
+            WHERE created_at > now() - interval '48 hours'
+            ORDER BY created_at DESC
+            LIMIT 10
+        """)
+
+        forecast_stations_task = pool.fetch("""
+            SELECT s.code, s.name,
+                   array_agg(json_build_object('observed_at', r.observed_at::text, 'sst', r.sst)
+                             ORDER BY r.observed_at DESC) AS readings_arr
+            FROM stations s
+            JOIN LATERAL (
+                SELECT observed_at, sst FROM readings
+                WHERE station_id = s.id AND sst IS NOT NULL
+                ORDER BY observed_at DESC LIMIT 48
+            ) r ON true
+            GROUP BY s.code, s.name
+            LIMIT 8
+        """)
+
+        results = await asyncio.gather(
+            counts_task,
+            recent_task,
+            pending_task,
+            duty_now_task,
+            duty_upcoming_task,
+            events_task,
+            forecast_stations_task,
+            return_exceptions=True
+        )
+
+        counts = results[0]
+        if isinstance(counts, Exception):
+            logger.warning("Failed to fetch station counts: %s", counts)
+        elif counts:
+            context_parts.append(
+                f"Станции: всего {counts['total']} "
+                f"(норма: {counts['normal']}, внимание: {counts['warning']}, "
+                f"критично: {counts['critical']}, офлайн: {counts['offline']})"
+            )
+
+        recent = results[1]
+        if not isinstance(recent, Exception) and recent:
+            alerts = "; ".join(
+                f"{r['name']} ({r['code']}): ТПО {_fmt(r['sst'])}°C, ветер {_fmt(r['wind_speed'])} м/с ({r['status']})"
+                for r in recent
+            )
+            context_parts.append(f"Станции с аномалиями: {alerts}")
+
+        pending = results[2]
+        if isinstance(pending, Exception):
+            logger.exception("Failed to fetch pending requests: %s", pending)
+        else:
             if pending:
                 req_lines = []
                 for r in pending:
@@ -457,35 +524,10 @@ async def _cmd_free_text(chat_id: int, text: str, pool) -> str:
                 context_parts.append("Заявки/документы (ожидают подписи или в работе):\n" + "\n".join(req_lines))
             else:
                 context_parts.append("Неподписанных заявок/документов нет.")
-        except Exception as e:
-            logger.exception("Failed to fetch pending requests: %s", e)
-        # Дежурства — сейчас и на ближайшие 3 дня
-        try:
-            duty_now = await pool.fetch("""
-                SELECT u.full_name, p.position, a.role_on_duty,
-                       s.code as station_code, s.name as station_name,
-                       a.shift_start, a.shift_end
-                FROM assignments a
-                JOIN personnel p ON p.id = a.personnel_id
-                JOIN users u ON u.id = p.user_id
-                JOIN stations s ON s.id = a.station_id
-                WHERE a.shift_start <= now() AND a.shift_end >= now() 
-                   OR a.shift_start::date = current_date
-                ORDER BY s.code
-            """)
-            duty_upcoming = await pool.fetch("""
-                SELECT u.full_name, p.position, a.role_on_duty,
-                       s.code as station_code, s.name as station_name,
-                       a.shift_start, a.shift_end
-                FROM assignments a
-                JOIN personnel p ON p.id = a.personnel_id
-                JOIN users u ON u.id = p.user_id
-                JOIN stations s ON s.id = a.station_id
-                WHERE a.shift_start > now() AND a.shift_start <= now() + interval '3 days'
-                  AND a.shift_start::date > current_date
-                ORDER BY a.shift_start, s.code
-                LIMIT 30
-            """)
+
+        duty_now = results[3]
+        duty_upcoming = results[4]
+        if not isinstance(duty_now, Exception) and not isinstance(duty_upcoming, Exception):
             if duty_now:
                 lines = []
                 for d in duty_now:
@@ -495,6 +537,7 @@ async def _cmd_free_text(chat_id: int, text: str, pool) -> str:
                 context_parts.append("Дежурят сегодня (или прямо сейчас):\n" + "\n".join(lines))
             else:
                 context_parts.append("Дежурят сегодня: никого (смен нет)")
+
             if duty_upcoming:
                 lines = []
                 for d in duty_upcoming:
@@ -502,56 +545,33 @@ async def _cmd_free_text(chat_id: int, text: str, pool) -> str:
                                  f"{d['shift_start'].strftime('%d.%m %H:%M')}–{d['shift_end'].strftime('%H:%M')}, "
                                  f"роль: {d['role_on_duty'] or d['position']}")
                 context_parts.append("Ближайшие дежурства (3 дня):\n" + "\n".join(lines))
-        except Exception:
-            pass
-        try:
-            events = await pool.fetch("""
-                SELECT agent_name, event_type, severity, title, created_at
-                FROM agent_activity
-                WHERE created_at > now() - interval '48 hours'
-                ORDER BY created_at DESC
-                LIMIT 10
-            """)
-            if events:
-                ev_lines = []
-                for e in events:
-                    date_str = e["created_at"].strftime("%d.%m %H:%M") if e["created_at"] else ""
-                    ev_lines.append(f"  [{e['severity']}] {e['title']} ({e['agent_name']}, {date_str})")
-                context_parts.append("События за 48ч:\n" + "\n".join(ev_lines))
-        except Exception:
-            pass
-        # Прогнозы Prophet по станциям с данными
-        try:
-            import asyncio
-            import json as _json
-            from services.prophet_forecast import get_station_forecast_prophet
-            forecast_stations = await pool.fetch("""
-                SELECT s.code, s.name,
-                       array_agg(json_build_object('observed_at', r.observed_at::text, 'sst', r.sst)
-                                 ORDER BY r.observed_at DESC) AS readings_arr
-                FROM stations s
-                JOIN LATERAL (
-                    SELECT observed_at, sst FROM readings
-                    WHERE station_id = s.id AND sst IS NOT NULL
-                    ORDER BY observed_at DESC LIMIT 48
-                ) r ON true
-                GROUP BY s.code, s.name
-                LIMIT 8
-            """)
 
-            async def _process_station(fs):
-                readings_list = [_json.loads(r) if isinstance(r, str) else r for r in fs["readings_arr"]]
-                fc = await get_station_forecast_prophet(fs["code"], readings_list, periods=3)
-                trend_word = "рост" if fc["trend"] > 0.05 else ("снижение" if fc["trend"] < -0.05 else "стабильно")
-                vals = ", ".join(f"{v}°C" for v in fc["forecast"][:3])
-                anom = f", аномалий: {fc['n_anomalies_24h']}" if fc.get("n_anomalies_24h", 0) > 0 else ""
-                return f"  {fs['name']} ({fs['code']}): прогноз [{vals}], тренд: {trend_word}{anom}"
+        events = results[5]
+        if not isinstance(events, Exception) and events:
+            ev_lines = []
+            for e in events:
+                date_str = e["created_at"].strftime("%d.%m %H:%M") if e["created_at"] else ""
+                ev_lines.append(f"  [{e['severity']}] {e['title']} ({e['agent_name']}, {date_str})")
+            context_parts.append("События за 48ч:\n" + "\n".join(ev_lines))
 
-            if forecast_stations:
+        forecast_stations = results[6]
+        if not isinstance(forecast_stations, Exception) and forecast_stations:
+            try:
+                import json as _json
+                from services.prophet_forecast import get_station_forecast_prophet
+
+                async def _process_station(fs):
+                    readings_list = [_json.loads(r) if isinstance(r, str) else r for r in fs["readings_arr"]]
+                    fc = await get_station_forecast_prophet(fs["code"], readings_list, periods=3)
+                    trend_word = "рост" if fc["trend"] > 0.05 else ("снижение" if fc["trend"] < -0.05 else "стабильно")
+                    vals = ", ".join(f"{v}°C" for v in fc["forecast"][:3])
+                    anom = f", аномалий: {fc['n_anomalies_24h']}" if fc.get("n_anomalies_24h", 0) > 0 else ""
+                    return f"  {fs['name']} ({fs['code']}): прогноз [{vals}], тренд: {trend_word}{anom}"
+
                 fc_lines = await asyncio.gather(*(_process_station(fs) for fs in forecast_stations))
                 context_parts.append("Прогнозы ТПО (Prophet, ближайшие 6-18ч):\n" + "\n".join(fc_lines))
-        except Exception:
-            pass
+            except Exception:
+                pass
 
     context = "\n".join(context_parts) if context_parts else "Данные системы недоступны."
 
