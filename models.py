@@ -133,6 +133,13 @@ class FocusBlockCreate(BaseModel):
     day_of_week: Optional[int] = None
     recurring: Optional[bool] = False
 
+class AssignmentCreate(BaseModel):
+    personnel_id: int
+    station_id: int
+    shift_start: datetime
+    shift_end: datetime
+    role_on_duty: Optional[str] = "Наблюдатель"
+
 class ReadingCreate(BaseModel):
     station_id: int
     sst: Optional[float] = None
