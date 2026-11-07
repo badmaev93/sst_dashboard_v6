@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from datetime import datetime, timezone, timedelta
 import db
 from auth import require_role, get_current_user
+from models import AssignmentCreate
 
 schedule_router = APIRouter(prefix="/api/monitoring/schedule", tags=["schedule"])
 
@@ -84,13 +85,13 @@ async def get_personnel_for_schedule(user=Depends(get_current_user)):
 
 
 @schedule_router.post("/")
-async def create_assignment(data: dict, user=Depends(require_role("supervisor"))):
+async def create_assignment(data: AssignmentCreate, user=Depends(require_role("supervisor"))):
+    # Security: validate assignment input payload with AssignmentCreate to ensure correct datatypes and boundaries
     row = await db.pool.fetchrow("""
         INSERT INTO assignments (personnel_id, station_id, shift_start, shift_end, role_on_duty)
         VALUES ($1, $2, $3, $4, $5) RETURNING id
-    """, data["personnel_id"], data["station_id"],
-        _parse_date(data["shift_start"]), _parse_date(data["shift_end"]),
-        data.get("role_on_duty", "Наблюдатель"))
+    """, data.personnel_id, data.station_id, data.shift_start, data.shift_end,
+        data.role_on_duty or "Наблюдатель")
     return {"id": row["id"]}
 
 

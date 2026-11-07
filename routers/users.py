@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends
 import db
 from auth import require_role
+from models import AssignmentCreate
 
 users_router = APIRouter(prefix="/api/monitoring/users", tags=["users"])
 
@@ -21,9 +22,10 @@ async def list_personnel(user=Depends(require_role("supervisor"))):
     return [dict(r) for r in rows]
 
 @users_router.post("/assignments")
-async def create_assignment(data: dict, user=Depends(require_role("supervisor"))):
+async def create_assignment(data: AssignmentCreate, user=Depends(require_role("supervisor"))):
+    # Security: validate assignment input payload with AssignmentCreate to ensure correct datatypes and boundaries
     row = await db.pool.fetchrow("""
         INSERT INTO assignments (personnel_id, station_id, shift_start, shift_end, role_on_duty)
-        VALUES ($1, $2, $3::timestamptz, $4::timestamptz, $5) RETURNING id
-    """, data["personnel_id"], data["station_id"], data["shift_start"], data["shift_end"], data.get("role_on_duty"))
+        VALUES ($1, $2, $3, $4, $5) RETURNING id
+    """, data.personnel_id, data.station_id, data.shift_start, data.shift_end, data.role_on_duty or "Наблюдатель")
     return {"id": row["id"]}
