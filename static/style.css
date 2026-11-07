@@ -1340,7 +1340,7 @@ body.detail-mode #panel-toggle { top: 56px; }
 }
 .cmp-cell:focus-visible {
   outline: 2px solid #0055aa;
-  outline-offset: 2px;
+  outline-offset: 1px;
 }
 
 .cmp-label {
@@ -1553,3 +1553,18 @@ body::-webkit-scrollbar-thumb:hover,
 }
 
 #omni-input:focus-visible, .omni-footer button:focus-visible { outline: 2px solid #0055aa; outline-offset: 1px; }
+
+.db-period-select:focus-visible {
+  outline: 2px solid #0055aa;
+  outline-offset: 1px;
+}
+
+.cmp-hdr-sel:focus-visible {
+  outline: 2px solid #0055aa;
+  outline-offset: 1px;
+}
+
+.ol-control button:focus-visible {
+  outline: 2px solid #0055aa !important;
+  outline-offset: 1px !important;
+}

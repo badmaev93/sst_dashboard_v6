@@ -97,7 +97,7 @@ const AI_ICON_SVG    = `✨`;
 }
 .fv-station-item:hover { background: #f9fafb; border-color: #e5e7eb; }
 .fv-station-item.active { background: #faf5ff; border-color: #8b5cf6; }
-.fv-station-item:focus-visible { outline: 2px solid #8b5cf6; outline-offset: -2px; }
+.fv-station-item:focus-visible { outline: 2px solid #8b5cf6; outline-offset: -1px; }
 .fv-station-dot {
   width: 10px; height: 10px;
   border-radius: 50%;
@@ -174,7 +174,7 @@ const AI_ICON_SVG    = `✨`;
 .fv-param-tab.active {
   color: #fff;
 }
-.fv-param-tab:focus-visible { outline: 2px solid #8b5cf6; outline-offset: 2px; }
+.fv-param-tab:focus-visible { outline: 2px solid #8b5cf6; outline-offset: 1px; }
 
 .fv-chart-card {
   background: #fff;

@@ -507,7 +507,7 @@
             }
             .cal-task-checkbox:focus-visible {
                 outline: 2px solid #2563eb;
-                outline-offset: 2px;
+                outline-offset: 1px;
             }
 
             .cal-task-info { flex: 1; min-width: 0; }
@@ -622,7 +622,11 @@
             }
             .cal-field input:focus, .cal-field select:focus, .cal-field textarea:focus {
                 border-color: #2563eb;
-                box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+            }
+            .cal-field input:focus-visible, .cal-field select:focus-visible, .cal-field textarea:focus-visible {
+                border-color: #2563eb;
+                outline: 2px solid #2563eb;
+                outline-offset: 1px;
             }
 
             .cal-field textarea { resize: vertical; }

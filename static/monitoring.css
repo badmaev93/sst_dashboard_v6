@@ -787,3 +787,15 @@
 .mon-action-btn:active {
   transform: scale(0.98);
 }
+
+.dropdown-menu button:focus-visible,
+#user-menu button:focus-visible,
+.cal-nav button:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 1px;
+}
+
+.form-group input:focus-visible {
+  outline: 2px solid #0066cc;
+  outline-offset: 1px;
+}

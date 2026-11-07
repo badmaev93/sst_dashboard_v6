@@ -93,7 +93,7 @@
         font-family: inherit; transition: background .15s;
       }
       .mon-btn-close:hover { background: ${CLR.border}; }
-      .mon-btn-close:focus-visible { outline: 2px solid ${CLR.info}; outline-offset: 2px; }
+      .mon-btn-close:focus-visible { outline: 2px solid ${CLR.info}; outline-offset: 1px; }
 
       /* ── Columns ── */
       .mon-columns {
@@ -150,6 +150,7 @@
         cursor: pointer; outline: none;
       }
       .mon-feed-select:focus { border-color: ${CLR.info}; }
+      .mon-feed-select:focus-visible { outline: 2px solid ${CLR.info}; outline-offset: 1px; }
 
       /* ── Feed list ── */
       .mon-feed-list {
@@ -167,7 +168,7 @@
         transition: border-color .2s, box-shadow .2s, transform .15s;
       }
       .mon-card:hover { border-color: ${CLR.textDim}; transform: translateY(-1px); }
-      .mon-card:focus-visible { outline: 2px solid ${CLR.info}; outline-offset: 2px; }
+      .mon-card:focus-visible { outline: 2px solid ${CLR.info}; outline-offset: 1px; }
       .mon-card.sev-critical {
         border-left: 3px solid ${CLR.critical};
         box-shadow: 0 0 12px rgba(248,81,73,.15);
@@ -260,7 +261,7 @@
       .mon-action-btn.primary:hover {
         background: #388bfd; box-shadow: 0 0 12px rgba(56,139,253,.3);
       }
-      .mon-action-btn:focus-visible { outline: 2px solid ${CLR.info}; outline-offset: 2px; }
+      .mon-action-btn:focus-visible { outline: 2px solid ${CLR.info}; outline-offset: 1px; }
 
       /* ── Feed empty ── */
       .mon-feed-empty {
