@@ -552,7 +552,7 @@
     }
     function inputStyle() {
         return 'width:100%;padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;' +
-               'font-size:13px;outline:none;font-family:inherit;';
+               'font-size:13px;font-family:inherit;';
     }
     function field(label, input) {
         return '<label style="display:block;margin-bottom:14px">' +

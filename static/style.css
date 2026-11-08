@@ -181,7 +181,7 @@ body.detail-mode #panel-toggle { top: 56px; }
   font-weight: 600;
   padding: 4px 8px;
   cursor: pointer;
-  outline: none;
+
   min-width: 220px;
 }
 .cmp-param-select:focus { border-color: #0055aa; }
@@ -364,7 +364,7 @@ body.detail-mode #panel-toggle { top: 56px; }
   font-size: 12px;
   padding: 5px 8px;
   cursor: pointer;
-  outline: none;
+
   appearance: auto;
 }
 .lp-select:focus { border-color: #0055aa; }
@@ -1084,7 +1084,7 @@ body.detail-mode #panel-toggle { top: 56px; }
   font-size: 12px;
   padding: 4px 8px;
   cursor: pointer;
-  outline: none;
+
   flex: 1;
 }
 
@@ -1212,14 +1212,14 @@ body.detail-mode #panel-toggle { top: 56px; }
   border: none;
   font-family: inherit;
   cursor: pointer;
-  outline: none;
+
   appearance: auto;
   border-radius: 3px;
   transition: background 0.12s;
   color: #0a1628;
 }
 .cmp-hdr-sel:hover  { background: rgba(0,80,160,0.06); }
-.cmp-hdr-sel:focus  { background: rgba(0,80,160,0.09); outline: none; }
+.cmp-hdr-sel:focus  { background: rgba(0,80,160,0.09);  }
 .cmp-hdr-sel option { background: #fff; color: #1a2030; }
 
 .cmp-hdr-param {
@@ -1428,7 +1428,7 @@ body.detail-mode #panel-toggle { top: 56px; }
   border-bottom: 1px solid #e2e8f0;
   padding: 16px 20px;
   font-size: 16px;
-  outline: none;
+
   background: transparent;
   color: #1e293b;
   width: 100%;

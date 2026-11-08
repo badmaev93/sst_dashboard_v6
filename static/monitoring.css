@@ -167,7 +167,7 @@
   border-radius: 8px;
   font-family: inherit;
   font-size: 13px;
-  outline: none;
+
   transition: all 0.2s ease;
 }
 .form-group input:focus { border-color: #0066cc; }

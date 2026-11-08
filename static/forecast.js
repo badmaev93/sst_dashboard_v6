@@ -55,7 +55,7 @@ const AI_ICON_SVG    = `✨`;
   border-radius: 8px;
   font-size: 13px;
   font-family: inherit;
-  outline: none;
+
   margin-top: 10px;
   transition: border-color .15s;
 }

@@ -147,7 +147,7 @@
       .mon-feed-select {
         background: ${CLR.surface}; border: 1px solid ${CLR.border}; color: ${CLR.text};
         padding: 4px 10px; border-radius: 5px; font-size: 12px; font-family: inherit;
-        cursor: pointer; outline: none;
+        cursor: pointer;
       }
       .mon-feed-select:focus { border-color: ${CLR.info}; }
       .mon-feed-select:focus-visible { outline: 2px solid ${CLR.info}; outline-offset: 1px; }
