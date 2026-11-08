@@ -616,7 +616,7 @@
                 border: 1px solid #d1d5db;
                 border-radius: 8px;
                 font-size: 13px;
-                outline: none;
+
                 font-family: inherit;
                 transition: border-color 0.15s;
             }

@@ -116,7 +116,7 @@
                     </span>
                     <input id="auth-username" type="text" autocomplete="username"
                            style="width:100%;padding:9px 12px;border:1px solid #d1d5db;border-radius:8px;
-                                  font-size:13px;outline:none;transition:border-color .15s"
+                                  font-size:13px;transition:border-color .15s"
                            onfocus="this.style.borderColor='#3b82f6'"
                            onblur="this.style.borderColor='#d1d5db'" />
                 </label>
@@ -126,7 +126,7 @@
                     </span>
                     <input id="auth-password" type="password" autocomplete="current-password"
                            style="width:100%;padding:9px 12px;border:1px solid #d1d5db;border-radius:8px;
-                                  font-size:13px;outline:none;transition:border-color .15s"
+                                  font-size:13px;transition:border-color .15s"
                            onfocus="this.style.borderColor='#3b82f6'"
                            onblur="this.style.borderColor='#d1d5db'" />
                 </label>
