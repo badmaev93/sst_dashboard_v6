@@ -92,10 +92,10 @@
           График дежурств
         </h2>
         <div style="display:flex;align-items:center;gap:8px">
-          <button onclick="window._schedPrev()" aria-label="Предыдущая неделя" style="padding:6px 12px;border:1px solid #d1d5db;border-radius:6px;background:#fff;cursor:pointer;font-size:14px;outline:none;" onfocus="this.style.boxShadow='0 0 0 2px #0066cc'" onblur="this.style.boxShadow='none'">&larr;</button>
+          <button onclick="window._schedPrev()" aria-label="Предыдущая неделя" style="padding:6px 12px;border:1px solid #d1d5db;border-radius:6px;background:#fff;cursor:pointer;font-size:14px;outline:none;" onfocus="this.style.outline='2px solid #0055aa'; this.style.outlineOffset='1px'" onblur="this.style.outline='none'; this.style.outlineOffset='0px'">&larr;</button>
           <span style="font-size:14px;font-weight:500;min-width:180px;text-align:center">${weekRange} &middot; ${monthLabel}</span>
-          <button onclick="window._schedNext()" aria-label="Следующая неделя" style="padding:6px 12px;border:1px solid #d1d5db;border-radius:6px;background:#fff;cursor:pointer;font-size:14px;outline:none;" onfocus="this.style.boxShadow='0 0 0 2px #0066cc'" onblur="this.style.boxShadow='none'">&rarr;</button>
-          <button onclick="window._schedToday()" style="padding:6px 12px;border:1px solid #0066cc;border-radius:6px;background:#0066cc;color:#fff;cursor:pointer;font-size:14px;outline:none;" onfocus="this.style.boxShadow='0 0 0 2px #0066cc'" onblur="this.style.boxShadow='none'">Сегодня</button>
+          <button onclick="window._schedNext()" aria-label="Следующая неделя" style="padding:6px 12px;border:1px solid #d1d5db;border-radius:6px;background:#fff;cursor:pointer;font-size:14px;outline:none;" onfocus="this.style.outline='2px solid #0055aa'; this.style.outlineOffset='1px'" onblur="this.style.outline='none'; this.style.outlineOffset='0px'">&rarr;</button>
+          <button onclick="window._schedToday()" style="padding:6px 12px;border:1px solid #0066cc;border-radius:6px;background:#0066cc;color:#fff;cursor:pointer;font-size:14px;outline:none;" onfocus="this.style.outline='2px solid #0055aa'; this.style.outlineOffset='1px'" onblur="this.style.outline='none'; this.style.outlineOffset='0px'">Сегодня</button>
         </div>
       </div>`;
 
