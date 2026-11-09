@@ -44,10 +44,31 @@ def _compute_bbox(geom):
 async def list_regions(user=Depends(get_current_user)):
     geo = _load_geojson()
     regions = []
+
+    all_station_codes = set()
+    for feat in geo["features"]:
+        station_codes = feat["properties"].get("stations", [])
+        all_station_codes.update(station_codes)
+
+    station_data_map = {}
+    if db.pool and all_station_codes:
+        rows = await db.pool.fetch("""
+            SELECT s.id, s.code, s.name, s.status,
+                   r.sst, r.observed_at
+            FROM stations s
+            LEFT JOIN LATERAL (
+                SELECT sst, observed_at FROM readings
+                WHERE station_id = s.id ORDER BY observed_at DESC LIMIT 1
+            ) r ON true
+            WHERE s.code = ANY($1)
+        """, list(all_station_codes))
+        for r in rows:
+            station_data_map[r["code"]] = r
+
     for feat in geo["features"]:
         props = feat["properties"]
         code = props["code"]
-        station_codes = props["stations"]
+        station_codes = props.get("stations", [])
 
         # Вычисление bbox из геометрии
         geom = feat.get("geometry", {})
@@ -59,23 +80,14 @@ async def list_regions(user=Depends(get_current_user)):
         statuses = {"normal": 0, "warning": 0, "critical": 0, "offline": 0}
 
         if db.pool and station_codes:
-            rows = await db.pool.fetch("""
-                SELECT s.id, s.code, s.name, s.status,
-                       r.sst, r.observed_at
-                FROM stations s
-                LEFT JOIN LATERAL (
-                    SELECT sst, observed_at FROM readings
-                    WHERE station_id = s.id ORDER BY observed_at DESC LIMIT 1
-                ) r ON true
-                WHERE s.code = ANY($1)
-            """, station_codes)
+            region_rows = [station_data_map[sc] for sc in station_codes if sc in station_data_map]
 
-            station_count = len(rows)
-            sst_vals = [r["sst"] for r in rows if r["sst"] is not None]
+            station_count = len(region_rows)
+            sst_vals = [r["sst"] for r in region_rows if r["sst"] is not None]
             if sst_vals:
                 avg_sst = round(sum(sst_vals) / len(sst_vals), 2)
 
-            for r in rows:
+            for r in region_rows:
                 st = r["status"] or "normal"
                 if st in statuses:
                     statuses[st] += 1
