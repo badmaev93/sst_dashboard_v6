@@ -1,4 +1,12 @@
-💡 What: Optimized `_cmd_free_text` in `services/telegram_bot.py` by grouping sequential database queries.
-🎯 Why: The Telegram bot previously ran seven individual queries sequentially when processing free text. This causes an N+1 queries performance bottleneck.
-📊 Impact: Expected to reduce execution latency of the function. In a local execution trace, it went down from roughly 2.6s to 1.1s.
-🔬 Measurement: Execute `python test_perf.py` on main vs PR branch, and compare execution times for `_cmd_free_text`.
+💡 What
+Removed inline `onfocus` and `onblur` event handlers from the authentication form inputs in `static/auth.js` and replaced them with a standard CSS `:focus-visible` pseudo-class in `static/style.css`.
+
+🎯 Why
+Using inline JavaScript event handlers for styling is an anti-pattern. Moving this logic to CSS separates presentation from behavior and adheres to standard accessibility (a11y) best practices for focus rings.
+
+📸 Before/After
+Before: Focus styles were managed via JS `this.style.borderColor` which overrides CSS cascade and fails to show consistent focus outlines.
+After: Inputs use `.auth-input-field:focus-visible` to manage focus states naturally.
+
+♿ Accessibility
+Ensures that the browser's focus ring remains fully visible and consistent with standard patterns when the inputs receive focus via keyboard navigation.

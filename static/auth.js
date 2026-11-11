@@ -114,21 +114,17 @@
                     <span style="display:block;font-size:12px;font-weight:600;color:#475569;margin-bottom:4px">
                         Логин
                     </span>
-                    <input id="auth-username" type="text" autocomplete="username"
+                    <input id="auth-username" type="text" autocomplete="username" class="auth-input-field"
                            style="width:100%;padding:9px 12px;border:1px solid #d1d5db;border-radius:8px;
-                                  font-size:13px;transition:border-color .15s"
-                           onfocus="this.style.borderColor='#3b82f6'"
-                           onblur="this.style.borderColor='#d1d5db'" />
+                                  font-size:13px;transition:border-color .15s, outline .15s" />
                 </label>
                 <label style="display:block;margin-bottom:20px">
                     <span style="display:block;font-size:12px;font-weight:600;color:#475569;margin-bottom:4px">
                         Пароль
                     </span>
-                    <input id="auth-password" type="password" autocomplete="current-password"
+                    <input id="auth-password" type="password" autocomplete="current-password" class="auth-input-field"
                            style="width:100%;padding:9px 12px;border:1px solid #d1d5db;border-radius:8px;
-                                  font-size:13px;transition:border-color .15s"
-                           onfocus="this.style.borderColor='#3b82f6'"
-                           onblur="this.style.borderColor='#d1d5db'" />
+                                  font-size:13px;transition:border-color .15s, outline .15s" />
                 </label>
                 <button id="auth-submit" style="width:100%;padding:10px;background:#2563eb;color:#fff;
                         border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;
